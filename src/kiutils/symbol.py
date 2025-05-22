@@ -355,6 +355,11 @@ class Symbol():
     units: List[Symbol] = field(default_factory=list)
     """The ``units`` can be one or more child symbol tokens embedded in a parent symbol"""
 
+    # Available since KiCad v9
+
+    # TODO Missing docs for this one
+    excludeFromSim: Optional[bool] = False
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Symbol:
         """Convert the given S-Expression into a Symbol object
@@ -471,7 +476,7 @@ class Symbol():
             obtext = 'yes' if self.onBoard else 'no'
         onboard = f' (on_board {obtext})' if self.onBoard is not None else ''
         power = f' (power)' if self.isPower else ''
-        pnhide = f' hide' if self.pinNamesHide else ''
+        pnhide = f' (hide yes)' if self.pinNamesHide else ''
         pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
         pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''
         pinnumbers = f' (pin_numbers hide)' if self.hidePinNumbers else ''
@@ -509,6 +514,11 @@ class SymbolLib():
     filePath: Optional[str] = None
     """The ``filePath`` token defines the path-like string to the library file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
+
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     @classmethod
     def from_file(cls, filepath: str, encoding: Optional[str] = None) -> SymbolLib:
@@ -593,10 +603,14 @@ class SymbolLib():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
+        indents = ' ' * indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(kicad_symbol_lib (version {self.version}) (generator {self.generator})\n'
+        version = f' (version {self.version})' if self.version is not None else ''
+        generator = f' (generator {self.generator})' if self.generator is not None else ''
+        generator_version = f' (generator_version {self.generator_version})' if self.generator_version is not None else ''
+
+        expression =  f'{indents}(kicad_symbol_lib {version} {generator} {generator_version}\n'
         for item in self.symbols:
             expression += f'{indents}{item.to_sexpr(indent+2)}'
         expression += f'{indents}){endline}'

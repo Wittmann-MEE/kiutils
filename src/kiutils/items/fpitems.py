@@ -120,8 +120,8 @@ class FpText():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        hide = ' hide' if self.hide else ''
-        unlocked = ' unlocked' if self.position.unlocked else ''
+        hide = ' (hide yes)' if self.hide else ''
+        unlocked = ' (unlocked yes)' if self.position.unlocked else ''
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         ko = ' knockout' if self.knockout else ''
 
@@ -217,7 +217,7 @@ class FpLine():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
         if self.width is not None:
             width = f' (width {self.width})'
         elif self.stroke is not None:
@@ -314,8 +314,8 @@ class FpRect():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
-        locked = ' locked' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        locked = ' (locked yes)' if self.locked else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
         if self.width is not None:
@@ -454,11 +454,11 @@ class FpTextBox():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
         angle = f'(angle {self.angle}) ' if self.angle is not None else ''
         start = f'(start {self.start.X} {self.start.Y}) ' if self.start is not None else ''
         end = f'(end {self.end.X} {self.end.Y}) ' if self.end is not None else ''
-        locked = ' locked' if self.locked else ''
+        locked = ' (locked yes)' if self.locked else ''
 
         expression = f'{indents}(fp_text_box{locked} "{dequote(self.text)}"\n'
         if len(self.pts) == 4:
@@ -562,8 +562,8 @@ class FpCircle():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
-        locked = ' locked' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        locked = ' (locked yes)' if self.locked else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
         if self.width is not None:
@@ -661,8 +661,8 @@ class FpArc():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
-        locked = ' locked' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        locked = ' (locked yes)' if self.locked else ''
 
         if self.width is not None:
             width = f' (width {self.width})'
@@ -761,8 +761,8 @@ class FpPoly():
         if len(self.coordinates) == 0:
             return f'{indents}{endline}'
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
-        locked = ' locked' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        locked = ' (locked yes)' if self.locked else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
         if self.width is not None:
@@ -861,8 +861,8 @@ class FpCurve():
         if len(self.coordinates) == 0:
             return f'{indents}{endline}'
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
-        locked = ' locked' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        locked = ' (locked yes)' if self.locked else ''
 
         if self.width is not None:
             width = f' (width {self.width})'

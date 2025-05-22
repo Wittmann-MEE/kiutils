@@ -355,8 +355,8 @@ class Font():
 
         if self.face is not None:        face_name = f'(face "{dequote(self.face)}") '
         if self.thickness is not None:   thickness = f' (thickness {self.thickness})'
-        if self.bold == True:            bold = ' bold'
-        if self.italic == True:          italic = ' italic'
+        if self.bold == True:            bold = ' (bold yes)'
+        if self.italic == True:          italic = ' (italic yes)'
         if self.lineSpacing is not None: linespacing = f' (line_spacing {self.lineSpacing})'
         if self.color is not None:       color = f' {self.color.to_sexpr()}'
 
@@ -501,7 +501,7 @@ class Effects():
         endline = '\n' if newline else ''
 
         justify = f' {self.justify.to_sexpr()}' if self.justify.to_sexpr() != '' else ''
-        hide = f' hide' if self.hide else ''
+        hide = f' (hide yes)' if self.hide else ''
         href = f' (href "{dequote(self.href)}")' if self.href is not None else ''
 
         expression =  f'{indents}(effects {self.font.to_sexpr()}{justify}{href}{hide}){endline}'
@@ -624,7 +624,7 @@ class Group():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
         expression =  f'{indents}(group "{dequote(self.name)}"{locked} (id {self.id})\n'
         expression += f'{indents}  (members\n'

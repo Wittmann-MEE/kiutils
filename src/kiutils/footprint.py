@@ -208,7 +208,7 @@ class Model():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        hide = " hide" if self.hide else ""
+        hide = " (hide yes)" if self.hide else ""
 
         expression =  f'{indents}(model "{dequote(self.path)}"{hide}\n'
         if self.opacity is not None:
@@ -581,7 +581,7 @@ class Pad():
 
         layers += ')'
 
-        locked = ' locked' if self.locked else ''
+        locked = ' (locked yes)' if self.locked else ''
         drill = f' {self.drill.to_sexpr()}' if self.drill is not None else ''
         ppty = f' (property {self.property})' if self.property is not None else ''
         rul = ' (remove_unused_layers)' if self.removeUnusedLayers else ''
@@ -597,7 +597,7 @@ class Pad():
         if net != '' or pf != '' or pt != '':
             schematicSymbolAssociated = True
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
 
         if len(self.chamfer) > 0:
             champferFound = True
@@ -844,6 +844,14 @@ class Footprint():
     """The ``filePath`` token defines the path-like string to the library file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[bool] = False
+    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Footprint:
         """Convert the given S-Expresstion into a Footprint object
@@ -925,6 +933,7 @@ class Footprint():
                             raise Exception(f"Property {prop_item} which is not in key -> value mapping. exp: {exp}")
 
                         if prop_item[0] == 'hide' and prop_item[1] == 'yes': prop_obj["hide"] = True
+                        if prop_item[0] == 'unlocked' and prop_item[1] == 'yes': prop_obj["unlocked"] = True
                         if prop_item[0] == 'at': prop_obj["position"] = Position().from_sexpr(prop_item)
                         if prop_item[0] == 'layer':
                             prop_obj["layer"] = prop_item[1]
@@ -1002,6 +1011,7 @@ class Footprint():
         fp.libId = library_id
 
         # Create text items that are created when adding a new footprint to a library
+        # TODO - In v9 these are not FpTexts anymore but rather Properties
         fp.graphicItems.extend(
             [
                 FpText(
@@ -1062,13 +1072,14 @@ class Footprint():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = ' locked' if self.locked else ''
-        placed = ' placed' if self.placed else ''
+        locked = f' (locked yes)' if self.locked else ''
+        placed = f' (placed yes)' if self.placed else ''
         version = f' (version {self.version})' if self.version is not None else ''
         generator = f' (generator {self.generator})' if self.generator is not None else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        generator_version = f' (generator_version {self.generator_version})' if self.generator_version is not None else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
 
-        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}'
+        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}'
         if layerInFirstLine:
             expression += f' (layer "{dequote(self.layer)}")\n'
         else:
