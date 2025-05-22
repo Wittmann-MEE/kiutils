@@ -91,9 +91,10 @@ class FpText():
         object.type = exp[1]
         object.text = exp[2]
         for item in exp[3:]:
-            if type(item) != type([]):
-                if item == 'hide': object.hide = True
-                continue
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'layer': 
                 object.layer = item[1]
@@ -102,6 +103,7 @@ class FpText():
                         object.knockout = True
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
         return object
 
@@ -184,15 +186,16 @@ class FpLine():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
@@ -278,15 +281,16 @@ class FpRect():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width':
                 object.width = item[1]
@@ -417,6 +421,7 @@ class FpTextBox():
             if item[0] == 'angle': object.angle = item[1]
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
             if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
             if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
@@ -524,15 +529,16 @@ class FpCircle():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'center': object.center = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width':
                 object.width = item[1]
@@ -622,16 +628,17 @@ class FpArc():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'mid': object.mid = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
@@ -717,17 +724,17 @@ class FpPoly():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
-
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width':
                 object.width = item[1]
@@ -818,16 +825,17 @@ class FpCurve():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None

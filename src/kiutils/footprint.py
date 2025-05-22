@@ -180,10 +180,12 @@ class Model():
         object = cls()
         object.path = exp[1]
 
-        if exp[2] == 'hide':
-            object.hide = True
+        # if exp[2] == 'hide':
+        #     object.hide = True
 
         for e in exp[2:]:
+            if e[0] == 'hide' and e[1] == 'yes':
+                object.hide = True
             if e[0] == 'opacity':
                 object.opacity = e[1]
             elif e[0] == 'offset':
@@ -502,26 +504,30 @@ class Pad():
         object.type = exp[2]
         object.shape = exp[3]
 
-        for item in exp[3:]:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
+        for item in exp[4:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'size': object.size = Position().from_sexpr(item)
             if item[0] == 'drill': object.drill = DrillDefinition().from_sexpr(item)
             if item[0] == 'layers':
                 for layer in item[1:]:
                     object.layers.append(layer)
+
             if item[0] == 'property': object.property = item[1]
-            if item[0] == 'remove_unused_layers': object.removeUnusedLayers = True
-            if item[0] == 'keep_end_layers': object.keepEndLayers = True
+            if item[0] == 'remove_unused_layers' and item[1] == 'yes': object.removeUnusedLayers = True
+            if item[0] == 'keep_end_layers' and item[1] == 'yes': object.keepEndLayers = True
             if item[0] == 'roundrect_rratio': object.roundrectRatio = item[1]
             if item[0] == 'chamfer_ratio': object.chamferRatio = item[1]
             if item[0] == 'chamfer':
                 for chamfer in item[1:]:
                     object.chamfer.append(chamfer)
+
             if item[0] == 'net': object.net = Net().from_sexpr(item)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'pinfunction': object.pinFunction = item[1]
             if item[0] == 'pintype': object.pinType = item[1]
             if item[0] == 'die_length': object.dieLength = item[1]
@@ -546,6 +552,7 @@ class Pad():
 
                     # XXX: Are dimentions even implemented here?
                     if primitive[0] == 'dimension': raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -861,15 +868,20 @@ class Footprint():
         object.libId = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                if item == 'locked': object.locked = True
-                if item == 'placed': object.placed = True
-                continue
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
+            if item[0] == 'placed' and item[1] == 'yes': object.placed = True
+
+            if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tedit': object.tedit = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'descr': object.description = item[1]
             if item[0] == 'tags': object.tags = item[1]
             if item[0] == 'path': object.path = item[1]
@@ -896,7 +908,11 @@ class Footprint():
             if item[0] == 'image':object.graphicItems.append(Image.from_sexpr(item))
             if item[0] == 'pad': object.pads.append(Pad.from_sexpr(item))
             if item[0] == 'zone': object.zones.append(Zone.from_sexpr(item))
+
+            # Oof, hopefully this handles the new kicad 9 properties well...
+            # Also, the fact that fp_text became just another Property :(
             if item[0] == 'property': object.properties.update({ item[1]: item[2] })
+
             if item[0] == 'group': object.groups.append(Group.from_sexpr(item))
             if item[0] == 'private_layers':
                 for layer in item[1:]:
@@ -906,6 +922,7 @@ class Footprint():
                     object.netTiePadGroups.append(layer)
             if item[0] == 'dimension':
                 raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
 
         return object
 

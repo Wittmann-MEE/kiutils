@@ -83,9 +83,13 @@ class GrText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+            # if type(item) != type([]):
+            #     if item == 'locked': object.locked = True
+            #     continue
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'layer': 
                 object.layer = item[1]
@@ -94,6 +98,7 @@ class GrText():
                         object.knockout = True
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
         return object
 
@@ -181,6 +186,10 @@ class GrTextBox():
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrTextBox:
+        raise Exception('We never dealt with this before.'
+                        'Most definitely there were changes introduced between Kicad 7 and 9.'
+                        'If you know what you are doing, proceed to verify/fix and remove the exception.')
+
         """Convert the given S-Expression into a GrTextBox object
 
         Args:
@@ -219,6 +228,7 @@ class GrTextBox():
             if item[0] == 'angle': object.angle = item[1]
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'tstamp': object.uuid = item[1] # Haha :)
             if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
             if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
             if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
@@ -322,14 +332,16 @@ class GrLine():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width': object.width = item[1]
         return object
 
@@ -403,14 +415,16 @@ class GrRect():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width': object.width = item[1]
         return object
@@ -485,14 +499,16 @@ class GrCircle():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'center': object.center = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width': object.width = item[1]
 
@@ -568,15 +584,17 @@ class GrArc():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'mid': object.mid = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width': object.width = item[1]
 
         return object
@@ -648,15 +666,17 @@ class GrPoly():
 
         object = cls()
 
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width': object.width = item[1]
 
@@ -740,15 +760,17 @@ class GrCurve():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width': object.width = item[1]
 
         return object

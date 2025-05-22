@@ -600,11 +600,13 @@ class Group():
 
         object = cls()
         object.name = exp[1]
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[2:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'id': object.id = item[1]
+            if item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
             if item[0] == 'members':
                 for member in item[1:]:
                     object.members.append(member)

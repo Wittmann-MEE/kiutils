@@ -72,9 +72,9 @@ class KeepoutSettings():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
             if item[0] == 'tracks': object.tracks = item[1]
             if item[0] == 'vias': object.vias = item[1]
@@ -199,11 +199,15 @@ class FillSettings():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'yes': object.yes = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                if item == 'yes':
+                    # Ok, very weird
+                    object.yes = True
+                else:
+                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'yes': object.yes = True
             if item[0] == 'mode': object.mode = item[1]
             if item[0] == 'thermal_gap': object.thermalGap = item[1]
             if item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
@@ -357,7 +361,11 @@ class FilledPolygon():
                 continue
 
             if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'island': object.island = True
+            if item[0] == 'island':
+                raise Exception("We didn't deal with this so far."
+                                "A small modification such as checking that item[1] is yes or no might be needed."
+                                "Verify/fix if needed and remove this exception.")
+                object.island = True
             if item[0] == 'pts':
                 for position in item[1:]:
                     object.coordinates.append(Position().from_sexpr(position))
@@ -571,17 +579,18 @@ class Zone():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'net': object.net = item[1]
             if item[0] == 'net_name': object.netName = item[1]
             if item[0] == 'layers' or item[0] == 'layer':
                 for layer in item[1:]:
                     object.layers.append(layer)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'name': object.name = item[1]
             if item[0] == 'hatch':
                 object.hatch = Hatch(style=item[1], pitch=item[2])
