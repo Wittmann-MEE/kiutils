@@ -910,8 +910,33 @@ class Footprint():
             if item[0] == 'zone': object.zones.append(Zone.from_sexpr(item))
 
             # Oof, hopefully this handles the new kicad 9 properties well...
-            # Also, the fact that fp_text became just another Property :(
-            if item[0] == 'property': object.properties.update({ item[1]: item[2] })
+            if item[0] == 'property':
+                val = item[2]
+
+                # These were fp_text before and thus handled properly, let's fix it :)
+                # TODO - this is mostly stolen from FpText parsing and should be a function, this is very dirty!
+                if item[1] in ['Reference', 'Value', 'Datasheet', 'Description']:
+                    prop_obj = {
+                        "type": item[1],
+                        "text": item[2]
+                    }
+                    for prop_item in item[3:]:
+                        if not isinstance(prop_item, list):
+                            raise Exception(f"Property {prop_item} which is not in key -> value mapping. exp: {exp}")
+
+                        if prop_item[0] == 'hide' and prop_item[1] == 'yes': prop_obj["hide"] = True
+                        if prop_item[0] == 'at': prop_obj["position"] = Position().from_sexpr(prop_item)
+                        if prop_item[0] == 'layer':
+                            prop_obj["layer"] = prop_item[1]
+                            if len(prop_item) > 2 and prop_item[2] == "knockout":
+                                prop_obj["knockout"] = True
+                        if prop_item[0] == 'effects': prop_obj["effects"] = Effects().from_sexpr(prop_item)
+                        if prop_item[0] == 'uuid': prop_obj["tstamp"] = prop_item[1]  # Haha :)
+                        if prop_item[0] == 'render_cache': prop_obj["renderCache"] = RenderCache.from_sexpr(prop_item)
+
+                    val = prop_obj
+
+                object.properties.update({ item[1]: val })
 
             if item[0] == 'group': object.groups.append(Group.from_sexpr(item))
             if item[0] == 'private_layers':
