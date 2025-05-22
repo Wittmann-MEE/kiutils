@@ -74,10 +74,14 @@ class SyArc():
 
         object = cls()
 
-        for item in exp:
-            if isinstance(item, str):
-                if item == 'private': object.private = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                # Pretty sure this isn't the case but let's be safe
+                if item == 'private':
+                    object.private = True
+                else:
+                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+            if item[0] == 'private' and item[1] == 'yes': object.private = True
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'mid': object.mid = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
@@ -157,10 +161,14 @@ class SyCircle():
 
         object = cls()
 
-        for item in exp:
-            if isinstance(item, str):
-                if item == 'private': object.private = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                # Pretty sure this isn't the case but let's be safe
+                if item == 'private':
+                    object.private = True
+                else:
+                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+            if item[0] == 'private' and item[1] == 'yes': object.private = True
             if item[0] == 'center': object.center = Position().from_sexpr(item)
             if item[0] == 'radius': object.radius = item[1]
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
@@ -225,7 +233,7 @@ class SyCurve():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             if item[0] == 'pts':
@@ -294,7 +302,7 @@ class SyPolyLine():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             if item[0] == 'pts':
@@ -373,10 +381,14 @@ class SyRect():
 
         object = cls()
 
-        for item in exp:
-            if isinstance(item, str):
-                if item == 'private': object.private = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                # Pretty sure this isn't the case but let's be safe
+                if item == 'private':
+                    object.private = True
+                else:
+                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+            if item[0] == 'private' and item[1] == 'yes': object.private = True
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)

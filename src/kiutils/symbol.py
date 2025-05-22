@@ -146,9 +146,9 @@ class SymbolPin():
         object.electricalType = exp[1]
         object.graphicalStyle = exp[2]
         for item in exp[3:]:
-            if type(item) != type([]):
-                if item == 'hide': object.hide = True
-                else: continue
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'length': object.length = item[1]
             if item[0] == 'name':
@@ -379,16 +379,22 @@ class Symbol():
         object.libId = exp[1]
         for item in exp[2:]:
             if item[0] == 'extends': object.extends = item[1]
+            if item[0] == 'exclude_from_sim': object.excludeFromSim = True if item[1] == 'yes' else False
             if item[0] == 'pin_numbers':
-                if item[1] == 'hide':
-                    object.hidePinNumbers = True
+                for prop in item[1:]:
+                    if not isinstance(prop, list):
+                        raise Exception(f"[SYMBOL] Item: {item} from has unexpected property: {prop} which is not in key -> value mapping")
+                    if prop[0] == 'hide' and prop[1] == 'yes': object.hidePinNumbers = True
+
             if item[0] == 'pin_names':
-                object.pinNames = True
-                for property in item[1:]:
-                    if type(property) == type([]):
-                        if property[0] == 'offset': object.pinNamesOffset = property[1]
-                    else:
-                        if property == 'hide': object.pinNamesHide = True
+                object.pinNames = True # This feels wrong to set here, what if it will be hidden? But ok...
+                for prop in item[1:]:
+                    if not isinstance(prop, list):
+                        raise Exception(f"[SYMBOL] Item: {item} from has unexpected property: {prop} which is not in key -> value mapping")
+                    if prop[0] == 'offset': object.pinNamesOffset = prop[1]
+                    if prop[0] == 'hide' and prop[1] == 'yes':
+                        object.pinNamesHide = True
+
             if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
             if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
             if item[0] == 'power': object.isPower = True
@@ -403,7 +409,11 @@ class Symbol():
             if item[0] == 'polyline': object.graphicItems.append(SyPolyLine().from_sexpr(item))
             if item[0] == 'rectangle': object.graphicItems.append(SyRect().from_sexpr(item))
             if item[0] == 'text': object.graphicItems.append(SyText().from_sexpr(item))
-            if item[0] == 'text_box': object.graphicItems.append(SyTextBox().from_sexpr(item))
+            if item[0] == 'text_box':
+                raise Exception('We never dealt with text_box symbols before.'
+                                'The function that parses this is most definitely incompatible.'
+                                'If you see this then fix parsing in SyTextBox and remove this exception.')
+                # object.graphicItems.append(SyTextBox().from_sexpr(item))
 
         return object
 
@@ -549,6 +559,7 @@ class SymbolLib():
         for item in exp[1:]:
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
         return object
 

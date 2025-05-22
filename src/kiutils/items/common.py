@@ -243,9 +243,9 @@ class Stroke():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
             if item[0] == 'width': object.width = item[1]
             if item[0] == 'type':  object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
@@ -325,11 +325,9 @@ class Font():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'bold': object.bold = True
-                if item == 'italic': object.italic = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
             if item[0] == 'face': object.face = item[1]
             if item[0] == 'size':
                 object.height = item[1]
@@ -337,6 +335,8 @@ class Font():
             if item[0] == 'thickness': object.thickness = item[1]
             if item[0] == 'line_spacing': object.lineSpacing = item[1]
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+            if item[0] == 'bold' and item[1] == 'yes': object.bold = True
+            if item[0] == 'italic' and item[1] == 'yes': object.italic = True
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -401,7 +401,7 @@ class Justify():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             # 'center' is the standard on vertical but not on horizontal in work sheets
             if item == 'left' or item == 'right' or item == 'center': object.horizontally = item
             if item == 'top' or item == 'bottom': object.vertically = item
@@ -478,10 +478,10 @@ class Effects():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'hide': object.hide = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'font': object.font = Font().from_sexpr(item)
             if item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             if item[0] == 'href': object.href = item[1]
@@ -1056,7 +1056,9 @@ class Fill():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
             if item[0] == 'type': object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
         return object
