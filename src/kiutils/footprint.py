@@ -849,7 +849,7 @@ class Footprint():
     generator_version: Optional[str] = None
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
-    embedded_fonts: Optional[bool] = False
+    embedded_fonts: Optional[str] = None
     """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
 
     @classmethod
@@ -1145,6 +1145,9 @@ class Footprint():
             expression += item.to_sexpr(indent=indent+2)
         for item in self.groups:
             expression += item.to_sexpr(indent=indent+2)
+
+        if self.embedded_fonts:
+            expression += f'{indents} (embedded_fonts {self.embedded_fonts})\n'
 
         expression += f'{indents}){endline}'
         return expression

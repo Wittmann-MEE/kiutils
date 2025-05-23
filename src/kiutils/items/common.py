@@ -685,10 +685,12 @@ class PageSettings():
 
             object.width = exp[2]
             object.height = exp[3]
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'portrait': object.portrait = True
-                continue
+
+        for item in exp[2:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} should be key -> value mapped")
+
+            if item[0] == 'portrait' and item[1] == 'yes': object.portrait = True
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -708,7 +710,7 @@ class PageSettings():
         endline = '\n' if newline else ''
 
         width, height = '', ''
-        portrait = ' portrait' if self.portrait else ''
+        portrait = ' (portrait yes)' if self.portrait else ''
         if self.paperSize == 'User':
             if self.width is None or self.height is None:
                 raise Exception("Page size set to 'User' but width or height not specified")

@@ -358,7 +358,7 @@ class Symbol():
     # Available since KiCad v9
 
     # TODO Missing docs for this one
-    excludeFromSim: Optional[bool] = False
+    excludeFromSim: Optional[str] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Symbol:
@@ -384,18 +384,18 @@ class Symbol():
         object.libId = exp[1]
         for item in exp[2:]:
             if item[0] == 'extends': object.extends = item[1]
-            if item[0] == 'exclude_from_sim': object.excludeFromSim = True if item[1] == 'yes' else False
+            if item[0] == 'exclude_from_sim': object.excludeFromSim = item[1]
             if item[0] == 'pin_numbers':
                 for prop in item[1:]:
                     if not isinstance(prop, list):
-                        raise Exception(f"[SYMBOL] Item: {item} from has unexpected property: {prop} which is not in key -> value mapping")
+                        raise Exception(f"Property {prop} should be key -> value mapped")
                     if prop[0] == 'hide' and prop[1] == 'yes': object.hidePinNumbers = True
 
             if item[0] == 'pin_names':
                 object.pinNames = True # This feels wrong to set here, what if it will be hidden? But ok...
                 for prop in item[1:]:
                     if not isinstance(prop, list):
-                        raise Exception(f"[SYMBOL] Item: {item} from has unexpected property: {prop} which is not in key -> value mapping")
+                        raise Exception(f"Property {prop} should be key -> value mapped")
                     if prop[0] == 'offset': object.pinNamesOffset = prop[1]
                     if prop[0] == 'hide' and prop[1] == 'yes':
                         object.pinNamesHide = True
@@ -476,13 +476,14 @@ class Symbol():
             obtext = 'yes' if self.onBoard else 'no'
         onboard = f' (on_board {obtext})' if self.onBoard is not None else ''
         power = f' (power)' if self.isPower else ''
+        exclude_from_sim = f' (exclude_from_sim {self.excludeFromSim})' if self.excludeFromSim is not None else ''
         pnhide = f' (hide yes)' if self.pinNamesHide else ''
         pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
         pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''
         pinnumbers = f' (pin_numbers hide)' if self.hidePinNumbers else ''
         extends = f' (extends "{dequote(self.extends)}")' if self.extends is not None else ''
 
-        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{pinnumbers}{pinnames}{inbom}{onboard}\n'
+        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{exclude_from_sim}{pinnumbers}{pinnames}{inbom}{onboard}\n'
         for item in self.properties:
             expression += item.to_sexpr(indent+2)
         for item in self.graphicItems:

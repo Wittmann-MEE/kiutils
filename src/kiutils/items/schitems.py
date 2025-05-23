@@ -637,7 +637,7 @@ class LocalLabel():
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = True
+            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -654,7 +654,7 @@ class LocalLabel():
         endline = '\n' if newline else ''
 
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
-        fieldsAutoplaced = ' (fields_autoplaced)' if self.fieldsAutoplaced else ''
+        fieldsAutoplaced = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
         expression =  f'{indents}(label "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}){fieldsAutoplaced}\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -718,7 +718,7 @@ class GlobalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = True
+            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'property': object.properties.append(Property().from_sexpr(item))
@@ -740,7 +740,7 @@ class GlobalLabel():
         endline = '\n' if newline else ''
 
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
-        fa = ' (fields_autoplaced)' if self.fieldsAutoplaced else ''
+        fa = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
         expression =  f'{indents}(global_label "{dequote(self.text)}" (shape {self.shape}) (at {self.position.X} {self.position.Y}{posA}){fa}\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -807,7 +807,7 @@ class HierarchicalLabel():
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'shape': object.shape = item[1]
             if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = True
+            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -824,7 +824,7 @@ class HierarchicalLabel():
         endline = '\n' if newline else ''
 
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
-        fieldsAutoplaced = ' (fields_autoplaced)' if self.fieldsAutoplaced else ''
+        fieldsAutoplaced = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
         expression =  f'{indents}(hierarchical_label "{dequote(self.text)}" (shape {self.shape}) (at {self.position.X} {self.position.Y}{posA}){fieldsAutoplaced}\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -1059,6 +1059,11 @@ class SchematicSymbol():
     
     Available since KiCad v7."""
 
+    # Available since KiCad v9
+
+    # TODO Missing docs for this one
+    excludeFromSim: Optinal[str] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> SchematicSymbol:
         """Convert the given S-Expresstion into a SchematicSymbol object
@@ -1086,6 +1091,7 @@ class SchematicSymbol():
             if item[0] == 'lib_name': object.libName = item[1]
             if item[0] == 'uuid': object.uuid = item[1]
             if item[0] == 'unit': object.unit = item[1]
+            if item[0] == 'exclude_from_sim': object.excludeFromSim = item[1]
             if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
             if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
             if item[0] == 'dnp': object.dnp = True if item[1] == 'yes' else False
@@ -1113,10 +1119,11 @@ class SchematicSymbol():
         endline = '\n' if newline else ''
 
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
-        fa = f' (fields_autoplaced)' if self.fieldsAutoplaced else ''
+        fa = f' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
         inBom = 'yes' if self.inBom else 'no'
         onBoard = 'yes' if self.onBoard else 'no'
         mirror = f' (mirror {self.mirror})' if self.mirror is not None else ''
+        exclude_from_sim = f' (exclude_from_sim {self.excludeFromSim})' if self.excludeFromSim is not None else ''
         unit = f' (unit {self.unit})' if self.unit is not None else ''
         lib_name = f' (lib_name "{dequote(self.libName)}")' if self.libName is not None else ''
         if self.dnp is not None:
@@ -1124,12 +1131,12 @@ class SchematicSymbol():
         else:
             dnp = ''
 
-        expression =  f'{indents}(symbol{lib_name} (lib_id "{dequote(self.libId)}") (at {self.position.X} {self.position.Y}{posA}){mirror}{unit}\n'
+        expression =  f'{indents}(symbol{lib_name} (lib_id "{dequote(self.libId)}") (at {self.position.X} {self.position.Y}{posA}){mirror}{unit}{exclude_from_sim}\n'
         expression += f'{indents}  (in_bom {inBom}) (on_board {onBoard}){dnp}{fa}\n'
         if self.uuid:
             expression += f'{indents}  (uuid {self.uuid})\n'
-        for property in self.properties:
-            expression += property.to_sexpr(indent+2)
+        for prop in self.properties:
+            expression += prop.to_sexpr(indent+2)
         for number, uuid in self.pins.items():
             expression += f'{indents}  (pin "{dequote(number)}" (uuid {uuid}))\n'
         if len(self.instances) != 0:
@@ -1409,7 +1416,7 @@ class HierarchicalSheet():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = True
+            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             if item[0] == 'size':
@@ -1443,7 +1450,7 @@ class HierarchicalSheet():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        fa = ' (fields_autoplaced)' if self.fieldsAutoplaced else ''
+        fa = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
         expression =  f'{indents}(sheet (at {self.position.X} {self.position.Y}) (size {self.width} {self.height}){fa}\n'
         expression += self.stroke.to_sexpr(indent+2)
@@ -1887,7 +1894,7 @@ class NetclassFlag():
             if item[0] == 'length': object.length = item[1]
             if item[0] == 'shape': object.shape = item[1]
             if item[0] == 'at': object.position = Position.from_sexpr(item)
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = True
+            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
             if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
             if item[0] == 'uuid': object.uuid = item[1]
             if item[0] == 'property': object.properties.append(Property.from_sexpr(item))
@@ -1907,7 +1914,7 @@ class NetclassFlag():
         endline = '\n' if newline else ''
 
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
-        fa = f' (fields_autoplaced)' if self.fieldsAutoplaced else ''
+        fa = f' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
         expression =  f'{indents}(netclass_flag "{dequote(self.text)}" (length {self.length}) (shape {self.shape}) (at {self.position.X} {self.position.Y}{posA}){fa}\n'
         expression += self.effects.to_sexpr(indent+2)

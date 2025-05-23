@@ -114,6 +114,14 @@ class Schematic():
     """The ``filePath`` token defines the path-like string to the schematic file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Schematic:
         """Convert the given S-Expresstion into a Schematic object
@@ -135,9 +143,13 @@ class Schematic():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property {item} should be key -> value mapped")
+
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'uuid': object.uuid = item[1]
             if item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
             if item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
@@ -169,6 +181,8 @@ class Schematic():
             if item[0] == 'symbol_instances':
                 for instance in item[1:]:
                     object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+
         return object
 
     @classmethod
@@ -346,6 +360,9 @@ class Schematic():
             for item in self.symbolInstances:
                 expression += item.to_sexpr(indent+4)
             expression += '  )\n'
+
+        if self.embedded_fonts:
+            expression += f'{indents} (embedded_fonts {self.embedded_fonts})\n'
 
         expression += f'{indents}){endline}'
         return expression
