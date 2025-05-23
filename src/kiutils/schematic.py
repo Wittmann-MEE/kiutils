@@ -256,7 +256,8 @@ class Schematic():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(kicad_sch (version {self.version}) (generator {self.generator})\n'
+        generator_version = f'(generator_version {self.generator_version})' if self.generator_version is not None else ''
+        expression =  f'{indents}(kicad_sch (version {self.version}) (generator {self.generator}) {generator_version}\n'
         if self.uuid is not None:
             expression += f'\n{indents}  (uuid {self.uuid})\n\n'
         expression += f'{self.paper.to_sexpr(indent+2)}'
