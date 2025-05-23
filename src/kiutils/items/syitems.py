@@ -80,7 +80,7 @@ class SyArc():
                 if item == 'private':
                     object.private = True
                 else:
-                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'private' and item[1] == 'yes': object.private = True
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'mid': object.mid = Position().from_sexpr(item)
@@ -167,7 +167,7 @@ class SyCircle():
                 if item == 'private':
                     object.private = True
                 else:
-                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'private' and item[1] == 'yes': object.private = True
             if item[0] == 'center': object.center = Position().from_sexpr(item)
             if item[0] == 'radius': object.radius = item[1]
@@ -387,7 +387,7 @@ class SyRect():
                 if item == 'private':
                     object.private = True
                 else:
-                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'private' and item[1] == 'yes': object.private = True
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)

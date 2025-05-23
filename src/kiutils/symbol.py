@@ -147,7 +147,7 @@ class SymbolPin():
         object.graphicalStyle = exp[2]
         for item in exp[3:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'length': object.length = item[1]

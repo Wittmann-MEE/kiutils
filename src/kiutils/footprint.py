@@ -506,7 +506,7 @@ class Pad():
 
         for item in exp[4:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -876,7 +876,7 @@ class Footprint():
         object.libId = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]

@@ -145,7 +145,7 @@ class Schematic():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} should be key -> value mapped")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]

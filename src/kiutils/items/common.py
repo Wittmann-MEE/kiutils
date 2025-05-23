@@ -245,7 +245,7 @@ class Stroke():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'width': object.width = item[1]
             if item[0] == 'type':  object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
@@ -327,7 +327,7 @@ class Font():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'face': object.face = item[1]
             if item[0] == 'size':
                 object.height = item[1]
@@ -480,7 +480,7 @@ class Effects():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'font': object.font = Font().from_sexpr(item)
             if item[0] == 'justify': object.justify = Justify().from_sexpr(item)
@@ -602,7 +602,7 @@ class Group():
         object.name = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'id': object.id = item[1]
@@ -685,12 +685,12 @@ class PageSettings():
 
             object.width = exp[2]
             object.height = exp[3]
+        else:
+            for item in exp[2:]:
+                if not isinstance(item, list):
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
-        for item in exp[2:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property {item} should be key -> value mapped")
-
-            if item[0] == 'portrait' and item[1] == 'yes': object.portrait = True
+                if item[0] == 'portrait' and item[1] == 'yes': object.portrait = True
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -1062,7 +1062,7 @@ class Fill():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'type': object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
         return object

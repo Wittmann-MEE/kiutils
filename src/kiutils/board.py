@@ -93,6 +93,14 @@ class Board():
     """The ``filePath`` token defines the path-like string to the board file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Board:
         """Convert the given S-Expresstion into a Board object
@@ -114,9 +122,13 @@ class Board():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'general': object.general = GeneralSettings().from_sexpr(item)
             if item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
             if item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
@@ -255,7 +267,8 @@ class Board():
 
         addNewLine = False
 
-        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator {self.generator})\n\n'
+        generator_version = f' (generator_version {self.generator_version})' if self.generator_version is not None else ''
+        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator {self.generator}){generator_version}\n\n'
         expression += self.general.to_sexpr(indent+2) + '\n'
         expression += self.paper.to_sexpr(indent+2)
         if self.titleBlock is not None:

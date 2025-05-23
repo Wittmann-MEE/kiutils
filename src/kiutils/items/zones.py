@@ -74,7 +74,7 @@ class KeepoutSettings():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'tracks': object.tracks = item[1]
             if item[0] == 'vias': object.vias = item[1]
@@ -205,7 +205,7 @@ class FillSettings():
                     # Ok, very weird
                     object.yes = True
                 else:
-                    raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'yes': object.yes = True
             if item[0] == 'mode': object.mode = item[1]
@@ -581,7 +581,7 @@ class Zone():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'net': object.net = item[1]
@@ -627,8 +627,8 @@ class Zone():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = f' locked' if self.locked else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        locked = f' (locked yes)' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
         name = f' (name "{dequote(self.name)}")' if self.name is not None else ''
         contype = f' {self.connectPads}' if self.connectPads is not None else ''
         fat = f' (filled_areas_thickness {self.filledAreasThickness})' if self.filledAreasThickness is not None else ''

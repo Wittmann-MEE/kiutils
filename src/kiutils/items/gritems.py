@@ -84,7 +84,7 @@ class GrText():
         object.text = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -331,7 +331,7 @@ class GrLine():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -414,7 +414,7 @@ class GrRect():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -498,7 +498,7 @@ class GrCircle():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'center': object.center = Position.from_sexpr(item)
@@ -583,7 +583,7 @@ class GrArc():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -665,7 +665,7 @@ class GrPoly():
 
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
@@ -759,7 +759,7 @@ class GrCurve():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property {item} which is not in key -> value mapping. exp: {exp}")
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':

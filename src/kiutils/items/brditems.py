@@ -32,6 +32,11 @@ class GeneralSettings():
     thickness: float = 1.6
     """The ``thickness`` token attribute defines the overall board thickness"""
 
+    # Available since KiCad v9
+
+    # TODO Missing docs
+    legacy_teardrops: Optional[str] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> GeneralSettings:
         """Convert the given S-Expresstion into a GeneralSettings object
@@ -53,8 +58,12 @@ class GeneralSettings():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'thickness': object.thickness = item[1]
+            if item[0] == 'legacy_teardrops': object.legacy_teardrops = item[1]
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -72,6 +81,8 @@ class GeneralSettings():
 
         expression =  f'{indents}(general\n'
         expression += f'{indents}  (thickness {self.thickness})\n'
+        if self.legacy_teardrops is not None:
+            expression += f'{indents}  (legacy_teardrops {self.legacy_teardrops})\n'
         expression += f'{indents}){endline}'
         return expression
 
@@ -419,21 +430,21 @@ class PlotSettings():
     
     Available and required since KiCad v7"""
 
-    disableApertMacros: bool = False
+    disableApertMacros: str = "no"
     """The ``disableApertMacros`` token defines if aperture macros are to be used in gerber plots"""
 
-    useGerberExtensions: bool = False
+    useGerberExtensions: str = "no"
     """The ``useGerberExtensions`` token  defines if the Protel layer file name extensions are to
     be used in gerber plots"""
 
-    useGerberAttributes: bool = False
+    useGerberAttributes: str = "no"
     """The ``useGerberAttributes`` token defines if the X2 extensions are used in gerber plots"""
 
-    useGerberAdvancedAttributes: bool = False
+    useGerberAdvancedAttributes: str = "no"
     """The ``useGerberAdvancedAttributes`` token defines if the netlist information should be
     included in gerber plots"""
 
-    createGerberJobFile: bool = False
+    createGerberJobFile: str = "no"
     """The ``createGerberJobFile`` token defines if a job file should be created when plotting 
     gerber files"""
 
@@ -449,7 +460,7 @@ class PlotSettings():
     
     Available and required since KiCad v7"""
 
-    svgUseInch: Optional[bool] = None
+    svgUseInch: Optional[str] = None
     """The ``svgUseInch`` token defines if inch units should be use when plotting SVG files.
     
     Required until KiCad v6, removed since KiCad v7"""
@@ -457,22 +468,22 @@ class PlotSettings():
     svgPrecision: float = 0.0
     """The ``svgPrecision`` token defines the units precision used when plotting SVG files"""
 
-    excludeEdgeLayer: Optional[bool] = None
+    excludeEdgeLayer: Optional[str] = None
     """The ``excludeEdgeLayer`` token defines if the board edge layer is plotted on all layers.
     
     Required until KiCad v6, removed since KiCad v7"""
 
-    plotFameRef: bool = False
+    plotFameRef: str = "no"
     """The ``plotFameRef`` token defines if the border and title block should be plotted"""
 
-    viasOnMask: bool = False
+    viasOnMask: str = "no"
     """The ``viasOnMask`` token defines if the vias are to be tented"""
 
     mode: int = 1
     """The ``mode`` token defines the plot mode. An attribute of 1 plots in the normal
     mode and an attribute of 2 plots in the outline (sketch) mode."""
 
-    useAuxOrigin: bool = False
+    useAuxOrigin: str = "no"
     """The ``useAuxOrigin`` token determines if all coordinates are offset by the defined user origin"""
 
     hpglPenNumber: int = 0
@@ -484,36 +495,36 @@ class PlotSettings():
     hpglPenDiameter: float = 0.0
     """The ``hpglPenDiameter`` token defines the floating point pen size for HPGL plots"""
 
-    dxfPolygonMode: bool = False
+    dxfPolygonMode: str = "no"
     """The ``dxfPolygonMode`` token defines if the polygon mode should be used for DXF plots"""
 
-    dxfImperialUnits: bool = False
+    dxfImperialUnits: str = "no"
     """The ``dxfImperialUnits`` token defines if imperial units should be used for DXF plots"""
 
-    dxfUsePcbnewFont: bool = False
+    dxfUsePcbnewFont: str = "no"
     """The ``dxfUsePcbnewFont`` token defines if the Pcbnew font (vector font) or the default
     font should be used for DXF plots"""
 
-    psNegative: bool = False
+    psNegative: str = "no"
     """The ``psNegative`` token defines if the output should be the negative for PostScript plots"""
 
-    psA4Output: bool = False
+    psA4Output: str = "no"
     """The ``psA4Output`` token defines if the A4 page size should be used for PostScript plots"""
 
-    plotReference: bool = False
+    plotReference: str = "no"
     """The ``plotReference`` token defines if hidden reference field text should be plotted"""
 
-    plotValue: bool = False
+    plotValue: str = "no"
     """The ``plotValue`` token defines if hidden value field text should be plotted"""
 
-    plotInvisibleText: bool = False
+    plotInvisibleText: str = "no"
     """The ``plotInvisibleText`` token defines if hidden text other than the reference and
     value fields should be plotted"""
 
-    sketchPadsOnFab: bool = False
+    sketchPadsOnFab: str = "no"
     """The ``sketchPadsOnFab`` token defines if pads should be plotted in the outline (sketch) mode"""
 
-    subtractMaskFromSilk: bool = False
+    subtractMaskFromSilk: str = "no"
     """The ``subtractMaskFromSilk`` token defines if the solder mask layers should be subtracted from
     the silk screen layers for gerber plots"""
 
@@ -526,7 +537,7 @@ class PlotSettings():
     - 4: HPGL
     - 5: PDF"""
 
-    mirror: bool = False
+    mirror: str = "no"
     """The ``mirror`` token defines if the plot should be mirrored"""
 
     drillShape: int = 0
@@ -538,6 +549,26 @@ class PlotSettings():
     outputDirectory: str = ""
     """The ``drillShape`` token defines the path relative to the current project path
     where the plot files will be saved"""
+
+    # Available since KiCad v9
+
+    # TODO missing docs
+
+    pdf_front_fp_property_popups: str = "yes"
+
+    pdf_back_fp_property_popups: str = "yes"
+
+    pdf_metadata: str = "yes"
+
+    pdf_single_document: str = "no"
+
+    plot_black_and_white: str = "yes"
+
+    hide_dnp_on_fab: str = "no"
+
+    crossout_dnp_on_fab: str = "yes"
+
+    sketch_dnp_on_fab: str = "yes"
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PlotSettings:
@@ -560,41 +591,54 @@ class PlotSettings():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'layerselection': object.layerSelection = item[1]
             if item[0] == 'plot_on_all_layers_selection': object.plotOnAllLayersSelection = item[1]
-            if item[0] == 'disableapertmacros': object.disableApertMacros = True if item[1] == 'true' else False
-            if item[0] == 'usegerberextensions' : object.useGerberExtensions = True if item[1] == 'true' else False
-            if item[0] == 'usegerberattributes' : object.useGerberAttributes = True if item[1] == 'true' else False
-            if item[0] == 'usegerberadvancedattributes' : object.useGerberAdvancedAttributes = True if item[1] == 'true' else False
-            if item[0] == 'creategerberjobfile' : object.createGerberJobFile = True if item[1] == 'true' else False
+            if item[0] == 'disableapertmacros': object.disableApertMacros = item[1]
+            if item[0] == 'usegerberextensions' : object.useGerberExtensions = item[1]
+            if item[0] == 'usegerberattributes' : object.useGerberAttributes = item[1]
+            if item[0] == 'usegerberadvancedattributes' : object.useGerberAdvancedAttributes = item[1]
+            if item[0] == 'creategerberjobfile' : object.createGerberJobFile = item[1]
             if item[0] == 'dashed_line_dash_ratio': object.dashedLineDashRatio = item[1]
             if item[0] == 'dashed_line_gap_ratio': object.dashedLineGapRatio = item[1]
-            if item[0] == 'svguseinch' : object.svgUseInch = True if item[1] == 'true' else False
+            if item[0] == 'svguseinch' : object.svgUseInch = item[1]
             if item[0] == 'svgprecision' : object.svgPrecision = item[1]
-            if item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = True if item[1] == 'true' else False
-            if item[0] == 'plotframeref' : object.plotFameRef = True if item[1] == 'true' else False
-            if item[0] == 'viasonmask' : object.viasOnMask = True if item[1] == 'true' else False
+            if item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = item[1]
+            if item[0] == 'plotframeref' : object.plotFameRef = item[1]
+            if item[0] == 'viasonmask' : object.viasOnMask = item[1]
             if item[0] == 'mode' : object.mode = item[1]
-            if item[0] == 'useauxorigin' : object.useAuxOrigin = True if item[1] == 'true' else False
+            if item[0] == 'useauxorigin' : object.useAuxOrigin = item[1]
             if item[0] == 'hpglpennumber' : object.hpglPenNumber = item[1]
             if item[0] == 'hpglpenspeed' : object.hpglPenSpeed = item[1]
             if item[0] == 'hpglpendiameter' : object.hpglPenDiameter = item[1]
-            if item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = True if item[1] == 'true' else False
-            if item[0] == 'dxfimperialunits' : object.dxfImperialUnits = True if item[1] == 'true' else False
-            if item[0] == 'dxfusepcbnewfont' : object.dxfUsePcbnewFont = True if item[1] == 'true' else False
-            if item[0] == 'psnegative' : object.psNegative = True if item[1] == 'true' else False
-            if item[0] == 'psa4output' : object.psA4Output = True if item[1] == 'true' else False
-            if item[0] == 'plotreference' : object.plotReference = True if item[1] == 'true' else False
-            if item[0] == 'plotvalue' : object.plotValue = True if item[1] == 'true' else False
-            if item[0] == 'plotinvisibletext' : object.plotInvisibleText = True if item[1] == 'true' else False
-            if item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = True if item[1] == 'true' else False
-            if item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = True if item[1] == 'true' else False
+            if item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = item[1]
+            if item[0] == 'dxfimperialunits' : object.dxfImperialUnits = item[1]
+            if item[0] == 'dxfusepcbnewfont' : object.dxfUsePcbnewFont = item[1]
+            if item[0] == 'psnegative' : object.psNegative = item[1]
+            if item[0] == 'psa4output' : object.psA4Output = item[1]
+            if item[0] == 'plotreference' : object.plotReference = item[1]
+            if item[0] == 'plotvalue' : object.plotValue = item[1]
+            if item[0] == 'plotinvisibletext' : object.plotInvisibleText = item[1]
+            if item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = item[1]
+            if item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = item[1]
             if item[0] == 'outputformat' : object.outputFormat = item[1]
-            if item[0] == 'mirror' : object.mirror = True if item[1] == 'true' else False
+            if item[0] == 'mirror' : object.mirror = item[1]
             if item[0] == 'drillshape' : object.drillShape = item[1]
             if item[0] == 'scaleselection' : object.scaleSelection = item[1]
             if item[0] == 'outputdirectory' : object.outputDirectory = item[1]
+
+            if item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = item[1]
+            if item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = item[1]
+            if item[0] == 'pdf_metadata': object.pdf_metadata = item[1]
+            if item[0] == 'pdf_single_document': object.pdf_single_document = item[1]
+            if item[0] == 'plot_black_and_white': object.plot_black_and_white = item[1]
+            if item[0] == 'hidednponfab': object.hide_dnp_on_fab = item[1]
+            if item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = item[1]
+            if item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = item[1]
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -614,39 +658,48 @@ class PlotSettings():
         expression += f'{indents}  (layerselection {self.layerSelection})\n'
         if self.plotOnAllLayersSelection is not None:
             expression += f'{indents}  (plot_on_all_layers_selection {self.plotOnAllLayersSelection})\n'
-        expression += f'{indents}  (disableapertmacros {str(self.disableApertMacros).lower()})\n'
-        expression += f'{indents}  (usegerberextensions {str(self.useGerberExtensions).lower()})\n'
-        expression += f'{indents}  (usegerberattributes {str(self.useGerberAttributes).lower()})\n'
-        expression += f'{indents}  (usegerberadvancedattributes {str(self.useGerberAdvancedAttributes).lower()})\n'
-        expression += f'{indents}  (creategerberjobfile {str(self.createGerberJobFile).lower()})\n'
+        expression += f'{indents}  (disableapertmacros {self.disableApertMacros})\n'
+        expression += f'{indents}  (usegerberextensions {self.useGerberExtensions})\n'
+        expression += f'{indents}  (usegerberattributes {self.useGerberAttributes})\n'
+        expression += f'{indents}  (usegerberadvancedattributes {self.useGerberAdvancedAttributes})\n'
+        expression += f'{indents}  (creategerberjobfile {self.createGerberJobFile})\n'
         if self.dashedLineDashRatio is not None:
             expression += f'{indents}  (dashed_line_dash_ratio {float(self.dashedLineDashRatio):.6f})\n'
         if self.dashedLineGapRatio is not None:
             expression += f'{indents}  (dashed_line_gap_ratio {float(self.dashedLineGapRatio):.6f})\n'
         if self.svgUseInch is not None:
-            expression += f'{indents}  (svguseinch {str(self.svgUseInch).lower()})\n'
+            expression += f'{indents}  (svguseinch {self.svgUseInch})\n'
         expression += f'{indents}  (svgprecision {self.svgPrecision})\n'
         if self.excludeEdgeLayer is not None:
-            expression += f'{indents}  (excludeedgelayer {str(self.excludeEdgeLayer).lower()})\n'
-        expression += f'{indents}  (plotframeref {str(self.plotFameRef).lower()})\n'
-        expression += f'{indents}  (viasonmask {str(self.viasOnMask).lower()})\n'
+            expression += f'{indents}  (excludeedgelayer {self.excludeEdgeLayer})\n'
+        expression += f'{indents}  (plotframeref {self.plotFameRef})\n'
+        expression += f'{indents}  (viasonmask {self.viasOnMask})\n'
         expression += f'{indents}  (mode {self.mode})\n'
-        expression += f'{indents}  (useauxorigin false)\n'
+        expression += f'{indents}  (useauxorigin no)\n'
         expression += f'{indents}  (hpglpennumber {self.hpglPenNumber})\n'
         expression += f'{indents}  (hpglpenspeed {self.hpglPenSpeed})\n'
         expression += f'{indents}  (hpglpendiameter {float(self.hpglPenDiameter):.6f})\n'
-        expression += f'{indents}  (dxfpolygonmode {str(self.dxfPolygonMode).lower()})\n'
-        expression += f'{indents}  (dxfimperialunits {str(self.dxfImperialUnits).lower()})\n'
-        expression += f'{indents}  (dxfusepcbnewfont {str(self.dxfUsePcbnewFont).lower()})\n'
-        expression += f'{indents}  (psnegative {str(self.psNegative).lower()})\n'
-        expression += f'{indents}  (psa4output {str(self.psA4Output).lower()})\n'
-        expression += f'{indents}  (plotreference {str(self.plotReference).lower()})\n'
-        expression += f'{indents}  (plotvalue {str(self.plotValue).lower()})\n'
-        expression += f'{indents}  (plotinvisibletext {str(self.plotInvisibleText).lower()})\n'
-        expression += f'{indents}  (sketchpadsonfab {str(self.sketchPadsOnFab).lower()})\n'
-        expression += f'{indents}  (subtractmaskfromsilk {str(self.subtractMaskFromSilk).lower()})\n'
+        expression += f'{indents}  (pdf_front_fp_property_popups {self.pdf_front_fp_property_popups})\n'
+        expression += f'{indents}  (pdf_back_fp_property_popups {self.pdf_back_fp_property_popups})\n'
+        expression += f'{indents}  (pdf_metadata {self.pdf_metadata})\n'
+        expression += f'{indents}  (pdf_single_document {self.pdf_single_document})\n'
+        expression += f'{indents}  (dxfpolygonmode {self.dxfPolygonMode})\n'
+        expression += f'{indents}  (dxfimperialunits {self.dxfImperialUnits})\n'
+        expression += f'{indents}  (dxfusepcbnewfont {self.dxfUsePcbnewFont})\n'
+        expression += f'{indents}  (psnegative {self.psNegative})\n'
+        expression += f'{indents}  (psa4output {self.psA4Output})\n'
+        expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
+        expression += f'{indents}  (hidednponfab {self.hide_dnp_on_fab})\n'
+        expression += f'{indents}  (crossoutdnponfab {self.crossout_dnp_on_fab})\n'
+        expression += f'{indents}  (sketchdnponfab {self.sketch_dnp_on_fab})\n'
+        expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
+        expression += f'{indents}  (plotreference {self.plotReference})\n'
+        expression += f'{indents}  (plotvalue {self.plotValue})\n'
+        expression += f'{indents}  (plotinvisibletext {self.plotInvisibleText})\n'
+        expression += f'{indents}  (sketchpadsonfab {self.sketchPadsOnFab})\n'
+        expression += f'{indents}  (subtractmaskfromsilk {self.subtractMaskFromSilk})\n'
         expression += f'{indents}  (outputformat {self.outputFormat})\n'
-        expression += f'{indents}  (mirror {str(self.mirror).lower()})\n'
+        expression += f'{indents}  (mirror {self.mirror})\n'
         expression += f'{indents}  (drillshape {self.drillShape})\n'
         expression += f'{indents}  (scaleselection {self.scaleSelection})\n'
         expression += f'{indents}  (outputdirectory "{dequote(self.outputDirectory)}")\n'
@@ -694,6 +747,13 @@ class SetupData():
     plotSettings: Optional[PlotSettings] = None
     """The optional ``plotSettings`` define how the board was last plotted."""
 
+    # Available since KiCad v9
+
+    allow_soldermask_bridges_in_footprints: Optional[str] = None
+
+    # TODO
+    # tenting: Optional[Tenting] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> SetupData:
         """Convert the given S-Expresstion into a SetupData object
@@ -725,6 +785,9 @@ class SetupData():
             if item[0] == 'aux_axis_origin': object.auxAxisOrigin = Position().from_sexpr(item)
             if item[0] == 'grid_origin': object.gridOrigin = Position().from_sexpr(item)
             if item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
+            if item[0] == 'allow_soldermask_bridges_in_footprints': object.allow_soldermask_bridges_in_footprints = item[1]
+            # TODO
+            # if item[0] == 'tenting': object.tenting = Tenting().from_sexpr(item)
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -743,6 +806,8 @@ class SetupData():
         expression =  f'{indents}(setup\n'
         if self.stackup is not None:                  expression += self.stackup.to_sexpr(indent+2)
         expression += f'{indents}  (pad_to_mask_clearance {self.packToMaskClearance})\n'
+        if self.allow_soldermask_bridges_in_footprints is not None:
+            expression += f'{indents}  (allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
         if self.solderMaskMinWidth is not None:       expression += f'{indents}  (solder_mask_min_width {self.solderMaskMinWidth})\n'
         if self.padToPasteClearance is not None:      expression += f'{indents}  (pad_to_paste_clearance {self.padToPasteClearance})\n'
         if self.padToPasteClearanceRatio is not None: expression += f'{indents}  (pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
@@ -804,16 +869,19 @@ class Segment():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
             if item[0] == 'width': object.width = item[1]
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'net': object.net = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -828,9 +896,9 @@ class Segment():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = ' locked' if self.locked else ''
+        locked = ' (locked yes)' if self.locked else ''
 
-        return f'{indents}(segment{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}) (layer "{dequote(self.layer)}") (net {self.net}) (tstamp {self.tstamp})){endline}'
+        return f'{indents}(segment{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}) (layer "{dequote(self.layer)}") (net {self.net}) (uuid {self.tstamp})){endline}'
 
 @dataclass
 class Via():
@@ -897,22 +965,28 @@ class Via():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                if item == 'micro' or item == 'blind': object.type = item
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                if item == 'micro' or item == 'blind':
+                    object.type = item
+                    continue
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'size': object.size = item[1]
             if item[0] == 'drill': object.drill = item[1]
             if item[0] == 'layers':
                 for layer in item[1:]:
                     object.layers.append(layer)
-            if item[0] == 'remove_unused_layers': object.removeUnusedLayers = True
-            if item[0] == 'keep_end_layers': object.keepEndLayers = True
-            if item[0] == 'free': object.free = True
+            if item[0] == 'remove_unused_layers' and item[1] == 'yes': object.removeUnusedLayers = True
+            if item[0] == 'keep_end_layers' and item[1] == 'yes': object.keepEndLayers = True
+            if item[0] == 'free' and item[1] == 'yes': object.free = True
             if item[0] == 'net': object.net = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -929,15 +1003,15 @@ class Via():
         endline = '\n' if newline else ''
 
         type = f' {self.type}' if self.type is not None else ''
-        locked = f' locked' if self.locked else ''
+        locked = ' (locked yes)' if self.locked else ''
 
         layers = ''
         for layer in self.layers:
             layers += f' "{dequote(layer)}"'
-        rum = f' (remove_unused_layers)' if self.removeUnusedLayers else ''
-        kel = f' (keep_end_layers)' if self.keepEndLayers else ''
-        free = f' (free)' if self.free else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        rum = ' (remove_unused_layers yes)' if self.removeUnusedLayers else ''
+        kel = ' (keep_end_layers yes)' if self.keepEndLayers else ''
+        free = ' (free yes)' if self.free else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
 
         return f'{indents}(via{type}{locked} (at {self.position.X} {self.position.Y}) (size {self.size}) (drill {self.drill}) (layers{layers}){rum}{kel}{free} (net {self.net}){tstamp}){endline}'
 
@@ -996,10 +1070,11 @@ class Arc():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
@@ -1007,6 +1082,8 @@ class Arc():
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -1022,8 +1099,8 @@ class Arc():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = f' locked' if self.locked else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        locked = f' (locked yes)' if self.locked else ''
+        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
 
         expression = f'{indents}(arc{locked} (start {self.start.X} {self.start.Y}) '
         expression += f'(mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}) '
@@ -1086,6 +1163,8 @@ class Target():
             if item[0] == 'width': object.width = item[1]
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -1101,4 +1180,4 @@ class Target():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        return f'{indents}(target {self.type} (at {self.position.X} {self.position.Y}) (size {self.size}) (width {self.width}) (layer "{self.layer}") (tstamp {self.tstamp})){endline}'
+        return f'{indents}(target {self.type} (at {self.position.X} {self.position.Y}) (size {self.size}) (width {self.width}) (layer "{self.layer}") (uuid {self.tstamp})){endline}'
