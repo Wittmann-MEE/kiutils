@@ -326,7 +326,7 @@ class Dimension():
             raise Exception("Number of points must not be zero")
 
         locked = ' (locked yes)' if self.locked else ''
-        expression =   f'{indents}(dimension (type {self.type}) (layer "{self.layer}") (uuid {self.tstamp}){locked}\n'
+        expression =   f'{indents}(dimension (type {self.type}) (layer "{self.layer}") (uuid "{self.tstamp}"){locked}\n'
         expression +=  f'{indents}  (pts{points})\n'
         if self.height is not None:
             expression +=  f'{indents}  (height {self.height})\n'

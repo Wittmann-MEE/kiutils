@@ -115,10 +115,10 @@ class GrText():
         ko = ' knockout' if self.knockout else ''
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         layer =  f' (layer "{dequote(self.layer)}"{ko})' if self.layer is not None else ''
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        expression =  f'{indents}(gr_text{locked} "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}){layer}{tstamp}\n'
+        expression =  f'{indents}(gr_text "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}){layer}{locked}{tstamp}\n'
         expression += f'{indents}  {self.effects.to_sexpr()}'
         if self.renderCache is not None:
             expression += self.renderCache.to_sexpr(indent+2)
@@ -356,11 +356,11 @@ class GrLine():
         endline = '\n' if newline else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         angle = f' (angle {self.angle}' if self.angle is not None else ''
 
-        return f'{indents}(gr_line{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){angle}{layer} (width {self.width}){tstamp}){endline}'
+        return f'{indents}(gr_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){angle}{layer} (width {self.width}){locked}{tstamp}){endline}'
 
 @dataclass
 class GrRect():
@@ -440,11 +440,11 @@ class GrRect():
         endline = '\n' if newline else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
-        return f'{indents}(gr_rect{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{tstamp}){endline}'
+        return f'{indents}(gr_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{locked}{tstamp}){endline}'
 
 @dataclass
 class GrCircle():
@@ -525,11 +525,11 @@ class GrCircle():
         endline = '\n' if newline else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
-        return f'{indents}(gr_circle{locked} (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{tstamp}){endline}'
+        return f'{indents}(gr_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{locked}{tstamp}){endline}'
 
 @dataclass
 class GrArc():
@@ -610,10 +610,10 @@ class GrArc():
         endline = '\n' if newline else ''
         locked = f' locked (yes)' if self.locked else ''
 
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
 
-        return f'{indents}(gr_arc{locked} (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){tstamp}){endline}'
+        return f'{indents}(gr_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){locked}{tstamp}){endline}'
 
 @dataclass
 class GrPoly():
@@ -698,20 +698,20 @@ class GrPoly():
         if len(self.coordinates) == 0:
             return f'{indents}{endline}'
 
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
         locked = f' (locked yes)' if self.locked else ''
 
         if pts_newline:
-            expression =  f'{indents}(gr_poly{locked}\n'
+            expression =  f'{indents}(gr_poly\n'
             expression += f'{indents}  (pts\n'
         else:
-            expression =  f'{indents}(gr_poly{locked} (pts\n'
+            expression =  f'{indents}(gr_poly (pts\n'
 
         for point in self.coordinates:
             expression += f'{indents}    (xy {point.X} {point.Y})\n'
-        expression += f'{indents}  ){layer} (width {self.width}){fill}{tstamp}){endline}'
+        expression += f'{indents}  ){layer} (width {self.width}){fill}{locked}{tstamp}){endline}'
         return expression
 
 @dataclass
@@ -788,12 +788,12 @@ class GrCurve():
         if len(self.coordinates) == 0:
             return f'{indents}{endline}'
 
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        expression = f'{indents}(gr_curve{locked} (pts\n'
+        expression = f'{indents}(gr_curve (pts\n'
         for point in self.coordinates:
             expression += f'{indents}  (xy {point.X} {point.Y})\n'
-        expression += f'{indents}){layer} (width {self.width}){tstamp}){endline}'
+        expression += f'{indents}){layer} (width {self.width}){locked}{tstamp}){endline}'
         return expression

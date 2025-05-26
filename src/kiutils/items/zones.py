@@ -628,7 +628,7 @@ class Zone():
         endline = '\n' if newline else ''
 
         locked = f' (locked yes)' if self.locked else ''
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         name = f' (name "{dequote(self.name)}")' if self.name is not None else ''
         contype = f' {self.connectPads}' if self.connectPads is not None else ''
         fat = f' (filled_areas_thickness {self.filledAreasThickness})' if self.filledAreasThickness is not None else ''

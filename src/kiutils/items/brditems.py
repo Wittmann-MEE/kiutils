@@ -898,7 +898,7 @@ class Segment():
         endline = '\n' if newline else ''
         locked = ' (locked yes)' if self.locked else ''
 
-        return f'{indents}(segment{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}) (layer "{dequote(self.layer)}") (net {self.net}) (uuid {self.tstamp})){endline}'
+        return f'{indents}(segment{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}) (layer "{dequote(self.layer)}") (net {self.net}) (uuid "{self.tstamp}")){endline}'
 
 @dataclass
 class Via():
@@ -1011,7 +1011,7 @@ class Via():
         rum = ' (remove_unused_layers yes)' if self.removeUnusedLayers else ''
         kel = ' (keep_end_layers yes)' if self.keepEndLayers else ''
         free = ' (free yes)' if self.free else ''
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         return f'{indents}(via{type}{locked} (at {self.position.X} {self.position.Y}) (size {self.size}) (drill {self.drill}) (layers{layers}){rum}{kel}{free} (net {self.net}){tstamp}){endline}'
 
@@ -1100,7 +1100,7 @@ class Arc():
         endline = '\n' if newline else ''
 
         locked = f' (locked yes)' if self.locked else ''
-        tstamp = f' (uuid {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         expression = f'{indents}(arc{locked} (start {self.start.X} {self.start.Y}) '
         expression += f'(mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}) '
@@ -1180,4 +1180,4 @@ class Target():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        return f'{indents}(target {self.type} (at {self.position.X} {self.position.Y}) (size {self.size}) (width {self.width}) (layer "{self.layer}") (uuid {self.tstamp})){endline}'
+        return f'{indents}(target {self.type} (at {self.position.X} {self.position.Y}) (size {self.size}) (width {self.width}) (layer "{self.layer}") (uuid "{self.tstamp}")){endline}'
