@@ -876,42 +876,6 @@ class Footprint():
         if exp[0] != 'module' and exp[0] != 'footprint':
             raise Exception("Expression does not have the correct type")
 
-        # These were fp_text before and thus handled properly, let's fix it :)
-        # TODO - this is mostly stolen from FpText parsing and should be a function, this is very dirty!
-        def from_sexpr_new_props(prop):
-            # if prop[1] not in ['Reference', 'Value', 'Datasheet', 'Description']:
-            #     raise Exception("Sorry, you shouldn't be here.")
-            
-            new_obj = {
-                "type": prop[1],
-                "text": prop[2],
-                "hide": False,
-                "unlocked": False,
-                "at": None,
-                "layer": None,
-                "knockout": False,
-                "effects": None,
-                "uuid": "",
-                "renderCache": None
-            }
-
-            for pitem in prop[3:]:
-                if not isinstance(pitem, list):
-                    raise Exception(f"Property {pitem} which is not in key -> value mapping. exp: {exp}")
-
-                if pitem[0] == 'hide' and pitem[1] == 'yes': new_obj["hide"] = True
-                if pitem[0] == 'unlocked' and pitem[1] == 'yes': new_obj["unlocked"] = True
-                if pitem[0] == 'at': new_obj["position"] = Position().from_sexpr(pitem)
-                if pitem[0] == 'layer':
-                    new_obj["layer"] = pitem[1]
-                    if len(pitem) > 2 and pitem[2] == "knockout":
-                        new_obj["knockout"] = True
-                if pitem[0] == 'effects': new_obj["effects"] = Effects().from_sexpr(pitem)
-                if pitem[0] == 'uuid': new_obj["tstamp"] = pitem[1]  # Haha :)
-                if pitem[0] == 'render_cache': new_obj["renderCache"] = RenderCache.from_sexpr(pitem)
-            
-            return new_obj
-
         object = cls()
         object.libId = exp[1]
         for item in exp[2:]:
@@ -958,20 +922,7 @@ class Footprint():
             if item[0] == 'zone': object.zones.append(Zone.from_sexpr(item))
             if item[0] == 'sheetname': object.sheet_name = item[1]
             if item[0] == 'sheetfile': object.sheet_file = item[1]
-
-            if item[0] == 'property':
-                val = from_sexpr_new_props(item)
-                # if item[1] in ['Reference', 'Value', 'Datasheet', 'Description']:
-                #     val = from_sexpr_new_props(item)
-                # else:
-                #     val = item[2]
-
-                object.properties.update({ item[1]: val })
-
-            # import pprint
-            # print("PROPSSSSSSSSSSSSSSSSS")
-            # pprint.pprint(object.properties)
-
+            if item[0] == 'property': object.properties.update({ item[1]: FpProperty.from_sexpr(item) })
             if item[0] == 'group': object.groups.append(Group.from_sexpr(item))
             if item[0] == 'private_layers':
                 for layer in item[1:]:
@@ -1095,41 +1046,6 @@ class Footprint():
             - str: S-Expression of this object
         """
 
-        # These were fp_text before and thus handled properly, let's fix it :)
-        # TODO - this is mostly stolen from FpText parsing and should be a function, this is very dirty!
-        def to_sexpr_new_props(tprop_obj, tindent):
-            tindents = ' ' * tindent
-            tendline = '\n' if newline else ''
-
-            hide = ' (hide yes)' if tprop_obj["hide"] else ''
-            unlocked = ' (unlocked yes)' if tprop_obj["unlocked"] else ''
-
-            pos_str = ''
-            if tprop_obj["position"] is not None:
-                position = tprop_obj["position"]
-                posA = f' {position.angle}' if position.angle is not None else ''
-                pos_str = f' (at {position.X} {position.Y}{posA})'
-
-            layer_str = ''
-            if tprop_obj["layer"] is not None:
-                tlayer = tprop_obj["layer"]
-                ko = ' (knockout yes)' if tprop_obj["knockout"] else ''
-                layer_str = f' (layer "{dequote(tlayer)}"{ko})'
-
-            ttype = tprop_obj["type"]
-            ttext = tprop_obj["text"]
-            new_expression = f'{tindents}(property "{dequote(ttype)}" "{dequote(ttext)}"{pos_str}{unlocked}{layer_str}{hide}\n'
-            if tprop_obj["effects"] is not None:
-                effects = tprop_obj["effects"]
-                new_expression += f'{tindents}  {effects.to_sexpr()}'
-            if tprop_obj["tstamp"] is not None:
-                new_expression += f'{tindents}  (uuid "{tprop_obj["tstamp"]}")\n'
-            if tprop_obj["renderCache"] is not None:
-                new_expression += tprop_obj["renderCache"].to_sexpr(indent + 2)
-
-            new_expression += f'{tindents}){tendline}'
-            return new_expression
-
         indents = ' '*indent
         endline = '\n' if newline else ''
 
@@ -1153,19 +1069,8 @@ class Footprint():
             expression += f'{indents}  (descr "{dequote(self.description)}")\n'
         if self.tags is not None:
             expression += f'{indents}  (tags "{dequote(self.tags)}")\n'
-        for item in self.properties:
-            # if item in ['Reference', 'Value']:
-            #     prop_obj = self.properties[item]
-            #     expression += to_sexpr_new_props(prop_obj, indent+2)
-            # elif item in ['Datasheet', 'Description']:
-            #     # TODO, should be okay for now.
-            #     # pass
-            #     prop_obj = self.properties[item]
-            #     expression += to_sexpr_new_props(prop_obj, indent+2)
-            # else:
-            #     expression += f'{indents}  (property "{dequote(item)}" "{dequote(self.properties[item])}")\n'
-            prop_obj = self.properties[item]
-            expression += to_sexpr_new_props(prop_obj, indent+2)
+        for item in self.properties.values():
+            expression += item.to_sexpr(indent=indent+2)
 
         if self.path is not None:
             expression += f'{indents}  (path "{dequote(self.path)}")\n'

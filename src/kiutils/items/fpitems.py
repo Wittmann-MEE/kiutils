@@ -876,3 +876,112 @@ class FpCurve():
             expression += f'{indents}  (xy {point.X} {point.Y})\n'
         expression += f'{indents}) (layer "{dequote(self.layer)}"){width}{locked}{tstamp}){endline}'
         return expression
+
+@dataclass
+class FpProperty:
+    """
+        Helper class for dealing with properties of a footprint.
+    """
+
+    type: str = ""
+
+    text: str = ""
+
+    hide: Optional[str] = None
+
+    unlocked: Optional[str] = None
+
+    at: Optional[Position] = None
+
+    layer: Optional[str] = None
+
+    ko: Optional[bool] = None
+
+    effects: Optional[Effects] = None
+
+    tstamp: Optional[str] = None
+
+    render_cache: Optional[RenderCache] = None
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> FpProperty:
+        """Convert the given S-Expresstion into a FpProperty object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(property ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not property
+
+        Returns:
+            - Property: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'property':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        object.type = exp[1]
+        object.text = exp[2]
+        for item in exp[3:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'hide': object.hide = item[1]
+            if item[0] == 'unlocked': object.unlocked = item[1]
+            if item[0] == 'at': object.position = Position().from_sexpr(item)
+            if item[0] == 'layer':
+                object.layer = item[1]
+                if len(item) > 2 and item[2] == "knockout":
+                    object.ko = True
+            if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
+            if item[0] == 'uuid': object.tstamp = item[1]
+            if item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
+
+        return object
+
+    def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
+        """Generate the S-Expression representing this object.
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        expression = f'{indents}(property "{dequote(self.type)}" "{dequote(self.text)}"\n'
+
+        if self.at is not None:
+            pos = self.at
+            pos_angle = f'{pos.angle}' if pos.angle is not None else ''
+            expression += f'{indents} (at {pos.X} {pos.Y}{pos_angle}){endline}'
+
+        if self.layer is not None:
+            layer = self.layer
+            ko = ' knockout' if self.ko else ''
+            expression += f'{indents} (layer "{dequote(layer)}"{ko}){endline}'
+
+        if self.hide is not None:
+            expression += f'{indents} (hide yes){endline}'
+
+        if self.unlocked is not None:
+            expression += f'{indents} (unlocked yes){endline}'
+
+        if self.tstamp is not None:
+            expression += f'{indents} (uuid "{dequote(self.tstamp)}"){endline}'
+
+        if self.effects is not None:
+            expression += f'{indents} {self.effects.to_sexpr()}'
+
+        if self.render_cache is not None:
+            expression += f'{indents} {self.render_cache.to_sexpr()}'
+
+        expression += f'{indents}){endline}'
+        return expression
