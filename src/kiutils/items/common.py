@@ -328,6 +328,7 @@ class Font():
         for item in exp[1:]:
             if not isinstance(item, list):
                 raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'face': object.face = item[1]
             if item[0] == 'size':
                 object.height = item[1]
@@ -353,12 +354,12 @@ class Font():
         endline = '\n' if newline else ''
         face_name, thickness, bold, italic, linespacing, color = '', '', '', '', '', ''
 
-        if self.face is not None:        face_name = f'(face "{dequote(self.face)}") '
-        if self.thickness is not None:   thickness = f' (thickness {self.thickness})'
-        if self.bold == True:            bold = ' (bold yes)'
-        if self.italic == True:          italic = ' (italic yes)'
-        if self.lineSpacing is not None: linespacing = f' (line_spacing {self.lineSpacing})'
-        if self.color is not None:       color = f' {self.color.to_sexpr()}'
+        if self.face is not None:           face_name = f'(face "{dequote(self.face)}") '
+        if self.thickness is not None:      thickness = f' (thickness {self.thickness})'
+        if self.bold:                       bold = ' (bold yes)'
+        if self.italic:                     italic = ' (italic yes)'
+        if self.lineSpacing is not None:    linespacing = f' (line_spacing {self.lineSpacing})'
+        if self.color is not None:          color = f' {self.color.to_sexpr()}'
 
         expression = f'{indents}(font {face_name}(size {self.height} {self.width}){color}{thickness}{bold}{italic}{linespacing}){endline}'
         return expression
@@ -424,7 +425,7 @@ class Justify():
         endline = '\n' if newline else ''
 
         if self.horizontally is None and self.vertically is None and self.mirror == False:
-            return f'{indents}{endline}';
+            return f'{indents}{endline}'
 
         horizontally, vertically, mirror = '', '', ''
 
@@ -970,7 +971,7 @@ class RenderCache():
     id: int = 0
     """The ``id`` token is some number after the text. Defaults to 0."""
 
-    polygons: List[Position] = field(default_factory=list)
+    polygons: List[RenderCachePolygon] = field(default_factory=list)
     """The ``polygons`` token is a list of polygons that define the outline of the cached text"""
 
     @classmethod
@@ -1015,7 +1016,7 @@ class RenderCache():
 
         expression = f'{indents}(render_cache "{dequote(self.text)}" {self.id}\n'
         for poly in self.polygons:
-            expression += poly.to_sexpr(indent+2)
+            expression += poly.to_sexpr()
         expression += f'{indents}){endline}'
         return expression
 
@@ -1177,7 +1178,7 @@ class ProjectInstance(ABC):
     """The ``name`` token defines the name of the project instance"""
 
     @abstractmethod
-    def from_sexpr(cls, exp: list) -> ProjectInstance:
+    def from_sexpr(self, cls, exp: list) -> ProjectInstance:
         raise NotImplementedError
 
     @abstractmethod

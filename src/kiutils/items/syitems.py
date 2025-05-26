@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from kiutils.items.common import Fill, Position, Stroke, Effects, Fill
+from kiutils.items.common import Position, Stroke, Effects, Fill
 from kiutils.utils.strings import dequote
 
 @dataclass
@@ -79,9 +79,14 @@ class SyArc():
                 # Pretty sure this isn't the case but let's be safe
                 if item == 'private':
                     object.private = True
+                    continue
                 else:
                     raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-            if item[0] == 'private' and item[1] == 'yes': object.private = True
+
+            if item[0] == 'private' and item[1] == 'yes':
+                object.private = True
+                continue
+
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'mid': object.mid = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
@@ -166,9 +171,14 @@ class SyCircle():
                 # Pretty sure this isn't the case but let's be safe
                 if item == 'private':
                     object.private = True
+                    continue
                 else:
                     raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-            if item[0] == 'private' and item[1] == 'yes': object.private = True
+
+            if item[0] == 'private' and item[1] == 'yes':
+                object.private = True
+                continue
+
             if item[0] == 'center': object.center = Position().from_sexpr(item)
             if item[0] == 'radius': object.radius = item[1]
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
@@ -254,14 +264,15 @@ class SyCurve():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(curve\n'
-        expression =  f'{indents}  (pts\n'
+        expression  =  f'{indents}(curve\n'
+        expression +=  f'{indents}  (pts\n'
         for point in self.points:
-            expression =  f'{indents}    (xy {point.X} {point.Y})\n'
-        expression =  f'{indents}  )\n'
+            expression +=  f'{indents}    (xy {point.X} {point.Y})\n'
+        expression +=  f'{indents}  )\n'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += f'{indents}){endline}'
+
         return expression
 
 @dataclass
@@ -386,9 +397,14 @@ class SyRect():
                 # Pretty sure this isn't the case but let's be safe
                 if item == 'private':
                     object.private = True
+                    continue
                 else:
                     raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-            if item[0] == 'private' and item[1] == 'yes': object.private = True
+
+            if item[0] == 'private' and item[1] == 'yes':
+                object.private = True
+                continue
+
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)

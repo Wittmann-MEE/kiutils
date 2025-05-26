@@ -14,16 +14,14 @@ Documentation taken from:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, List
 from os import path
 import re
 
-from kiutils.items.common import Effects, Position, Property, Font
+from kiutils.items.common import Property, Font
 from kiutils.items.syitems import *
 from kiutils.utils import sexpr
 from kiutils.utils.strings import dequote
-from kiutils.misc.config import KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.misc.config import *
 
 @dataclass
 class SymbolAlternativePin():
@@ -608,9 +606,9 @@ class SymbolLib():
 
         version = f' (version {self.version})' if self.version is not None else ''
         generator = f' (generator {self.generator})' if self.generator is not None else ''
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        generator_version = f' (generator_version "{self.generator_version}")'
 
-        expression =  f'{indents}(kicad_symbol_lib {version} {generator} {generator_version}\n'
+        expression =  f'{indents}(kicad_symbol_lib{version}{generator}{generator_version}\n'
         for item in self.symbols:
             expression += f'{indents}{item.to_sexpr(indent+2)}'
         expression += f'{indents}){endline}'

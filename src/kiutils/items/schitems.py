@@ -1062,7 +1062,7 @@ class SchematicSymbol():
     # Available since KiCad v9
 
     # TODO Missing docs
-    excludeFromSim: Optinal[str] = None
+    excludeFromSim: Optional[str] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> SchematicSymbol:

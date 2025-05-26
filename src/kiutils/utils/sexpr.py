@@ -38,6 +38,6 @@ def parse_sexp(sexp):
         elif term == 's':
             out.append(value)
         else:
-            raise NotImplementedError("Error: %r" % (term, value))
+            raise NotImplementedError("Error: (%r, %r)" % (term, value))
     assert not stack, "Trouble with nesting of brackets"
     return out[0]

@@ -15,15 +15,14 @@ Documentation taken from:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Union
+from typing import Union
 from os import path
 
 from kiutils.items.common import Image, PageSettings, TitleBlock
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils import sexpr
-from kiutils.misc.config import KIUTILS_CREATE_NEW_GENERATOR_STR, KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.misc.config import *
 
 @dataclass
 class Schematic():
@@ -216,10 +215,10 @@ class Schematic():
         Returns:
             - Schematic: Empty schematic
         """
-        schematic = cls(
-            version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = KIUTILS_CREATE_NEW_GENERATOR_STR
-        )
+        schematic = Schematic()
+        schematic.version = KIUTILS_CREATE_NEW_VERSION_STR
+        schematic.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+        schematic.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
         schematic.sheetInstances.append(HierarchicalSheetInstance(instancePath='/', page='1'))
         return schematic
 
@@ -256,8 +255,7 @@ class Schematic():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        generator_version = f'(generator_version "{self.generator_version}")' if self.generator_version is not None else ''
-        expression =  f'{indents}(kicad_sch (version {self.version}) (generator {self.generator}) {generator_version}\n'
+        expression =  f'{indents}(kicad_sch (version {self.version}) (generator {self.generator}) (generator_version "{self.generator_version}")\n'
         if self.uuid is not None:
             expression += f'\n{indents}  (uuid {self.uuid})\n\n'
         expression += f'{self.paper.to_sexpr(indent+2)}'

@@ -187,50 +187,50 @@ class GrTextBox():
                         'Most definitely there were changes introduced between Kicad 7 and 9.'
                         'If you know what you are doing, proceed to verify/fix and remove the exception.')
 
-        """Convert the given S-Expression into a GrTextBox object
-
-        Args:
-            - exp (list): Part of parsed S-Expression ``(gr_text_box ...)``
-
-        Raises:
-            - Exception: When given parameter's type is not a list
-            - Exception: When the first item of the list is not fp_text_box
-
-        Returns:
-            - GrTextBox: Object of the class initialized with the given S-Expression
-        """
-        if not isinstance(exp, list) or len(exp) < 2:
-            raise Exception("Expression does not have the correct type")
-
-        if exp[0] != 'gr_text_box':
-            raise Exception("Expression does not have the correct type")
-
-        object = cls()
-
-        # Extract "locked" token, if any is present
-        if exp[1] == "locked" and not isinstance(exp[2], list):
-            object.locked = True
-            object.text = exp[2]
-            start_at = 3
-        else:
-            object.text = exp[1]
-            start_at = 2
-
-        for item in exp[start_at:]:
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.pts.append(Position().from_sexpr(point))
-            if item[0] == 'angle': object.angle = item[1]
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'tstamp': object.uuid = item[1] # Haha :)
-            if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
-            if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
-
-        return object
+        # """Convert the given S-Expression into a GrTextBox object
+        #
+        # Args:
+        #     - exp (list): Part of parsed S-Expression ``(gr_text_box ...)``
+        #
+        # Raises:
+        #     - Exception: When given parameter's type is not a list
+        #     - Exception: When the first item of the list is not fp_text_box
+        #
+        # Returns:
+        #     - GrTextBox: Object of the class initialized with the given S-Expression
+        # """
+        # if not isinstance(exp, list) or len(exp) < 2:
+        #     raise Exception("Expression does not have the correct type")
+        #
+        # if exp[0] != 'gr_text_box':
+        #     raise Exception("Expression does not have the correct type")
+        #
+        # object = cls()
+        #
+        # # Extract "locked" token, if any is present
+        # if exp[1] == "locked" and not isinstance(exp[2], list):
+        #     object.locked = True
+        #     object.text = exp[2]
+        #     start_at = 3
+        # else:
+        #     object.text = exp[1]
+        #     start_at = 2
+        #
+        # for item in exp[start_at:]:
+        #     if item[0] == 'start': object.start = Position.from_sexpr(item)
+        #     if item[0] == 'end': object.end = Position.from_sexpr(item)
+        #     if item[0] == 'pts':
+        #         for point in item[1:]:
+        #             object.pts.append(Position().from_sexpr(point))
+        #     if item[0] == 'angle': object.angle = item[1]
+        #     if item[0] == 'layer': object.layer = item[1]
+        #     if item[0] == 'tstamp': object.tstamp = item[1]
+        #     if item[0] == 'tstamp': object.uuid = item[1] # Haha :)
+        #     if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
+        #     if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
+        #     if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+        #
+        # return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
         """Generate the S-Expression representing this object

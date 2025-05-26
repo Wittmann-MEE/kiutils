@@ -18,17 +18,16 @@ from __future__ import annotations
 import calendar
 import datetime
 import re
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Dict
 from os import path
 
 from kiutils.items.zones import Zone
-from kiutils.items.common import Image, Position, Coordinate, Net, Group, Font
+from kiutils.items.common import Image, Coordinate, Net, Group, Font
 from kiutils.items.fpitems import *
 from kiutils.items.gritems import *
 from kiutils.utils import sexpr
 from kiutils.utils.strings import dequote, remove_prefix
-from kiutils.misc.config import KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.misc.config import *
 
 @dataclass
 class Attributes():
@@ -112,7 +111,7 @@ class Attributes():
         Returns:
             - str: S-Expression of this object
         """
-        if (self.type == None
+        if (self.type is None
             and self.boardOnly == False
             and self.excludeFromBom == False
             and self.excludeFromPosFiles == False
@@ -980,32 +979,29 @@ class Footprint():
         if type not in ['smd', 'through_hole', 'other']:
             raise Exception("Unsupported type was given")
 
-        fp = cls(
-            version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = 'kiutils'
-        )
+        fp = Footprint()
+        fp.version = KIUTILS_CREATE_NEW_VERSION_STR
+        fp.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+        fp.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
         fp.libId = library_id
 
         # Create text items that are created when adding a new footprint to a library
-        # TODO - In v9 these are not FpTexts anymore but rather Properties
-        fp.graphicItems.extend(
-            [
-                FpText(
-                    type = 'reference', text = reference, layer = 'F.SilkS',
-                    effects = Effects(font=Font(thickness=0.15)),
-                    position = Position(X=0, Y=-0.5, unlocked=True)
-                ),
-                FpText(
-                    type = 'value', text = value, layer ='F.Fab',
-                    effects  = Effects(font=Font(thickness=0.15)),
-                    position = Position(X=0, Y=1, unlocked=True)
-                ),
-                FpText(
-                    type = 'user', text = '${REFERENCE}', layer = 'F.Fab',
-                    effects = Effects(font=Font(thickness=0.15)),
-                    position = Position(X=0, Y=2.5, unlocked=True)
-                )
-            ]
+        fp.properties['Reference'] = FpProperty(
+            type='Reference', text=reference, layer='F.SilkS',
+            effects=Effects(font=Font(thickness=0.15)),
+            at=Position(X=0, Y=-0.5, unlocked=True)
+        ),
+        fp.properties['Value'] = FpProperty(
+            type='Value', text=value, layer='F.Fab',
+            effects=Effects(font=Font(thickness=0.15)),
+            at=Position(X=0, Y=1, unlocked=True)
+        ),
+        fp.graphicItems.append(
+            FpText(
+                type = 'user', text = '${REFERENCE}', layer = 'F.Fab',
+                effects = Effects(font=Font(thickness=0.15)),
+                position = Position(X=0, Y=2.5, unlocked=True)
+            )
         )
 
         # The type ``other`` does not set the attributes type token
@@ -1053,7 +1049,7 @@ class Footprint():
         placed = f' (placed yes)' if self.placed else ''
         version = f' (version {self.version})' if self.version is not None else ''
         generator = f' (generator {self.generator})' if self.generator is not None else ''
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        generator_version = f' (generator_version "{self.generator_version}")'
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}{tstamp}'

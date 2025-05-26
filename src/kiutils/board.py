@@ -15,8 +15,7 @@ Documentation taken from:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Dict
 from os import path
 
 from kiutils.items.common import Group, Image, Net, PageSettings, TitleBlock
@@ -27,7 +26,7 @@ from kiutils.items.dimensions import Dimension
 from kiutils.utils.strings import dequote
 from kiutils.utils import sexpr
 from kiutils.footprint import Footprint
-from kiutils.misc.config import KIUTILS_CREATE_NEW_VERSION_STR, KIUTILS_CREATE_NEW_GENERATOR_STR
+from kiutils.misc.config import *
 
 @dataclass
 class Board():
@@ -189,10 +188,10 @@ class Board():
         Returns:
             - Board: Empty board
         """
-        board = cls(
-            version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = KIUTILS_CREATE_NEW_GENERATOR_STR
-        )
+        board = Board()
+        board.version = KIUTILS_CREATE_NEW_VERSION_STR
+        board.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+        board.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
 
         # Add all standard layers to board
         board.layers.extend([
@@ -267,8 +266,7 @@ class Board():
 
         addNewLine = False
 
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
-        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator {self.generator}){generator_version}\n\n'
+        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator {self.generator}) (generator_version "{self.generator_version}")\n\n'
         expression += self.general.to_sexpr(indent+2) + '\n'
         expression += self.paper.to_sexpr(indent+2)
         if self.titleBlock is not None:

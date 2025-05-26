@@ -365,7 +365,7 @@ class FilledPolygon():
                 raise Exception("We didn't deal with this so far."
                                 "A small modification such as checking that item[1] is yes or no might be needed."
                                 "Verify/fix if needed and remove this exception.")
-                object.island = True
+                # object.island = True
             if item[0] == 'pts':
                 for position in item[1:]:
                     object.coordinates.append(Position().from_sexpr(position))
