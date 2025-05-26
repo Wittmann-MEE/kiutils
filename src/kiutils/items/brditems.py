@@ -34,7 +34,6 @@ class GeneralSettings():
 
     # Available since KiCad v9
 
-    # TODO Missing docs
     legacy_teardrops: Optional[str] = None
 
     @classmethod
@@ -379,7 +378,10 @@ class Stackup():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'layer': object.layers.append(StackupLayer().from_sexpr(item))
             if item[0] == 'copper_finish': object.copperFinish = item[1]
             if item[0] == 'dielectric_constraints': object.dielectricContraints = item[1]
@@ -752,7 +754,11 @@ class SetupData():
     allow_soldermask_bridges_in_footprints: Optional[str] = None
 
     # TODO
-    # tenting: Optional[Tenting] = None
+    tenting: List[str] = field(default_factory=list)
+    covering: List[str] = field(default_factory=list)
+    plugging: List[str] = field(default_factory=list)
+    capping: List[str] = field(default_factory=list)
+    filling: List[str] = field(default_factory=list)
 
     @classmethod
     def from_sexpr(cls, exp: list) -> SetupData:
@@ -775,7 +781,10 @@ class SetupData():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'stackup': object.stackup = Stackup().from_sexpr(item)
             if item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
             if item[0] == 'pad_to_mask_clearance': object.packToMaskClearance = item[1]
@@ -786,8 +795,12 @@ class SetupData():
             if item[0] == 'grid_origin': object.gridOrigin = Position().from_sexpr(item)
             if item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
             if item[0] == 'allow_soldermask_bridges_in_footprints': object.allow_soldermask_bridges_in_footprints = item[1]
-            # TODO
-            # if item[0] == 'tenting': object.tenting = Tenting().from_sexpr(item)
+            if item[0] == 'tenting': object.tenting.extend(item[1:])
+            if item[0] == 'covering': object.covering.extend(item[1:])
+            if item[0] == 'plugging': object.plugging.extend(item[1:])
+            if item[0] == 'capping': object.capping.extend(item[1:])
+            if item[0] == 'filling': object.filling.extend(item[1:])
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -801,19 +814,30 @@ class SetupData():
             - str: S-Expression of this object
         """
         indents = ' '*indent
+        indents_nest = indents*2
         endline = '\n' if newline else ''
 
         expression =  f'{indents}(setup\n'
-        if self.stackup is not None:                  expression += self.stackup.to_sexpr(indent+2)
-        expression += f'{indents}  (pad_to_mask_clearance {self.packToMaskClearance})\n'
+        if self.stackup is not None:
+            expression += self.stackup.to_sexpr(indent+2)
+
+        expression += f'{indents_nest}(pad_to_mask_clearance {self.packToMaskClearance})\n'
+
         if self.allow_soldermask_bridges_in_footprints is not None:
-            expression += f'{indents}  (allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
-        if self.solderMaskMinWidth is not None:       expression += f'{indents}  (solder_mask_min_width {self.solderMaskMinWidth})\n'
-        if self.padToPasteClearance is not None:      expression += f'{indents}  (pad_to_paste_clearance {self.padToPasteClearance})\n'
-        if self.padToPasteClearanceRatio is not None: expression += f'{indents}  (pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
-        if self.auxAxisOrigin is not None:            expression += f'{indents}  (aux_axis_origin {self.auxAxisOrigin.X} {self.auxAxisOrigin.Y})\n'
-        if self.gridOrigin is not None:               expression += f'{indents}  (grid_origin {self.gridOrigin.X} {self.gridOrigin.Y})\n'
-        if self.plotSettings is not None:             expression += self.plotSettings.to_sexpr(indent+2)
+            expression += f'{indents_nest}(allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
+
+        if self.solderMaskMinWidth is not None:         expression += f'{indents_nest}(solder_mask_min_width {self.solderMaskMinWidth})\n'
+        if self.padToPasteClearance is not None:        expression += f'{indents_nest}(pad_to_paste_clearance {self.padToPasteClearance})\n'
+        if self.padToPasteClearanceRatio is not None:   expression += f'{indents_nest}(pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
+        if self.auxAxisOrigin is not None:              expression += f'{indents_nest}(aux_axis_origin {self.auxAxisOrigin.X} {self.auxAxisOrigin.Y})\n'
+        if self.gridOrigin is not None:                 expression += f'{indents_nest}(grid_origin {self.gridOrigin.X} {self.gridOrigin.Y})\n'
+        if len(self.tenting) > 0:                       expression += f'{indents_nest}(tenting {' '.join(self.tenting)})\n'
+        if len(self.covering) > 0:                      expression += f'{indents_nest}(covering {' '.join(self.covering)})\n'
+        if len(self.plugging) > 0:                      expression += f'{indents_nest}(plugging {' '.join(self.plugging)})\n'
+        if len(self.capping) > 0:                       expression += f'{indents_nest}(capping {' '.join(self.capping)})\n'
+        if len(self.filling) > 0:                       expression += f'{indents_nest}(filling {' '.join(self.filling)})\n'
+        if self.plotSettings is not None:               expression += self.plotSettings.to_sexpr(indent+2)
+
         expression += f'{indents}){endline}'
         return expression
 

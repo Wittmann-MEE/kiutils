@@ -176,7 +176,7 @@ class SymbolPin():
         endline = '\n' if newline else ''
         newLineAdded = False
 
-        hide = ' hide' if self.hide else ''
+        hide = ' (hide yes)' if self.hide else ''
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         nameEffects = f' {self.nameEffects.to_sexpr(newline=False)}' if self.nameEffects is not None else ''
         numberEffects = f' {self.numberEffects.to_sexpr(newline=False)}' if self.numberEffects is not None else ''
@@ -357,7 +357,7 @@ class Symbol():
 
     # Available since KiCad v9
 
-    # TODO Missing docs for this one
+    # TODO Missing docs
     excludeFromSim: Optional[str] = None
 
     @classmethod
@@ -397,8 +397,7 @@ class Symbol():
                     if not isinstance(prop, list):
                         raise Exception(f"Property {prop} should be key -> value mapped")
                     if prop[0] == 'offset': object.pinNamesOffset = prop[1]
-                    if prop[0] == 'hide' and prop[1] == 'yes':
-                        object.pinNamesHide = True
+                    if prop[0] == 'hide' and prop[1] == 'yes': object.pinNamesHide = True
 
             if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
             if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
@@ -480,7 +479,7 @@ class Symbol():
         pnhide = f' (hide yes)' if self.pinNamesHide else ''
         pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
         pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''
-        pinnumbers = f' (pin_numbers hide)' if self.hidePinNumbers else ''
+        pinnumbers = f' (pin_numbers (hide yes))' if self.hidePinNumbers else ''
         extends = f' (extends "{dequote(self.extends)}")' if self.extends is not None else ''
 
         expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{exclude_from_sim}{pinnumbers}{pinnames}{inbom}{onboard}\n'

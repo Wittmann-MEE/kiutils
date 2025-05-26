@@ -1061,7 +1061,7 @@ class SchematicSymbol():
 
     # Available since KiCad v9
 
-    # TODO Missing docs for this one
+    # TODO Missing docs
     excludeFromSim: Optinal[str] = None
 
     @classmethod
