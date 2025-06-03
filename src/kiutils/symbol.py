@@ -607,8 +607,8 @@ class SymbolLib():
         endline = '\n' if newline else ''
 
         version = f' (version {self.version})' if self.version is not None else ''
-        generator = f' (generator {self.generator})' if self.generator is not None else ''
-        generator_version = f' (generator_version "{self.generator_version}")'
+        generator = f' (generator "{self.generator}")' if self.generator is not None else ''
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
 
         expression =  f'{indents}(kicad_symbol_lib{version}{generator}{generator_version}\n'
         for item in self.symbols:

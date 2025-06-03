@@ -268,7 +268,8 @@ class Board():
 
         addNewLine = False
 
-        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator {self.generator}) (generator_version "{self.generator_version}")\n\n'
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator "{self.generator}"){generator_version}\n\n'
         expression += self.general.to_sexpr(indent+2) + '\n'
         expression += self.paper.to_sexpr(indent+2)
         if self.titleBlock is not None:

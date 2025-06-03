@@ -111,13 +111,15 @@ class WksFont():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'bold': object.bold = True
-                if item == 'italic': object.italic = True
-                continue
+        for item in exp[1]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'bold' and item[1] == 'yes': object.bold = True
+            if item[0] == 'italic' and item[1] == 'yes': object.italic = True
             if item[0] == 'linewidth': object.linewidth = item[1]
             if item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent=0, newline=False):
@@ -136,8 +138,8 @@ class WksFont():
 
         lw = f' (linewidth {self.linewidth})' if self.linewidth is not None else ''
         size = f' {self.size.to_sexpr()}' if self.size is not None else ''
-        bold = f' bold' if self.bold else ''
-        italic = f' italic' if self.italic else ''
+        bold = f' (bold yes)' if self.bold else ''
+        italic = f' (italic yes)' if self.italic else ''
 
         if lw == '' and size == '' and bold == '' and italic == '':
             return ''
@@ -955,7 +957,7 @@ class WorkSheet():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(kicad_wks (version {self.version}) (generator {self.generator})\n'
+        expression =  f'{indents}(kicad_wks (version {self.version}) (generator "{self.generator}")\n'
         expression += self.setup.to_sexpr(indent+2)
         for item in self.drawingObjects:
             expression += item.to_sexpr(indent+2)

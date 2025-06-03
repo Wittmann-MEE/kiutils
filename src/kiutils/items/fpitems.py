@@ -891,7 +891,7 @@ class FpProperty:
 
     unlocked: Optional[str] = None
 
-    at: Optional[Position] = None
+    position: Optional[Position] = None
 
     layer: Optional[str] = None
 
@@ -958,9 +958,9 @@ class FpProperty:
 
         expression = f'{indents}(property "{dequote(self.type)}" "{dequote(self.text)}"\n'
 
-        if self.at is not None:
-            pos = self.at
-            pos_angle = f'{pos.angle}' if pos.angle is not None else ''
+        if self.position is not None:
+            pos = self.position
+            pos_angle = f' {pos.angle}' if pos.angle is not None else ''
             expression += f'{indents} (at {pos.X} {pos.Y}{pos_angle}){endline}'
 
         if self.layer is not None:

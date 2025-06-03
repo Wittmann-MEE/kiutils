@@ -572,20 +572,22 @@ class Pad():
 
         layers = ' (layers'
         for layer in self.layers:
-            # For some reason KiCad does not escape a layer with double-quotes if it has a
-            # wildcard (*) or an ampersant (&) in it
-            if "*." in layer or "&" in layer:
-                layers += f' {layer}'
-            else:
-                layers += f' "{dequote(layer)}"'
+            # Update: seems KiCad now handles this properly - revert back to this if issues are seen
+            # # For some reason KiCad does not escape a layer with double-quotes if it has a
+            # # wildcard (*) or an ampersant (&) in it
+            # if "*." in layer or "&" in layer:
+            #     layers += f' {layer}'
+            # else:
+            #     layers += f' "{dequote(layer)}"'
+            layers += f' "{dequote(layer)}"'
 
         layers += ')'
 
         locked = ' (locked yes)' if self.locked else ''
         drill = f' {self.drill.to_sexpr()}' if self.drill is not None else ''
         ppty = f' (property {self.property})' if self.property is not None else ''
-        rul = ' (remove_unused_layers)' if self.removeUnusedLayers else ''
-        kel = ' (keep_end_layers)' if self.keepEndLayers else ''
+        rul = f' (remove_unused_layers {"yes" if self.removeUnusedLayers else "no"})'
+        kel = f' (keep_end_layers {"yes" if self.keepEndLayers else "no"})'
         rrr = f' (roundrect_rratio {self.roundrectRatio})' if self.roundrectRatio is not None else ''
 
         net = f' {self.net.to_sexpr()}' if self.net is not None else ''
@@ -750,9 +752,9 @@ class Footprint():
     tags: Optional[str] = None
     """The optional ``tags`` token defines a string of search tags for the footprint"""
 
-    properties: Dict = field(default_factory=dict)
+    properties: Dict[str, FpProperty] = field(default_factory=dict)
     """The ``properties`` token defines dictionary of properties as key / value pairs where key being
-    the name of the property and value being the description of the property"""
+    the name of the property and value being the description of the property, the FpProperty item"""
 
     path: Optional[str] = None
     """The ``path`` token defines the hierarchical path of the schematic symbol linked to the footprint.
@@ -1050,8 +1052,8 @@ class Footprint():
         locked = f' (locked yes)' if self.locked else ''
         placed = f' (placed yes)' if self.placed else ''
         version = f' (version {self.version})' if self.version is not None else ''
-        generator = f' (generator {self.generator})' if self.generator is not None else ''
-        generator_version = f' (generator_version "{self.generator_version}")'
+        generator = f' (generator "{self.generator}")' if self.generator is not None else ''
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}{tstamp}'
@@ -1072,6 +1074,12 @@ class Footprint():
 
         if self.path is not None:
             expression += f'{indents}  (path "{dequote(self.path)}")\n'
+
+        if self.sheet_file != "":
+            expression += f'{indents}  (sheetfile "{self.sheet_file}")\n'
+
+        if self.sheet_name != "":
+            expression += f'{indents}  (sheetname "{self.sheet_name}")\n'
 
         # Additional parameters used in board
         if self.autoplaceCost90 is not None:
@@ -1116,19 +1124,12 @@ class Footprint():
             expression += item.to_sexpr(indent=indent+2)
         for item in self.zones:
             expression += item.to_sexpr(indent=indent+2)
+        if self.embedded_fonts:
+            expression += f'{indents}  (embedded_fonts {self.embedded_fonts})\n'
         for item in self.models:
             expression += item.to_sexpr(indent=indent+2)
         for item in self.groups:
             expression += item.to_sexpr(indent=indent+2)
-
-        if self.embedded_fonts:
-            expression += f'{indents}  (embedded_fonts {self.embedded_fonts})\n'
-
-        if self.sheet_file != "":
-            expression += f'{indents}  (sheetfile "{self.sheet_file}")\n'
-
-        if self.sheet_name != "":
-            expression += f'{indents}  (sheetname "{self.sheet_name}")\n'
 
         expression += f'{indents}){endline}'
         return expression
