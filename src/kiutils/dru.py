@@ -20,6 +20,7 @@ from typing import Optional, List
 from os import path
 
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.utils.strings import dequote
 
 @dataclass
@@ -290,7 +291,8 @@ class DesignRules():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=False):
         """Generate the S-Expression representing this object

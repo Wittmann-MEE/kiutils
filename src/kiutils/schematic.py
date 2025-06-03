@@ -22,6 +22,7 @@ from kiutils.items.common import Image, PageSettings, TitleBlock
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.misc.config import *
 
 @dataclass
@@ -240,7 +241,8 @@ class Schematic():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True) -> str:
         """Generate the S-Expression representing this object

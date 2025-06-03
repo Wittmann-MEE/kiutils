@@ -22,6 +22,7 @@ from os import path
 from kiutils.items.common import Justify
 from kiutils.utils.strings import dequote
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.misc.config import KIUTILS_CREATE_NEW_GENERATOR_STR, KIUTILS_CREATE_NEW_VERSION_STR
 
 @dataclass
@@ -938,7 +939,8 @@ class WorkSheet():
             filepath = self.filePath
 
         with open(filepath, 'w') as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True):
         """Generate the S-Expression representing this object

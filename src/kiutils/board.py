@@ -25,6 +25,7 @@ from kiutils.items.gritems import *
 from kiutils.items.dimensions import Dimension
 from kiutils.utils.strings import dequote
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
 
@@ -249,7 +250,8 @@ class Board():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True) -> str:
         """Generate the S-Expression representing this object
