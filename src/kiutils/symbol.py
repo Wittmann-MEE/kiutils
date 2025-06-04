@@ -359,6 +359,8 @@ class Symbol():
     # TODO Missing docs
     excludeFromSim: Optional[str] = None
 
+    embedded_fonts: Optional[str] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Symbol:
         """Convert the given S-Expression into a Symbol object
@@ -417,6 +419,7 @@ class Symbol():
                                 'The function that parses this is most definitely incompatible.'
                                 'If you see this then fix parsing in SyTextBox and remove this exception.')
                 # object.graphicItems.append(SyTextBox().from_sexpr(item))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
 
         return object
 
@@ -481,7 +484,7 @@ class Symbol():
         pinnumbers = f' (pin_numbers (hide yes))' if self.hidePinNumbers else ''
         extends = f' (extends "{dequote(self.extends)}")' if self.extends is not None else ''
 
-        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{exclude_from_sim}{pinnumbers}{pinnames}{inbom}{onboard}\n'
+        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{pinnumbers}{pinnames}{exclude_from_sim}{inbom}{onboard}\n'
         for item in self.properties:
             expression += item.to_sexpr(indent+2)
         for item in self.graphicItems:
@@ -490,6 +493,9 @@ class Symbol():
             expression += item.to_sexpr(indent+2)
         for item in self.units:
             expression += item.to_sexpr(indent+2)
+        if self.embedded_fonts is not None:
+            expression += f' (embedded_fonts {self.embedded_fonts}){endline}'
+
         expression += f'{indents}){endline}'
         return expression
 
@@ -518,6 +524,8 @@ class SymbolLib():
 
     generator_version: Optional[str] = None
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
 
     @classmethod
     def from_file(cls, filepath: str, encoding: Optional[str] = None) -> SymbolLib:
@@ -570,6 +578,8 @@ class SymbolLib():
             if item[0] == 'generator': object.generator = item[1]
             if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+
         return object
 
     def to_file(self, filepath = None, encoding: Optional[str] = None):
@@ -613,5 +623,8 @@ class SymbolLib():
         expression =  f'{indents}(kicad_symbol_lib{version}{generator}{generator_version}\n'
         for item in self.symbols:
             expression += f'{indents}{item.to_sexpr(indent+2)}'
+        if self.embedded_fonts is not None:
+            expression += f' (embedded_fonts {self.embedded_fonts}){endline}'
+
         expression += f'{indents}){endline}'
         return expression

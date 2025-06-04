@@ -627,10 +627,10 @@ class Group():
         endline = '\n' if newline else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        expression =  f'{indents}(group "{dequote(self.name)}"{locked} (id {self.id})\n'
+        expression =  f'{indents}(group "{dequote(self.name)}" (uuid "{self.id}"){locked}\n'
         expression += f'{indents}  (members\n'
         for member in self.members:
-            expression += f'{indents}    {member}\n'
+            expression += f'{indents}    "{member}"\n'
 
         expression += f'{indents}  )\n'
         expression += f'{indents}){endline}'

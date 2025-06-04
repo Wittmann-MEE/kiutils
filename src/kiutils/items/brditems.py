@@ -572,6 +572,8 @@ class PlotSettings():
 
     sketch_dnp_on_fab: str = "yes"
 
+    plot_pad_numbers: str = "no"
+
     @classmethod
     def from_sexpr(cls, exp: list) -> PlotSettings:
         """Convert the given S-Expresstion into a PlotSettings object
@@ -640,6 +642,7 @@ class PlotSettings():
             if item[0] == 'hidednponfab': object.hide_dnp_on_fab = item[1]
             if item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = item[1]
             if item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = item[1]
+            if item[0] == 'plotpadnumbers': object.plotpadnumbers = item[1]
 
         return object
 
@@ -675,7 +678,7 @@ class PlotSettings():
         if self.excludeEdgeLayer is not None:
             expression += f'{indents}  (excludeedgelayer {self.excludeEdgeLayer})\n'
         expression += f'{indents}  (plotframeref {self.plotFameRef})\n'
-        expression += f'{indents}  (viasonmask {self.viasOnMask})\n'
+        expression += f'{indents}  (viasonmask {self.viasOnMask})\n' if self.viasOnMask == 'yes' else ''
         expression += f'{indents}  (mode {self.mode})\n'
         expression += f'{indents}  (useauxorigin no)\n'
         expression += f'{indents}  (hpglpennumber {self.hpglPenNumber})\n'
@@ -691,14 +694,14 @@ class PlotSettings():
         expression += f'{indents}  (psnegative {self.psNegative})\n'
         expression += f'{indents}  (psa4output {self.psA4Output})\n'
         expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
-        expression += f'{indents}  (hidednponfab {self.hide_dnp_on_fab})\n'
-        expression += f'{indents}  (crossoutdnponfab {self.crossout_dnp_on_fab})\n'
-        expression += f'{indents}  (sketchdnponfab {self.sketch_dnp_on_fab})\n'
-        expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
-        expression += f'{indents}  (plotreference {self.plotReference})\n'
-        expression += f'{indents}  (plotvalue {self.plotValue})\n'
-        expression += f'{indents}  (plotinvisibletext {self.plotInvisibleText})\n'
         expression += f'{indents}  (sketchpadsonfab {self.sketchPadsOnFab})\n'
+        expression += f'{indents}  (plotpadnumbers {self.plot_pad_numbers})\n'
+        expression += f'{indents}  (hidednponfab {self.hide_dnp_on_fab})\n'
+        expression += f'{indents}  (sketchdnponfab {self.sketch_dnp_on_fab})\n'
+        expression += f'{indents}  (crossoutdnponfab {self.crossout_dnp_on_fab})\n'
+        expression += f'{indents}  (plotreference {self.plotReference})\n' if self.plotReference == 'yes' else ''
+        expression += f'{indents}  (plotvalue {self.plotValue})\n' if self.plotValue == 'yes' else ''
+        expression += f'{indents}  (plotinvisibletext {self.plotInvisibleText})\n' if self.plotInvisibleText == 'yes' else ''
         expression += f'{indents}  (subtractmaskfromsilk {self.subtractMaskFromSilk})\n'
         expression += f'{indents}  (outputformat {self.outputFormat})\n'
         expression += f'{indents}  (mirror {self.mirror})\n'
@@ -823,15 +826,14 @@ class SetupData():
 
         expression += f'{indents_nest}(pad_to_mask_clearance {self.packToMaskClearance})\n'
 
-        if self.allow_soldermask_bridges_in_footprints is not None:
-            expression += f'{indents_nest}(allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
-
         if self.solderMaskMinWidth is not None:         expression += f'{indents_nest}(solder_mask_min_width {self.solderMaskMinWidth})\n'
         if self.padToPasteClearance is not None:        expression += f'{indents_nest}(pad_to_paste_clearance {self.padToPasteClearance})\n'
         if self.padToPasteClearanceRatio is not None:   expression += f'{indents_nest}(pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
+        if self.allow_soldermask_bridges_in_footprints is not None:
+            expression += f'{indents_nest}(allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
+        if len(self.tenting) > 0:                       expression += f'{indents_nest}(tenting {' '.join(self.tenting)})\n'
         if self.auxAxisOrigin is not None:              expression += f'{indents_nest}(aux_axis_origin {self.auxAxisOrigin.X} {self.auxAxisOrigin.Y})\n'
         if self.gridOrigin is not None:                 expression += f'{indents_nest}(grid_origin {self.gridOrigin.X} {self.gridOrigin.Y})\n'
-        if len(self.tenting) > 0:                       expression += f'{indents_nest}(tenting {' '.join(self.tenting)})\n'
         if len(self.covering) > 0:                      expression += f'{indents_nest}(covering {' '.join(self.covering)})\n'
         if len(self.plugging) > 0:                      expression += f'{indents_nest}(plugging {' '.join(self.plugging)})\n'
         if len(self.capping) > 0:                       expression += f'{indents_nest}(capping {' '.join(self.capping)})\n'
@@ -922,7 +924,7 @@ class Segment():
         endline = '\n' if newline else ''
         locked = ' (locked yes)' if self.locked else ''
 
-        return f'{indents}(segment{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}) (layer "{dequote(self.layer)}") (net {self.net}) (uuid "{self.tstamp}")){endline}'
+        return f'{indents}(segment (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}){locked} (layer "{dequote(self.layer)}") (net {self.net}) (uuid "{self.tstamp}")){endline}'
 
 @dataclass
 class Via():
@@ -968,6 +970,11 @@ class Via():
     tstamp: Optional[str] = None
     """The ``tstamp`` token defines the unique identifier of the via"""
 
+    # Available since KiCad v9
+    # TODO missing docs
+
+    zone_layer_connections: bool = False
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Via:
         """Convert the given S-Expresstion into a Via object
@@ -1010,6 +1017,7 @@ class Via():
             if item[0] == 'net': object.net = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            if item[0] == 'zone_layer_connections': object.zone_layer_connections = True
 
         return object
 
@@ -1036,8 +1044,9 @@ class Via():
         kel = ' (keep_end_layers yes)' if self.keepEndLayers else ''
         free = ' (free yes)' if self.free else ''
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
+        zone_layer_connections = ' (zone_layer_connections)' if self.zone_layer_connections else ''
 
-        return f'{indents}(via{type}{locked} (at {self.position.X} {self.position.Y}) (size {self.size}) (drill {self.drill}) (layers{layers}){rum}{kel}{free} (net {self.net}){tstamp}){endline}'
+        return f'{indents}(via{type} (at {self.position.X} {self.position.Y}) (size {self.size}) (drill {self.drill}) (layers{layers}){rum}{kel}{locked}{free}{zone_layer_connections} (net {self.net}){tstamp}){endline}'
 
 @dataclass
 class Arc():

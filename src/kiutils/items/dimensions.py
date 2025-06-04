@@ -160,6 +160,11 @@ class DimensionStyle():
     dimension crossbar. When false, the dimension text is shown horizontally regardless of the
     orientation of the dimension."""
 
+    # Available since KiCad v9
+    # TODO missing docs
+
+    arrow_direction: Optional[str] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> DimensionStyle:
         """Convert the given S-Expresstion into a DimensionStyle object
@@ -185,13 +190,14 @@ class DimensionStyle():
             if not isinstance(item, list):
                 raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
-            if item[0] == 'keep_text_aligned' and item[1] == 'yes': object.keepTextAligned = False
+            if item[0] == 'keep_text_aligned' and item[1] == 'yes': object.keepTextAligned = True
             if item[0] == 'thickness': object.thickness = item[1]
             if item[0] == 'arrow_length': object.arrowLength = item[1]
             if item[0] == 'text_position_mode': object.textPositionMode = item[1]
             if item[0] == 'extension_height': object.extensionHeight = item[1]
             if item[0] == 'text_frame': object.textFrame = item[1]
             if item[0] == 'extension_offset': object.extensionOffset = item[1]
+            if item[0] == 'arrow_direction': object.arrow_direction = item[1]
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -211,8 +217,9 @@ class DimensionStyle():
         text_frame = f' (text_frame {self.textFrame})' if self.textFrame is not None else ''
         extension_offset = f' (extension_offset {self.extensionOffset})' if self.extensionOffset is not None else ''
         keep_aligned = f' (keep_text_aligned yes)' if self.keepTextAligned else ''
+        arrow_direction = f' (arrow_direction {self.arrow_direction})' if self.arrow_direction is not None else ''
 
-        expression =  f'{indents}(style (thickness {self.thickness}) (arrow_length {self.arrowLength}) (text_position_mode {self.textPositionMode}){extension_height}{text_frame}{extension_offset}{keep_aligned}){endline}'
+        expression =  f'{indents}(style (thickness {self.thickness}) (arrow_length {self.arrowLength}) (text_position_mode {self.textPositionMode}){arrow_direction}{extension_height}{text_frame}{extension_offset}{keep_aligned}){endline}'
         return expression
 
 @dataclass
@@ -334,10 +341,10 @@ class Dimension():
             expression +=  f'{indents}  (orientation {self.orientation})\n'
         if self.leaderLength is not None:
             expression +=  f'{indents}  (leader_length {self.leaderLength})\n'
-        if self.grText is not None:
-            expression += self.grText.to_sexpr(indent+2)
         if self.format is not None:
             expression += self.format.to_sexpr(indent+2)
         expression += self.style.to_sexpr(indent+2)
+        if self.grText is not None:
+            expression += self.grText.to_sexpr(indent+2)
         expression +=  f'{indents}){endline}'
         return expression

@@ -391,11 +391,11 @@ class Pad():
     are ``pad_prop_bga``, ``pad_prop_fiducial_glob``, ``pad_prop_fiducial_loc``, ``pad_prop_testpoint``,
     ``pad_prop_heatsink``, ``pad_prop_heatsink``, and ``pad_prop_castellated``"""
 
-    removeUnusedLayers: bool = False
+    removeUnusedLayers: Optional[str] = None
     """The optional ``removeUnusedLayers`` token specifies that the copper should be removed from
     any layers the pad is not connected to"""
 
-    keepEndLayers: bool = False
+    keepEndLayers: Optional[str] = None
     """The optional ``keepEndLayers`` token specifies that the top and bottom layers should be
     retained when removing the copper from unused layers"""
 
@@ -479,6 +479,15 @@ class Pad():
     """The optional ``customPadPrimitives`` defines the drawing objects and options used to define
     a custom pad"""
 
+    # Available since KiCad v9
+    # TODO missing docs
+
+    zone_layer_connections: bool = False
+
+    thermal_bridge_width: Optional[int] = None
+
+    thermal_bridge_angle: Optional[int] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Pad:
         """Convert the given S-Expresstion into a Pad object
@@ -506,7 +515,10 @@ class Pad():
 
         for item in exp[4:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+                if item[0] == 'zone_layer_connections':
+                    object.zone_layer_connections = True
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -517,8 +529,8 @@ class Pad():
                     object.layers.append(layer)
 
             if item[0] == 'property': object.property = item[1]
-            if item[0] == 'remove_unused_layers' and item[1] == 'yes': object.removeUnusedLayers = True
-            if item[0] == 'keep_end_layers' and item[1] == 'yes': object.keepEndLayers = True
+            if item[0] == 'remove_unused_layers': object.removeUnusedLayers = item[1]
+            if item[0] == 'keep_end_layers': object.keepEndLayers = item[1]
             if item[0] == 'roundrect_rratio': object.roundrectRatio = item[1]
             if item[0] == 'chamfer_ratio': object.chamferRatio = item[1]
             if item[0] == 'chamfer':
@@ -552,6 +564,9 @@ class Pad():
 
                     # XXX: Are dimentions even implemented here?
                     if primitive[0] == 'dimension': raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+            if item[0] == 'thermal_bridge_width': object.thermal_bridge_width = int(item[1])
+            if item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = int(item[1])
+
 
         return object
 
@@ -568,7 +583,7 @@ class Pad():
         indents = ' '*indent
         endline = '\n' if newline else ''
         champferFound, marginFound, schematicSymbolAssociated = False, False, False
-        c, cr, smm, spm, spmr, cl, zc, tw, tg = '', '', '', '', '', '', '', '', ''
+        c, cr, smm, spm, spmr, cl, zc, tw, tg, tbw, tba = '', '', '', '', '', '', '', '', '', '', ''
 
         layers = ' (layers'
         for layer in self.layers:
@@ -586,9 +601,10 @@ class Pad():
         locked = ' (locked yes)' if self.locked else ''
         drill = f' {self.drill.to_sexpr()}' if self.drill is not None else ''
         ppty = f' (property {self.property})' if self.property is not None else ''
-        rul = f' (remove_unused_layers {"yes" if self.removeUnusedLayers else "no"})'
-        kel = f' (keep_end_layers {"yes" if self.keepEndLayers else "no"})'
+        rul = f' (remove_unused_layers {self.removeUnusedLayers})' if self.removeUnusedLayers is not None else ''
+        kel = f' (keep_end_layers {self.keepEndLayers})' if self.keepEndLayers is not None else ''
         rrr = f' (roundrect_rratio {self.roundrectRatio})' if self.roundrectRatio is not None else ''
+        zlc = ' (zone_layer_connections)' if self.zone_layer_connections else ''
 
         net = f' {self.net.to_sexpr()}' if self.net is not None else ''
         pf = f' (pinfunction "{dequote(self.pinFunction)}")' if self.pinFunction is not None else ''
@@ -636,6 +652,12 @@ class Pad():
             marginFound = True
             zc = f' (zone_connect {self.zoneConnect})'
 
+        if self.thermal_bridge_width is not None:
+            tbw = f' (thermal_bridge_width {self.thermal_bridge_width})'
+
+        if self.thermal_bridge_angle is not None:
+            tba = f' (thermal_bridge_angle {self.thermal_bridge_angle})'
+
         if self.thermalWidth is not None:
             marginFound = True
             tw = f' (thermal_width {self.thermalWidth})'
@@ -644,7 +666,7 @@ class Pad():
             marginFound = True
             tg = f' (thermal_gap {self.thermalGap})'
 
-        expression =  f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked} {position} (size {self.size.X} {self.size.Y}){drill}{ppty}{layers}{rul}{kel}{rrr}'
+        expression =  f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked} {position} (size {self.size.X} {self.size.Y}){drill}{ppty}{layers}{rul}{kel}{rrr}{zlc}'
         if champferFound:
             # Only one whitespace here as all temporary strings have at least one leading whitespace
             expression += f'\n{indents} {cr}{c}'
@@ -654,7 +676,7 @@ class Pad():
 
         if marginFound or schematicSymbolAssociated:
             # Only one whitespace here as all temporary strings have at least one leading whitespace
-            expression += f'\n{indents} {net}{pf}{pt}{smm}{spm}{spmr}{cl}{zc}{tw}{tg}'
+            expression += f'\n{indents} {net}{pf}{pt}{smm}{spm}{spmr}{cl}{zc}{tw}{tbw}{tba}{tg}'
 
         if self.customPadOptions is not None:
             expression += f'\n{indents}  {self.customPadOptions.to_sexpr()}'
@@ -1054,13 +1076,14 @@ class Footprint():
         version = f' (version {self.version})' if self.version is not None else ''
         generator = f' (generator "{self.generator}")' if self.generator is not None else ''
         generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
-        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}{tstamp}'
+        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}'
         if layerInFirstLine:
             expression += f' (layer "{dequote(self.layer)}")\n'
         else:
             expression += f'\n{indents}  (layer "{dequote(self.layer)}")\n'
+
+        expression += f'{indents} (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         if self.position is not None:
             angle = f' {self.position.angle}' if self.position.angle is not None else ''
@@ -1075,11 +1098,11 @@ class Footprint():
         if self.path is not None:
             expression += f'{indents}  (path "{dequote(self.path)}")\n'
 
-        if self.sheet_file != "":
-            expression += f'{indents}  (sheetfile "{self.sheet_file}")\n'
-
         if self.sheet_name != "":
             expression += f'{indents}  (sheetname "{self.sheet_name}")\n'
+
+        if self.sheet_file != "":
+            expression += f'{indents}  (sheetfile "{self.sheet_file}")\n'
 
         # Additional parameters used in board
         if self.autoplaceCost90 is not None:
@@ -1124,11 +1147,11 @@ class Footprint():
             expression += item.to_sexpr(indent=indent+2)
         for item in self.zones:
             expression += item.to_sexpr(indent=indent+2)
-        if self.embedded_fonts:
+        for item in self.groups:
+            expression += item.to_sexpr(indent=indent+2)
+        if self.embedded_fonts is not None:
             expression += f'{indents}  (embedded_fonts {self.embedded_fonts})\n'
         for item in self.models:
-            expression += item.to_sexpr(indent=indent+2)
-        for item in self.groups:
             expression += item.to_sexpr(indent=indent+2)
 
         expression += f'{indents}){endline}'

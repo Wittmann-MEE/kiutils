@@ -299,8 +299,10 @@ class GrLine():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the rectangle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the rectangle. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     tstamp: Optional[str] = None      # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the rectangle object"""
@@ -339,7 +341,9 @@ class GrLine():
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -360,7 +364,17 @@ class GrLine():
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         angle = f' (angle {self.angle}' if self.angle is not None else ''
 
-        return f'{indents}(gr_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){angle}{layer} (width {self.width}){locked}{tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {self.width})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return f'{indents}(gr_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){angle}{width}{locked}{layer}{tstamp}){endline}'
 
 @dataclass
 class GrRect():
@@ -379,8 +393,10 @@ class GrRect():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the rectangle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the rectangle. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     fill: Optional[str] = None
     """The optional ``fill`` toke defines how the rectangle is filled. Valid fill types are solid and none. If not defined, the rectangle is not filled"""
@@ -423,7 +439,9 @@ class GrRect():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -444,7 +462,17 @@ class GrRect():
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
-        return f'{indents}(gr_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{locked}{tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {self.width})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return f'{indents}(gr_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked}{layer}{tstamp}){endline}'
 
 @dataclass
 class GrCircle():
@@ -463,8 +491,10 @@ class GrCircle():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the circle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the circle. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     fill: Optional[str] = None
     """The optional ``fill`` toke defines how the circle is filled. Valid fill types are solid and none. If not defined, the rectangle is not filled"""
@@ -507,7 +537,8 @@ class GrCircle():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -529,7 +560,17 @@ class GrCircle():
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
-        return f'{indents}(gr_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{locked}{tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {self.width})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return f'{indents}(gr_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked}{layer}{tstamp}){endline}'
 
 @dataclass
 class GrArc():
@@ -551,8 +592,10 @@ class GrArc():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the arc resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the arc. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     tstamp: Optional[str] = None      # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the arc object."""
@@ -592,7 +635,8 @@ class GrArc():
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -613,7 +657,17 @@ class GrArc():
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
 
-        return f'{indents}(gr_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){locked}{tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {self.width})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return f'{indents}(gr_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){width}{locked}{layer}{tstamp}){endline}'
 
 @dataclass
 class GrPoly():
@@ -629,8 +683,10 @@ class GrPoly():
     coordinates: List[Position] = field(default_factory=list)
     """The ``layer`` token defines the canonical layer the polygon resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the polygon. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     fill: Optional[str] = None
     """The optional ``fill`` toke defines how the polygon is filled. Valid fill types are solid and none. If not defined, the rectangle is not filled"""
@@ -675,7 +731,8 @@ class GrPoly():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -709,9 +766,19 @@ class GrPoly():
         else:
             expression =  f'{indents}(gr_poly (pts\n'
 
+        width = ''
+        if self.width is not None:
+            width = f' (width {self.width})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
         for point in self.coordinates:
             expression += f'{indents}    (xy {point.X} {point.Y})\n'
-        expression += f'{indents}  ){layer} (width {self.width}){fill}{locked}{tstamp}){endline}'
+        expression += f'{indents}  ){width}{fill}{locked}{layer}{tstamp}){endline}'
         return expression
 
 @dataclass
@@ -727,8 +794,10 @@ class GrCurve():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the curve resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the curve. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     tstamp: Optional[str] = None      # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the curve object"""
@@ -768,7 +837,8 @@ class GrCurve():
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -792,8 +862,71 @@ class GrCurve():
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         locked = f' (locked yes)' if self.locked else ''
 
+        width = ''
+        if self.width is not None:
+            width = f' (width {self.width})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
         expression = f'{indents}(gr_curve (pts\n'
         for point in self.coordinates:
             expression += f'{indents}  (xy {point.X} {point.Y})\n'
-        expression += f'{indents}){layer} (width {self.width}){locked}{tstamp}){endline}'
+        expression += f'{indents}){width}{locked}{layer}{tstamp}){endline}'
         return expression
+
+@dataclass
+class GrStroke():
+
+    width: float = 0.0
+
+    type: str = ""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> GrStroke:
+        """Convert the given S-Expresstion into a GrStroke object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(stroke ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not stroke
+
+        Returns:
+            - KeepoutSettings: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'stroke':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'type': object.type = item[1]
+
+        return object
+
+    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
+        """Generate the S-Expression representing this object. When no coordinates are set
+        in the curve, the resulting S-Expression will be left empty.
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
+            - newline (bool): Adds a newline to the end of the output. Defaults to False.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        return f'{indents}(stroke (width {self.width}) (type {self.type})){endline}'

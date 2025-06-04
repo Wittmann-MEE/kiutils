@@ -260,7 +260,7 @@ class Schematic():
         generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
         expression =  f'{indents}(kicad_sch (version {self.version}) (generator "{self.generator}"){generator_version}\n'
         if self.uuid is not None:
-            expression += f'\n{indents}  (uuid {self.uuid})\n\n'
+            expression += f' (uuid "{self.uuid}"){endline}'
         expression += f'{self.paper.to_sexpr(indent+2)}'
         if self.titleBlock is not None:
             expression += f'\n{self.titleBlock.to_sexpr(indent+2)}'
@@ -273,6 +273,16 @@ class Schematic():
             expression += f'{indents}  )\n'
         else:
             expression += f'{indents}  (lib_symbols)\n'
+
+        if self.texts:
+            expression += '\n'
+            for item in self.texts:
+                expression += item.to_sexpr(indent + 2)
+
+        if self.textBoxes:
+            expression += '\n'
+            for item in self.textBoxes:
+                expression += item.to_sexpr(indent + 2)
 
         if self.junctions:
             expression += '\n'
@@ -309,15 +319,6 @@ class Schematic():
             for item in self.images:
                 expression += item.to_sexpr(indent+2)
 
-        if self.textBoxes:
-            expression += '\n'
-            for item in self.textBoxes:
-                expression += item.to_sexpr(indent+2)
-
-        if self.texts:
-            expression += '\n'
-            for item in self.texts:
-                expression += item.to_sexpr(indent+2)
 
         if self.labels:
             expression += '\n'

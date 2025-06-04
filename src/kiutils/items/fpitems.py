@@ -67,6 +67,10 @@ class FpText():
     
     Available since KiCad v7"""
 
+    # Available since KiCad v9
+
+    unlocked: bool = False
+
     @classmethod
     def from_sexpr(cls, exp: list) -> FpText:
         """Convert the given S-Expresstion into a FpText object
@@ -94,6 +98,7 @@ class FpText():
             if not isinstance(item, list):
                 raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
+            if item[0] == 'unlocked' and item[1] == 'yes': object.unlocked = True
             if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'layer': 
@@ -121,14 +126,15 @@ class FpText():
         endline = '\n' if newline else ''
 
         hide = ' (hide yes)' if self.hide else ''
-        unlocked = ' (unlocked yes)' if self.position.unlocked else ''
+        unlocked = ' (unlocked yes)' if self.unlocked else ''
+        unlocked_pos = ' (unlocked yes)' if self.position.unlocked else ''
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         ko = ' knockout' if self.knockout else ''
 
-        expression =  f'{indents}(fp_text {self.type} "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}{unlocked}) (layer "{dequote(self.layer)}"{ko}){hide}\n'
-        expression += f'{indents}  {self.effects.to_sexpr()}'
+        expression =  f'{indents}(fp_text {self.type} "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}{unlocked_pos}){unlocked} (layer "{dequote(self.layer)}"{ko}){hide}\n'
         if self.tstamp is not None:
-            expression += f'{indents}  (tstamp {self.tstamp})\n'
+            expression += f'{indents}  (uuid "{self.tstamp}")\n'
+        expression += f'{indents}  {self.effects.to_sexpr(indent+2)}'
         if self.renderCache is not None:
             expression += self.renderCache.to_sexpr(indent+2)
         expression += f'{indents}){endline}'
@@ -225,7 +231,7 @@ class FpLine():
         else:
             width = ''
 
-        return f'{indents}(fp_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (layer "{dequote(self.layer)}"){width}{tstamp}){endline}'
+        return f'{indents}(fp_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){width} (layer "{dequote(self.layer)}"){tstamp}){endline}'
 
 @dataclass
 class FpRect():
@@ -325,7 +331,7 @@ class FpRect():
         else:
             width = ''
 
-        return f'{indents}(fp_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (layer "{dequote(self.layer)}"){width}{fill}{locked}{tstamp}){endline}'
+        return f'{indents}(fp_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
 
 @dataclass
 class FpTextBox():
@@ -413,6 +419,7 @@ class FpTextBox():
             start_at = 2
 
         for item in exp[start_at:]:
+            if item[0] == 'unlocked' and item[1] == 'yes': object.locked = False
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'pts':
@@ -573,7 +580,7 @@ class FpCircle():
         else:
             width = ''
 
-        return f'{indents}(fp_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}) (layer "{dequote(self.layer)}"){width}{fill}{locked}{tstamp}){endline}'
+        return f'{indents}(fp_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
 
 @dataclass
 class FpArc():
@@ -671,7 +678,7 @@ class FpArc():
         else:
             width = ''
 
-        return f'{indents}(fp_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}) (layer "{dequote(self.layer)}"){width}{locked}{tstamp}){endline}'
+        return f'{indents}(fp_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){width}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
 
 @dataclass
 class FpPoly():
@@ -775,7 +782,7 @@ class FpPoly():
         expression = f'{indents}(fp_poly (pts\n'
         for point in self.coordinates:
             expression += f'{indents}    (xy {point.X} {point.Y})\n'
-        expression += f'{indents}  ) (layer "{dequote(self.layer)}"){width}{fill}{locked}{tstamp}){endline}'
+        expression += f'{indents}  ){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
         return expression
 
 @dataclass
@@ -963,6 +970,9 @@ class FpProperty:
             pos_angle = f' {pos.angle}' if pos.angle is not None else ''
             expression += f'{indents} (at {pos.X} {pos.Y}{pos_angle}){endline}'
 
+        if self.unlocked is not None:
+            expression += f'{indents} (unlocked yes){endline}'
+
         if self.layer is not None:
             layer = self.layer
             ko = ' knockout' if self.ko else ''
@@ -970,9 +980,6 @@ class FpProperty:
 
         if self.hide is not None:
             expression += f'{indents} (hide yes){endline}'
-
-        if self.unlocked is not None:
-            expression += f'{indents} (unlocked yes){endline}'
 
         if self.tstamp is not None:
             expression += f'{indents} (uuid "{dequote(self.tstamp)}"){endline}'

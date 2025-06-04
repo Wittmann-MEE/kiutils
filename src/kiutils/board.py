@@ -155,6 +155,7 @@ class Board():
             if item[0] == 'via': object.traceItems.append(Via().from_sexpr(item))
             if item[0] == 'zone': object.zones.append(Zone().from_sexpr(item))
             if item[0] == 'group': object.groups.append(Group().from_sexpr(item))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
 
         return object
 
@@ -332,6 +333,9 @@ class Board():
         # Groups
         for group in self.groups:
             expression += group.to_sexpr(indent+2)
+
+        if self.embedded_fonts is not None:
+            expression += f'{indents} (embedded_fonts {self.embedded_fonts})'
 
         expression += f'{indents}){endline}'
         return expression
