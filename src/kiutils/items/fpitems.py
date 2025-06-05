@@ -23,6 +23,8 @@ from typing import Optional, List
 from kiutils.items.common import RenderCache, Stroke, Position, Effects
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 # FIXME: Several classes have a ``stroke`` member. This feature will be introduced in KiCad 7 and
 #        has yet to be tested here.
 
@@ -110,6 +112,7 @@ class FpText():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -131,7 +134,8 @@ class FpText():
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         ko = ' knockout' if self.knockout else ''
 
-        expression =  f'{indents}(fp_text {self.type} "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}{unlocked_pos}){unlocked} (layer "{dequote(self.layer)}"{ko}){hide}\n'
+        expression =  (f'{indents}(fp_text {self.type} "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}'
+                       f'{posA}{unlocked_pos}){unlocked} (layer "{dequote(self.layer)}"{ko}){hide}\n')
         if self.tstamp is not None:
             expression += f'{indents}  (uuid "{self.tstamp}")\n'
         expression += f'{indents}  {self.effects.to_sexpr(indent+2)}'
@@ -231,7 +235,8 @@ class FpLine():
         else:
             width = ''
 
-        return f'{indents}(fp_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){width} (layer "{dequote(self.layer)}"){tstamp}){endline}'
+        return (f'{indents}(fp_line (start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}){width}'
+                f' (layer "{dequote(self.layer)}"){tstamp}){endline}')
 
 @dataclass
 class FpRect():
@@ -331,7 +336,8 @@ class FpRect():
         else:
             width = ''
 
-        return f'{indents}(fp_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
+        return (f'{indents}(fp_rect (start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}')
 
 @dataclass
 class FpTextBox():
@@ -463,8 +469,8 @@ class FpTextBox():
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         angle = f'(angle {self.angle}) ' if self.angle is not None else ''
-        start = f'(start {self.start.X} {self.start.Y}) ' if self.start is not None else ''
-        end = f'(end {self.end.X} {self.end.Y}) ' if self.end is not None else ''
+        start = f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) ' if self.start is not None else ''
+        end = f'(end {format_float(self.end.X)} {format_float(self.end.Y)}) ' if self.end is not None else ''
         locked = ' (locked yes)' if self.locked else ''
 
         expression = f'{indents}(fp_text_box{locked} "{dequote(self.text)}"\n'
@@ -580,7 +586,8 @@ class FpCircle():
         else:
             width = ''
 
-        return f'{indents}(fp_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
+        return (f'{indents}(fp_circle (center {format_float(self.center.X)} {format_float(self.center.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}')
 
 @dataclass
 class FpArc():
@@ -678,7 +685,9 @@ class FpArc():
         else:
             width = ''
 
-        return f'{indents}(fp_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){width}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
+        return (f'{indents}(fp_arc'
+                f' (start {format_float(self.start.X)} {format_float(self.start.Y)}) (mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}')
 
 @dataclass
 class FpPoly():
@@ -968,7 +977,7 @@ class FpProperty:
         if self.position is not None:
             pos = self.position
             pos_angle = f' {pos.angle}' if pos.angle is not None else ''
-            expression += f'{indents} (at {pos.X} {pos.Y}{pos_angle}){endline}'
+            expression += f'{indents} (at {format_float(pos.X)} {format_float(pos.Y)}{pos_angle}){endline}'
 
         if self.unlocked is not None:
             expression += f'{indents} (unlocked yes){endline}'

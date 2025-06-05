@@ -63,8 +63,8 @@ class Position():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.X = exp[1]
-        object.Y = exp[2]
+        object.X = float(exp[1])
+        object.Y = float(exp[2])
         if len(exp) >= 4:
             # More than four components means X, Y, and either angle or unlocked are present
             if exp[3] != 'unlocked':
@@ -246,9 +246,11 @@ class Stroke():
         for item in exp[1:]:
             if not isinstance(item, list):
                 raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'width': object.width = item[1]
             if item[0] == 'type':  object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -338,6 +340,7 @@ class Font():
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
             if item[0] == 'bold' and item[1] == 'yes': object.bold = True
             if item[0] == 'italic' and item[1] == 'yes': object.italic = True
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -407,6 +410,7 @@ class Justify():
             if item == 'left' or item == 'right' or item == 'center': object.horizontally = item
             if item == 'top' or item == 'bottom': object.vertically = item
             if item == 'mirror': object.mirror = True
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -482,10 +486,12 @@ class Effects():
         for item in exp[1:]:
             if not isinstance(item, list):
                 raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'font': object.font = Font().from_sexpr(item)
             if item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             if item[0] == 'href': object.href = item[1]
+
         return object
 
     def to_sexpr(self, indent=0, newline=True) -> str:
@@ -691,7 +697,8 @@ class PageSettings():
                 if not isinstance(item, list):
                     raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
-                if item[0] == 'portrait' and item[1] == 'yes': object.portrait = True
+                if item[0] == 'portrait': object.portrait = True
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -711,7 +718,7 @@ class PageSettings():
         endline = '\n' if newline else ''
 
         width, height = '', ''
-        portrait = ' (portrait yes)' if self.portrait else ''
+        portrait = ' portrait' if self.portrait else ''
         if self.paperSize == 'User':
             if self.width is None or self.height is None:
                 raise Exception("Page size set to 'User' but width or height not specified")
@@ -770,6 +777,7 @@ class TitleBlock():
             if item[0] == 'rev': object.revision = item[1]
             if item[0] == 'company': object.company = item[1]
             if item[0] == 'comment': object.comments.update({item[1]: item[2]})
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -863,6 +871,7 @@ class Property():
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'show_name': object.showName = True
+
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -1139,6 +1148,7 @@ class Image():
             if item[0] == 'data':
                 for b64part in item[1:]:
                     object.data.append(b64part)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:

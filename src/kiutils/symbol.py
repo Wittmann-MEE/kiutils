@@ -355,11 +355,12 @@ class Symbol():
     """The ``units`` can be one or more child symbol tokens embedded in a parent symbol"""
 
     # Available since KiCad v9
+    # TODO Update docs
 
-    # TODO Missing docs
-    excludeFromSim: Optional[str] = None
+    exclude_from_sim: Optional[str] = None
 
     embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Symbol:
@@ -385,7 +386,7 @@ class Symbol():
         object.libId = exp[1]
         for item in exp[2:]:
             if item[0] == 'extends': object.extends = item[1]
-            if item[0] == 'exclude_from_sim': object.excludeFromSim = item[1]
+            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
             if item[0] == 'pin_numbers':
                 for prop in item[1:]:
                     if not isinstance(prop, list):
@@ -477,7 +478,7 @@ class Symbol():
             obtext = 'yes' if self.onBoard else 'no'
         onboard = f' (on_board {obtext})' if self.onBoard is not None else ''
         power = f' (power)' if self.isPower else ''
-        exclude_from_sim = f' (exclude_from_sim {self.excludeFromSim})' if self.excludeFromSim is not None else ''
+        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
         pnhide = f' (hide yes)' if self.pinNamesHide else ''
         pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
         pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''

@@ -445,7 +445,7 @@ class Text():
     """The optional ``uuid`` defines the universally unique identifier. Defaults to ``None.``"""
 
     # Available since KiCad v9
-    # TODO Missing docs
+    # TODO Update docs
 
     exclude_from_sim: Optional[str] = None
 
@@ -543,7 +543,7 @@ class TextBox():
     """The optional ``uuid`` defines the universally unique identifier. Defaults to ``None.``"""
 
     # Available since KiCad v9
-    # TODO Missing docs
+    # TODO Update docs
 
     exclude_from_sim: Optional[str] = None
 
@@ -603,7 +603,7 @@ class TextBox():
         exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
 
         expression =  f'{indents}(text_box "{dequote(self.text)}"{exclude_from_sim}\n'
-        expression += f'{indents}  (at {self.position.X} {self.position.Y}{posA}) (size {self.size.X} {self.size.Y})\n'
+        expression += f'{indents} (at {self.position.X} {self.position.Y}{posA}) (size {self.size.X} {self.size.Y})\n'
         expression += f'{indents} (margins {" ".join(map(str, self.margins))}){endline}'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
@@ -1086,9 +1086,9 @@ class SchematicSymbol():
     Available since KiCad v7."""
 
     # Available since KiCad v9
+    # TODO Update docs
 
-    # TODO Missing docs
-    excludeFromSim: Optional[str] = None
+    exclude_from_sim: Optional[str] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> SchematicSymbol:
@@ -1117,7 +1117,7 @@ class SchematicSymbol():
             if item[0] == 'lib_name': object.libName = item[1]
             if item[0] == 'uuid': object.uuid = item[1]
             if item[0] == 'unit': object.unit = item[1]
-            if item[0] == 'exclude_from_sim': object.excludeFromSim = item[1]
+            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
             if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
             if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
             if item[0] == 'dnp': object.dnp = True if item[1] == 'yes' else False
@@ -1149,7 +1149,7 @@ class SchematicSymbol():
         inBom = 'yes' if self.inBom else 'no'
         onBoard = 'yes' if self.onBoard else 'no'
         mirror = f' (mirror {self.mirror})' if self.mirror is not None else ''
-        exclude_from_sim = f' (exclude_from_sim {self.excludeFromSim})' if self.excludeFromSim is not None else ''
+        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
         unit = f' (unit {self.unit})' if self.unit is not None else ''
         lib_name = f' (lib_name "{dequote(self.libName)}")' if self.libName is not None else ''
         if self.dnp is not None:
@@ -1421,7 +1421,7 @@ class HierarchicalSheet():
     Available since KiCad v7."""
 
     # Available since KiCad v9
-    # TODO Missing docs
+    # TODO Update docs
 
     exclude_from_sim: Optional[str] = None
 

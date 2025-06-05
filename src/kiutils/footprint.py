@@ -30,6 +30,8 @@ from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.utils.strings import dequote, remove_prefix
 from kiutils.misc.config import *
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class Attributes():
     """The ``attr`` token defines the list of attributes of a footprint.
@@ -92,6 +94,7 @@ class Attributes():
             if item == 'exclude_from_pos_files': object.excludeFromPosFiles = True
             if item == 'exclude_from_bom': object.excludeFromBom = True
             if item == 'allow_missing_courtyard': object.allowMissingCourtyard = True
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -180,20 +183,16 @@ class Model():
         object = cls()
         object.path = exp[1]
 
-        # if exp[2] == 'hide':
-        #     object.hide = True
-
         for e in exp[2:]:
-            if e[0] == 'hide' and e[1] == 'yes':
-                object.hide = True
-            if e[0] == 'opacity':
-                object.opacity = e[1]
-            elif e[0] == 'offset':
-                object.pos = Coordinate.from_sexpr(e[1])
-            elif e[0] == 'scale':
-                object.scale = Coordinate.from_sexpr(e[1])
-            elif e[0] == 'rotate':
-                object.rotate = Coordinate.from_sexpr(e[1])
+            if not isinstance(e, list):
+                raise Exception(f"Property '{e}' which is not in key -> value mapping. Expression: {exp}")
+
+            if e[0] == 'hide' and e[1] == 'yes': object.hide = True
+            if e[0] == 'opacity': object.opacity = e[1]
+            elif e[0] == 'offset': object.pos = Coordinate.from_sexpr(e[1])
+            elif e[0] == 'scale': object.scale = Coordinate.from_sexpr(e[1])
+            elif e[0] == 'rotate': object.rotate = Coordinate.from_sexpr(e[1])
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -332,9 +331,13 @@ class PadOptions():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'clearance': object.clearance = item[1]
             if item[0] == 'anchor': object.anchor = item[1]
+
         return object
 
     def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
@@ -480,13 +483,13 @@ class Pad():
     a custom pad"""
 
     # Available since KiCad v9
-    # TODO missing docs
+    # TODO Update docs
 
     zone_layer_connections: bool = False
 
-    thermal_bridge_width: Optional[int] = None
+    thermal_bridge_width: Optional[float] = None
 
-    thermal_bridge_angle: Optional[int] = None
+    thermal_bridge_angle: Optional[float] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Pad:
@@ -564,8 +567,10 @@ class Pad():
 
                     # XXX: Are dimentions even implemented here?
                     if primitive[0] == 'dimension': raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
-            if item[0] == 'thermal_bridge_width': object.thermal_bridge_width = int(item[1])
-            if item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = int(item[1])
+
+            if item[0] == 'zone_layer_connections': object.zone_layer_connections = True
+            if item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
+            if item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
 
 
         return object
@@ -587,15 +592,7 @@ class Pad():
 
         layers = ' (layers'
         for layer in self.layers:
-            # Update: seems KiCad now handles this properly - revert back to this if issues are seen
-            # # For some reason KiCad does not escape a layer with double-quotes if it has a
-            # # wildcard (*) or an ampersant (&) in it
-            # if "*." in layer or "&" in layer:
-            #     layers += f' {layer}'
-            # else:
-            #     layers += f' "{dequote(layer)}"'
             layers += f' "{dequote(layer)}"'
-
         layers += ')'
 
         locked = ' (locked yes)' if self.locked else ''
@@ -628,9 +625,9 @@ class Pad():
             cr = f' (chamfer_ratio {self.chamferRatio})'
 
         if self.position.angle is not None:
-            position = f'(at {self.position.X} {self.position.Y} {self.position.angle})'
+            position = f'(at {format_float(self.position.X)} {format_float(self.position.Y)} {self.position.angle})'
         else:
-            position = f'(at {self.position.X} {self.position.Y})'
+            position = f'(at {format_float(self.position.X)} {format_float(self.position.Y)})'
 
         if self.solderMaskMargin is not None:
             marginFound = True
@@ -874,7 +871,7 @@ class Footprint():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[str] = None
-    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+    """The ``embedded_fonts`` token defines if the embedded fonts are used in the footprint."""
 
     sheet_name: str = ""
 
@@ -1087,7 +1084,7 @@ class Footprint():
 
         if self.position is not None:
             angle = f' {self.position.angle}' if self.position.angle is not None else ''
-            expression += f'{indents}  (at {self.position.X} {self.position.Y}{angle})\n'
+            expression += f'{indents}  (at {format_float(self.position.X)} {format_float(self.position.Y)}{angle})\n'
         if self.description is not None:
             expression += f'{indents}  (descr "{dequote(self.description)}")\n'
         if self.tags is not None:

@@ -341,7 +341,7 @@ class GrLine():
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
@@ -439,7 +439,7 @@ class GrRect():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
@@ -537,7 +537,7 @@ class GrCircle():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
@@ -635,7 +635,7 @@ class GrArc():
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
@@ -731,7 +731,7 @@ class GrPoly():
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
@@ -837,7 +837,7 @@ class GrCurve():
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
@@ -910,7 +910,7 @@ class GrStroke():
             if not isinstance(item, list):
                 raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
-            if item[0] == 'width': object.width = float(item[1])
+            if item[0] == 'width': object.width = item[1]
             if item[0] == 'type': object.type = item[1]
 
         return object

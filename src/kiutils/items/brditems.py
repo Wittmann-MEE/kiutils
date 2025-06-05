@@ -553,26 +553,25 @@ class PlotSettings():
     where the plot files will be saved"""
 
     # Available since KiCad v9
+    # TODO Update docs
 
-    # TODO missing docs
+    pdf_front_fp_property_popups: Optional[str] = None
 
-    pdf_front_fp_property_popups: str = "yes"
+    pdf_back_fp_property_popups: Optional[str] = None
 
-    pdf_back_fp_property_popups: str = "yes"
+    pdf_metadata: Optional[str] = None
 
-    pdf_metadata: str = "yes"
+    pdf_single_document: Optional[str] = None
 
-    pdf_single_document: str = "no"
+    plot_black_and_white: Optional[str] = None
 
-    plot_black_and_white: str = "yes"
+    hide_dnp_on_fab: Optional[str] = None
 
-    hide_dnp_on_fab: str = "no"
+    crossout_dnp_on_fab: Optional[str] = None
 
-    crossout_dnp_on_fab: str = "yes"
+    sketch_dnp_on_fab: Optional[str] = None
 
-    sketch_dnp_on_fab: str = "yes"
-
-    plot_pad_numbers: str = "no"
+    plot_pad_numbers: Optional[str] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PlotSettings:
@@ -642,7 +641,7 @@ class PlotSettings():
             if item[0] == 'hidednponfab': object.hide_dnp_on_fab = item[1]
             if item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = item[1]
             if item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = item[1]
-            if item[0] == 'plotpadnumbers': object.plotpadnumbers = item[1]
+            if item[0] == 'plotpadnumbers': object.plot_pad_numbers = item[1]
 
         return object
 
@@ -684,21 +683,30 @@ class PlotSettings():
         expression += f'{indents}  (hpglpennumber {self.hpglPenNumber})\n'
         expression += f'{indents}  (hpglpenspeed {self.hpglPenSpeed})\n'
         expression += f'{indents}  (hpglpendiameter {float(self.hpglPenDiameter):.6f})\n'
-        expression += f'{indents}  (pdf_front_fp_property_popups {self.pdf_front_fp_property_popups})\n'
-        expression += f'{indents}  (pdf_back_fp_property_popups {self.pdf_back_fp_property_popups})\n'
-        expression += f'{indents}  (pdf_metadata {self.pdf_metadata})\n'
-        expression += f'{indents}  (pdf_single_document {self.pdf_single_document})\n'
+        if self.pdf_front_fp_property_popups is not None:
+            expression += f'{indents}  (pdf_front_fp_property_popups {self.pdf_front_fp_property_popups})\n'
+        if self.pdf_back_fp_property_popups is not None:
+            expression += f'{indents}  (pdf_back_fp_property_popups {self.pdf_back_fp_property_popups})\n'
+        if self.pdf_metadata is not None:
+            expression += f'{indents}  (pdf_metadata {self.pdf_metadata})\n'
+        if self.pdf_single_document is not None:
+            expression += f'{indents}  (pdf_single_document {self.pdf_single_document})\n'
         expression += f'{indents}  (dxfpolygonmode {self.dxfPolygonMode})\n'
         expression += f'{indents}  (dxfimperialunits {self.dxfImperialUnits})\n'
         expression += f'{indents}  (dxfusepcbnewfont {self.dxfUsePcbnewFont})\n'
         expression += f'{indents}  (psnegative {self.psNegative})\n'
         expression += f'{indents}  (psa4output {self.psA4Output})\n'
-        expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
+        if self.plot_black_and_white is not None:
+            expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
         expression += f'{indents}  (sketchpadsonfab {self.sketchPadsOnFab})\n'
-        expression += f'{indents}  (plotpadnumbers {self.plot_pad_numbers})\n'
-        expression += f'{indents}  (hidednponfab {self.hide_dnp_on_fab})\n'
-        expression += f'{indents}  (sketchdnponfab {self.sketch_dnp_on_fab})\n'
-        expression += f'{indents}  (crossoutdnponfab {self.crossout_dnp_on_fab})\n'
+        if self.plot_pad_numbers is not None:
+            expression += f'{indents}  (plotpadnumbers {self.plot_pad_numbers})\n'
+        if self.hide_dnp_on_fab is not None:
+            expression += f'{indents}  (hidednponfab {self.hide_dnp_on_fab})\n'
+        if self.sketch_dnp_on_fab is not None:
+            expression += f'{indents}  (sketchdnponfab {self.sketch_dnp_on_fab})\n'
+        if self.crossout_dnp_on_fab is not None:
+            expression += f'{indents}  (crossoutdnponfab {self.crossout_dnp_on_fab})\n'
         expression += f'{indents}  (plotreference {self.plotReference})\n' if self.plotReference == 'yes' else ''
         expression += f'{indents}  (plotvalue {self.plotValue})\n' if self.plotValue == 'yes' else ''
         expression += f'{indents}  (plotinvisibletext {self.plotInvisibleText})\n' if self.plotInvisibleText == 'yes' else ''
@@ -971,7 +979,7 @@ class Via():
     """The ``tstamp`` token defines the unique identifier of the via"""
 
     # Available since KiCad v9
-    # TODO missing docs
+    # TODO Update docs
 
     zone_layer_connections: bool = False
 
@@ -998,8 +1006,11 @@ class Via():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                if item == 'micro' or item == 'blind':
+                if item in ['micro','blind']:
                     object.type = item
+                    continue
+                elif item == 'zone_layer_connections':
+                    object.zone_layer_connections = True
                     continue
                 else:
                     raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")

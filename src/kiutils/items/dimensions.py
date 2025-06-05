@@ -94,7 +94,7 @@ class DimensionFormat():
             if item[0] == 'units_format': object.unitsFormat = item[1]
             if item[0] == 'precision': object.precision = item[1]
             if item[0] == 'override_value': object.overrideValue = item[1]
-            pass
+
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -160,10 +160,14 @@ class DimensionStyle():
     dimension crossbar. When false, the dimension text is shown horizontally regardless of the
     orientation of the dimension."""
 
-    # Available since KiCad v9
-    # TODO missing docs
+    # Available after KiCad v7
 
     arrow_direction: Optional[str] = None
+    """The ``arrow_direction`` token attribute defines the direction of the dimension arrows.
+    Only aligned and orthogonal dimensions support this attribute. Valid directions are as follows:
+    outward: The arrows face outward, pointing away from midpoint of the crossbar.
+    inward: The arrows face inward, pointing towards the midpoint of the crossbar.
+    """
 
     @classmethod
     def from_sexpr(cls, exp: list) -> DimensionStyle:
