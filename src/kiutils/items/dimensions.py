@@ -21,7 +21,10 @@ from typing import Optional, List
 
 from kiutils.items.common import Position
 from kiutils.items.gritems import GrText
+from kiutils.utils.format_float import format_float
 from kiutils.utils.strings import dequote
+
+from kiutils.utils.format_float import format_float
 
 @dataclass
 class DimensionFormat():
@@ -332,7 +335,7 @@ class Dimension():
 
         points = ''
         for point in self.pts:
-            points = f'{points} (xy {point.X} {point.Y})'
+            points = f'{points} (xy {format_float(point.X)} {format_float(point.Y)})'
         if len(points) == 0:
             raise Exception("Number of points must not be zero")
 

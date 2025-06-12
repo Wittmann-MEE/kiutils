@@ -23,6 +23,8 @@ from typing import Optional, List
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class GrText():
     """The ``gr_text`` token defines a graphical text.
@@ -118,7 +120,7 @@ class GrText():
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         locked = f' (locked yes)' if self.locked else ''
 
-        expression =  f'{indents}(gr_text "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}){layer}{locked}{tstamp}\n'
+        expression =  f'{indents}(gr_text "{dequote(self.text)}"{locked} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){layer}{tstamp}\n'
         expression += f'{indents}  {self.effects.to_sexpr()}'
         if self.renderCache is not None:
             expression += self.renderCache.to_sexpr(indent+2)
@@ -366,7 +368,7 @@ class GrLine():
 
         width = ''
         if self.width is not None:
-            width = f' (width {self.width})'
+            width = f' (width {format_float(self.width)})'
             # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -374,7 +376,9 @@ class GrLine():
         if self.stroke is not None:
             width = f' {self.stroke.to_sexpr()}'
 
-        return f'{indents}(gr_line (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){angle}{width}{locked}{layer}{tstamp}){endline}'
+        return (f'{indents}(gr_line '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{angle}{width}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrRect():
@@ -464,7 +468,7 @@ class GrRect():
 
         width = ''
         if self.width is not None:
-            width = f' (width {self.width})'
+            width = f' (width {format_float(self.width)})'
             # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -472,7 +476,9 @@ class GrRect():
         if self.stroke is not None:
             width = f' {self.stroke.to_sexpr()}'
 
-        return f'{indents}(gr_rect (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked}{layer}{tstamp}){endline}'
+        return (f'{indents}(gr_rect '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{fill}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrCircle():
@@ -562,7 +568,7 @@ class GrCircle():
 
         width = ''
         if self.width is not None:
-            width = f' (width {self.width})'
+            width = f' (width {format_float(self.width)})'
             # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -570,7 +576,9 @@ class GrCircle():
         if self.stroke is not None:
             width = f' {self.stroke.to_sexpr()}'
 
-        return f'{indents}(gr_circle (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){width}{fill}{locked}{layer}{tstamp}){endline}'
+        return (f'{indents}(gr_circle '
+                f'(center {format_float(self.center.X)} {format_float(self.center.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{fill}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrArc():
@@ -659,7 +667,7 @@ class GrArc():
 
         width = ''
         if self.width is not None:
-            width = f' (width {self.width})'
+            width = f' (width {format_float(self.width)})'
             # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -667,7 +675,11 @@ class GrArc():
         if self.stroke is not None:
             width = f' {self.stroke.to_sexpr()}'
 
-        return f'{indents}(gr_arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){width}{locked}{layer}{tstamp}){endline}'
+        return (f'{indents}(gr_arc '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) '
+                f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) '
+                f'(end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrPoly():
@@ -768,7 +780,7 @@ class GrPoly():
 
         width = ''
         if self.width is not None:
-            width = f' (width {self.width})'
+            width = f' (width {format_float(self.width)})'
             # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -777,7 +789,7 @@ class GrPoly():
             width = f' {self.stroke.to_sexpr()}'
 
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  ){width}{fill}{locked}{layer}{tstamp}){endline}'
         return expression
 
@@ -864,7 +876,7 @@ class GrCurve():
 
         width = ''
         if self.width is not None:
-            width = f' (width {self.width})'
+            width = f' (width {format_float(self.width)})'
             # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -874,7 +886,7 @@ class GrCurve():
 
         expression = f'{indents}(gr_curve (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}  (xy {point.X} {point.Y})\n'
+            expression += f'{indents}  (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}){width}{locked}{layer}{tstamp}){endline}'
         return expression
 
@@ -929,4 +941,4 @@ class GrStroke():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        return f'{indents}(stroke (width {self.width}) (type {self.type})){endline}'
+        return f'{indents}(stroke (width {format_float(self.width)}) (type {self.type})){endline}'

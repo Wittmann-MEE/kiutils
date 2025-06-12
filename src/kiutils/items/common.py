@@ -22,6 +22,8 @@ from typing import Optional, List, Dict
 
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class Position():
     """The ``position`` token defines the positional coordinates and rotation of an object.
@@ -267,7 +269,7 @@ class Stroke():
         endline = '\n' if newline else ''
         color = f' {self.color.to_sexpr()}' if self.color is not None else ''
         the_type = f' (type {self.type})' if self.type is not None else ''
-        return f'{indents}(stroke (width {self.width}){the_type}{color}){endline}'
+        return f'{indents}(stroke (width {format_float(self.width)}){the_type}{color}){endline}'
 
 
 
@@ -887,11 +889,11 @@ class Property():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         id = f' (id {self.id})' if self.id is not None else ''
         sn = ' (show_name)' if self.showName else ''
 
-        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {self.position.X} {self.position.Y}{posA}){sn}'
+        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}'
         if self.effects is not None:
             expression += f'\n{self.effects.to_sexpr(indent+2)}'
             expression += f'{indents}){endline}'
@@ -956,7 +958,7 @@ class RenderCachePolygon():
             if i % 4 == 0:
                 expression += f'\n'
             expression += f'{indents}    '
-            expression += f'(xy {point.X} {point.Y})'
+            expression += f'(xy {format_float(point.X)} {format_float(point.Y)})'
 
         # NOTE: This expects the length of the points array to be a multiple of four to get the
         #       formatting right.

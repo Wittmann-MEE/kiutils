@@ -24,6 +24,8 @@ from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.utils.strings import dequote
 from kiutils.misc.config import *
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class SymbolAlternativePin():
     pinName: str = ""
@@ -176,11 +178,12 @@ class SymbolPin():
         newLineAdded = False
 
         hide = ' (hide yes)' if self.hide else ''
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         nameEffects = f' {self.nameEffects.to_sexpr(newline=False)}' if self.nameEffects is not None else ''
         numberEffects = f' {self.numberEffects.to_sexpr(newline=False)}' if self.numberEffects is not None else ''
 
-        expression =  f'{indents}(pin {self.electricalType} {self.graphicalStyle} (at {self.position.X} {self.position.Y}{posA}) (length {self.length}){hide}'
+        expression =  (f'{indents}(pin {self.electricalType} {self.graphicalStyle} '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (length {format_float(self.length)}){hide}')
         
         # Since KiCad v7 nightly: Missing name and number effects print both other tokens into 
         # the same line.

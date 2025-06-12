@@ -21,6 +21,8 @@ from typing import Optional, List
 from kiutils.items.common import Position
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class GeneralSettings():
     """The ``general`` token define general information about the board
@@ -840,8 +842,8 @@ class SetupData():
         if self.allow_soldermask_bridges_in_footprints is not None:
             expression += f'{indents_nest}(allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
         if len(self.tenting) > 0:                       expression += f'{indents_nest}(tenting {' '.join(self.tenting)})\n'
-        if self.auxAxisOrigin is not None:              expression += f'{indents_nest}(aux_axis_origin {self.auxAxisOrigin.X} {self.auxAxisOrigin.Y})\n'
-        if self.gridOrigin is not None:                 expression += f'{indents_nest}(grid_origin {self.gridOrigin.X} {self.gridOrigin.Y})\n'
+        if self.auxAxisOrigin is not None:              expression += f'{indents_nest}(aux_axis_origin {format_float(self.auxAxisOrigin.X)} {format_float(self.auxAxisOrigin.Y)})\n'
+        if self.gridOrigin is not None:                 expression += f'{indents_nest}(grid_origin {format_float(self.gridOrigin.X)} {format_float(self.gridOrigin.Y)})\n'
         if len(self.covering) > 0:                      expression += f'{indents_nest}(covering {' '.join(self.covering)})\n'
         if len(self.plugging) > 0:                      expression += f'{indents_nest}(plugging {' '.join(self.plugging)})\n'
         if len(self.capping) > 0:                       expression += f'{indents_nest}(capping {' '.join(self.capping)})\n'
@@ -932,7 +934,9 @@ class Segment():
         endline = '\n' if newline else ''
         locked = ' (locked yes)' if self.locked else ''
 
-        return f'{indents}(segment (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}) (width {self.width}){locked} (layer "{dequote(self.layer)}") (net {self.net}) (uuid "{self.tstamp}")){endline}'
+        return (f'{indents}(segment '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}) (width {format_float(self.width)})'
+                f'{locked} (layer "{dequote(self.layer)}") (net {self.net}) (uuid "{self.tstamp}")){endline}')
 
 @dataclass
 class Via():
@@ -1057,7 +1061,9 @@ class Via():
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         zone_layer_connections = ' (zone_layer_connections)' if self.zone_layer_connections else ''
 
-        return f'{indents}(via{type} (at {self.position.X} {self.position.Y}) (size {self.size}) (drill {self.drill}) (layers{layers}){rum}{kel}{locked}{free}{zone_layer_connections} (net {self.net}){tstamp}){endline}'
+        return (f'{indents}(via{type} '
+                f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) (size {format_float(self.size)}) (drill {self.drill}) '
+                f'(layers{layers}){rum}{kel}{locked}{free}{zone_layer_connections} (net {self.net}){tstamp}){endline}')
 
 @dataclass
 class Arc():

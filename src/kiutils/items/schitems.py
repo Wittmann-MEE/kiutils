@@ -22,6 +22,8 @@ from typing import Optional, List, Dict
 from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class Junction():
     """The ``junction`` token defines a junction in the schematic
@@ -85,7 +87,9 @@ class Junction():
         indents = ' '*indent
         endline = '\n' if newline else ''
         uuid = f' (uuid "{self.uuid}")\n' if self.uuid is not None else ''
-        expression =  f'{indents}(junction (at {self.position.X} {self.position.Y}) (diameter {self.diameter}) {self.color.to_sexpr()}{uuid}{indents}){endline}'
+        expression =  (f'{indents}(junction '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) (diameter {format_float(self.diameter)}) '
+                       f'{self.color.to_sexpr()}{uuid}{indents}){endline}')
         return expression
 
 @dataclass
@@ -344,7 +348,7 @@ class Connection():
 
         points = ''
         for point in self.points:
-            points += f' (xy {point.X} {point.Y})'
+            points += f' (xy {format_float(point.X)} {format_float(point.Y)})'
 
         expression =  f'{indents}({self.type} (pts{points})\n'
         expression += self.stroke.to_sexpr(indent+2)
@@ -599,11 +603,11 @@ class TextBox():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
 
         expression =  f'{indents}(text_box "{dequote(self.text)}"{exclude_from_sim}\n'
-        expression += f'{indents} (at {self.position.X} {self.position.Y}{posA}) (size {self.size.X} {self.size.Y})\n'
+        expression += f'{indents} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n'
         expression += f'{indents} (margins {" ".join(map(str, self.margins))}){endline}'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
@@ -679,10 +683,10 @@ class LocalLabel():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         fieldsAutoplaced = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
-        expression =  f'{indents}(label "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}){fieldsAutoplaced}\n'
+        expression =  f'{indents}(label "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fieldsAutoplaced}\n'
         expression += self.effects.to_sexpr(indent+2)
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
@@ -765,10 +769,10 @@ class GlobalLabel():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         fa = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
-        expression =  f'{indents}(global_label "{dequote(self.text)}" (shape {self.shape}) (at {self.position.X} {self.position.Y}{posA}){fa}\n'
+        expression =  f'{indents}(global_label "{dequote(self.text)}" (shape {self.shape}) (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fa}\n'
         expression += self.effects.to_sexpr(indent+2)
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
@@ -849,10 +853,11 @@ class HierarchicalLabel():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         fieldsAutoplaced = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
-        expression =  f'{indents}(hierarchical_label "{dequote(self.text)}" (shape {self.shape}) (at {self.position.X} {self.position.Y}{posA}){fieldsAutoplaced}\n'
+        expression =  (f'{indents}(hierarchical_label "{dequote(self.text)}" (shape {self.shape}) '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fieldsAutoplaced}\n')
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -1144,7 +1149,7 @@ class SchematicSymbol():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         fa = f' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
         inBom = 'yes' if self.inBom else 'no'
         onBoard = 'yes' if self.onBoard else 'no'
@@ -1157,7 +1162,10 @@ class SchematicSymbol():
         else:
             dnp = ''
 
-        expression =  f'{indents}(symbol{lib_name} (lib_id "{dequote(self.libId)}") (at {self.position.X} {self.position.Y}{posA}){mirror}{unit}{exclude_from_sim}\n'
+        expression =  (f'{indents}(symbol{lib_name} (lib_id "{dequote(self.libId)}") '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})'
+                       f'{mirror}{unit}{exclude_from_sim}\n')
+
         expression += f'{indents}  (in_bom {inBom}) (on_board {onBoard}){dnp}{fa}\n'
         if self.uuid:
             expression += f'{indents}  (uuid "{self.uuid}")\n'

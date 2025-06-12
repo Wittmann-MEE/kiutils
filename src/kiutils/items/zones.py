@@ -23,6 +23,7 @@ from kiutils.items.common import Position
 from kiutils.utils.strings import dequote
 from xlwings.constants import Placement
 
+from kiutils.utils.format_float import format_float
 
 @dataclass
 class KeepoutSettings():
@@ -314,7 +315,7 @@ class ZonePolygon():
         expression =  f'{indents}(polygon\n'
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += f'{indents})\n'
         return expression
@@ -393,7 +394,7 @@ class FilledPolygon():
             expression += f'{indents}  (island)\n'
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += f'{indents})\n'
         return expression
@@ -467,7 +468,7 @@ class FillSegments():
         expression += f'{indents}  (layer "{dequote(self.layer)}")\n'
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += f'{indents})\n'
         return expression

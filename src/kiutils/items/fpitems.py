@@ -790,7 +790,7 @@ class FpPoly():
 
         expression = f'{indents}(fp_poly (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  ){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
         return expression
 

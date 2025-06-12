@@ -62,6 +62,11 @@ class Attributes():
     
     Available since KiCad 7"""
 
+    # Available since KiCad v9
+    # TODO Update docs
+
+    dnp: Optional[bool] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Attributes:
         """Convert the given S-Expresstion into a Attributes object
@@ -94,6 +99,7 @@ class Attributes():
             if item == 'exclude_from_pos_files': object.excludeFromPosFiles = True
             if item == 'exclude_from_bom': object.excludeFromBom = True
             if item == 'allow_missing_courtyard': object.allowMissingCourtyard = True
+            if item == 'dnp': object.dnp = True
 
         return object
 
@@ -131,6 +137,7 @@ class Attributes():
         if self.excludeFromPosFiles: expression += ' exclude_from_pos_files'
         if self.excludeFromBom: expression += ' exclude_from_bom'
         if self.allowMissingCourtyard: expression += ' allow_missing_courtyard'
+        if self.dnp: expression += ' dnp'
         expression += f'){endline}'
         return expression
 
@@ -229,7 +236,7 @@ class DrillDefinition():
     oval: bool = False
     """The ``oval`` token defines if the drill is oval instead of round"""
 
-    diameter: float = 0.0
+    diameter: Optional[float] = None
     """The ``diameter`` attribute defines the drill diameter"""
 
     width: Optional[float] = None
@@ -259,20 +266,21 @@ class DrillDefinition():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        # Depending on the ``oval`` token, the fields may be shifted ..
-        if exp[1] == 'oval':
-            object.oval = True
-            object.diameter = exp[2]
-            object.width = exp[3]
-        else:
-            object.diameter = exp[1]
-            if len(exp) > 2:
-                object.width = exp[2]
 
-        # The ``offset`` token may not be given
-        for item in exp:
-            if type(item) != type([]): continue
-            if item[0] == 'offset': object.offset = Position().from_sexpr(item)
+        # If offset is given, others won't be present
+        if isinstance(exp[1], list):
+            object.offset = Position().from_sexpr(exp[1])
+        else:
+            # Depending on the ``oval`` token, the fields may be shifted ..
+            if exp[1] == 'oval':
+                object.oval = True
+                object.diameter = exp[2]
+                object.width = exp[3]
+            else:
+                object.diameter = exp[1]
+                if len(exp) > 2:
+                    object.width = exp[2]
+
         return object
 
     def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
@@ -288,11 +296,12 @@ class DrillDefinition():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
+        diameter = f' {self.diameter}' if self.diameter is not None else ''
         oval = f' oval' if self.oval else ''
         width = f' {self.width}' if self.oval and self.width is not None else ''
-        offset = f' (offset {self.offset.X} {self.offset.Y})' if self.offset is not None else ''
+        offset = f' (offset {format_float(self.offset.X)} {format_float(self.offset.Y)})' if self.offset is not None else ''
 
-        return f'{indents}(drill{oval} {self.diameter}{width}{offset}){endline}'
+        return f'{indents}(drill{oval}{diameter}{width}{offset}){endline}'
 
 @dataclass
 class PadOptions():
@@ -625,9 +634,9 @@ class Pad():
             cr = f' (chamfer_ratio {self.chamferRatio})'
 
         if self.position.angle is not None:
-            position = f'(at {format_float(self.position.X)} {format_float(self.position.Y)} {self.position.angle})'
+            position = f' (at {format_float(self.position.X)} {format_float(self.position.Y)} {self.position.angle})'
         else:
-            position = f'(at {format_float(self.position.X)} {format_float(self.position.Y)})'
+            position = f' (at {format_float(self.position.X)} {format_float(self.position.Y)})'
 
         if self.solderMaskMargin is not None:
             marginFound = True
@@ -663,7 +672,8 @@ class Pad():
             marginFound = True
             tg = f' (thermal_gap {self.thermalGap})'
 
-        expression =  f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked} {position} (size {self.size.X} {self.size.Y}){drill}{ppty}{layers}{rul}{kel}{rrr}{zlc}'
+        expression =  (f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked}{position} '
+                       f'(size {format_float(self.size.X)} {format_float(self.size.Y)}){drill}{ppty}{layers}{rul}{kel}{rrr}{zlc}')
         if champferFound:
             # Only one whitespace here as all temporary strings have at least one leading whitespace
             expression += f'\n{indents} {cr}{c}'
