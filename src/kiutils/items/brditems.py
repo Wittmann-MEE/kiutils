@@ -836,19 +836,35 @@ class SetupData():
 
         expression += f'{indents_nest}(pad_to_mask_clearance {self.packToMaskClearance})\n'
 
-        if self.solderMaskMinWidth is not None:         expression += f'{indents_nest}(solder_mask_min_width {self.solderMaskMinWidth})\n'
-        if self.padToPasteClearance is not None:        expression += f'{indents_nest}(pad_to_paste_clearance {self.padToPasteClearance})\n'
-        if self.padToPasteClearanceRatio is not None:   expression += f'{indents_nest}(pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
+        if self.solderMaskMinWidth is not None:
+            expression += f'{indents_nest}(solder_mask_min_width {self.solderMaskMinWidth})\n'
+        if self.padToPasteClearance is not None:
+            expression += f'{indents_nest}(pad_to_paste_clearance {self.padToPasteClearance})\n'
+        if self.padToPasteClearanceRatio is not None:
+            expression += f'{indents_nest}(pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
         if self.allow_soldermask_bridges_in_footprints is not None:
             expression += f'{indents_nest}(allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
-        if len(self.tenting) > 0:                       expression += f'{indents_nest}(tenting {' '.join(self.tenting)})\n'
-        if self.auxAxisOrigin is not None:              expression += f'{indents_nest}(aux_axis_origin {format_float(self.auxAxisOrigin.X)} {format_float(self.auxAxisOrigin.Y)})\n'
-        if self.gridOrigin is not None:                 expression += f'{indents_nest}(grid_origin {format_float(self.gridOrigin.X)} {format_float(self.gridOrigin.Y)})\n'
-        if len(self.covering) > 0:                      expression += f'{indents_nest}(covering {' '.join(self.covering)})\n'
-        if len(self.plugging) > 0:                      expression += f'{indents_nest}(plugging {' '.join(self.plugging)})\n'
-        if len(self.capping) > 0:                       expression += f'{indents_nest}(capping {' '.join(self.capping)})\n'
-        if len(self.filling) > 0:                       expression += f'{indents_nest}(filling {' '.join(self.filling)})\n'
-        if self.plotSettings is not None:               expression += self.plotSettings.to_sexpr(indent+2)
+        if len(self.tenting) > 0:
+            tenting_joined = ' '.join(self.tenting)
+            expression += f'{indents_nest}(tenting {tenting_joined})\n'
+        if self.auxAxisOrigin is not None:
+            expression += f'{indents_nest}(aux_axis_origin {format_float(self.auxAxisOrigin.X)} {format_float(self.auxAxisOrigin.Y)})\n'
+        if self.gridOrigin is not None:
+            expression += f'{indents_nest}(grid_origin {format_float(self.gridOrigin.X)} {format_float(self.gridOrigin.Y)})\n'
+        if len(self.covering) > 0:
+            covering_joined = ' '.join(self.covering)
+            expression += f'{indents_nest}(covering {covering_joined})\n'
+        if len(self.plugging) > 0:
+            plugging_joined = ' '.join(self.plugging)
+            expression += f'{indents_nest}(plugging {plugging_joined})\n'
+        if len(self.capping) > 0:
+            capping_joined = ' '.join(self.capping)
+            expression += f'{indents_nest}(capping {capping_joined})\n'
+        if len(self.filling) > 0:
+            filling_joined = ' '.join(self.filling)
+            expression += f'{indents_nest}(filling {filling_joined})\n'
+        if self.plotSettings is not None:
+            expression += self.plotSettings.to_sexpr(indent+2)
 
         expression += f'{indents}){endline}'
         return expression
