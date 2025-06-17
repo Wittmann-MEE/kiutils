@@ -1,8 +1,13 @@
-(kicad_sch (version 20211014) (generator kiutils)
-  (paper "A4")
-  (lib_symbols)
-
-  (sheet_instances
-    (path "/" (page "1"))
-  )
+(kicad_sch
+	(version 20250526)
+	(generator "kiutils")
+	(generator_version "9.0")
+	(paper "A4")
+	(lib_symbols)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
 )

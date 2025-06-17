@@ -15,6 +15,29 @@ from tests.testfunctions import to_file_and_compare, prepare_test, cleanup_after
 from kiutils.board import Board
 
 BOARD_BASE = path.join(TEST_BASE, 'board')
+BOARD_COMMUNITY = path.join(BOARD_BASE, 'community')
+
+class Tests_Board_Community(unittest.TestCase):
+    """New Test cases for Boards - based on community KiCad projects"""
+
+    def setUp(self):
+        prepare_test(self)
+        return super().setUp()
+
+    def test_boardGlasgow(self):
+        self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardGlasgow')
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
+
+    def test_boardSmartPrintCoreH7x(self):
+        self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardSmartPrintCoreH7x')
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
+
+    def test_boardTokayLite(self):
+        self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardTokayLite')
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
 
 class Tests_Board(unittest.TestCase):
     """Test cases for Boards"""
@@ -23,13 +46,13 @@ class Tests_Board(unittest.TestCase):
         prepare_test(self)
         return super().setUp()
 
-    # def test_boardTraceArcs(self):
-    #     """Tests the parser's handling of traces with arcs"""
-    #     self.testData.compareToTestFile = True
-    #     self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_boardTraceArcs')
-    #     board = Board().from_file(self.testData.pathToTestFile)
-    #     self.assertTrue(to_file_and_compare(board, self.testData))
-
+#     def test_boardTraceArcs(self):
+#         """Tests the parser's handling of traces with arcs"""
+#         self.testData.compareToTestFile = True
+#         self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_boardTraceArcs')
+#         board = Board().from_file(self.testData.pathToTestFile)
+#         self.assertTrue(to_file_and_compare(board, self.testData))
+#
 #     def test_boardStackup32LayerDielectricsVias(self):
 #         """Tests the parsing of a board with 32 layers, all different dielectric layers and all
 #         available via combinations"""
@@ -38,12 +61,12 @@ class Tests_Board(unittest.TestCase):
 #         board = Board().from_file(self.testData.pathToTestFile)
 #         self.assertTrue(to_file_and_compare(board, self.testData))
 #
-    def test_boardWithAllPrimitives(self):
-        """Tests the parsing of a board containting all primitives (traces, texts, forms, dimensions,
-        markers, polygons, etc)"""
-        self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_boardWithAllPrimitives')
-        board = Board().from_file(self.testData.pathToTestFile)
-        self.assertTrue(to_file_and_compare(board, self.testData))
+#     def test_boardWithAllPrimitives(self):
+#         """Tests the parsing of a board containting all primitives (traces, texts, forms, dimensions,
+#         markers, polygons, etc)"""
+#         self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_boardWithAllPrimitives')
+#         board = Board().from_file(self.testData.pathToTestFile)
+#         self.assertTrue(to_file_and_compare(board, self.testData))
 #
 #     def test_allFpManufacturingAttributes(self):
 #         """Tests the parsing of a board with footprints that feature all combinations of
@@ -70,12 +93,12 @@ class Tests_Board(unittest.TestCase):
 #         self.assertEqual(attr, board.footprints[11].attributes,
 #             msg="Parsing of footprint without `attr` field does not yield expected Attributes() object")
 #
-#     def test_createEmptyBoard(self):
-#         """Tests the behavior when creating an empty board"""
-#         self.testData.compareToTestFile = True
-#         self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_createEmptyBoard')
-#         board = Board().create_new()
-#         self.assertTrue(to_file_and_compare(board, self.testData))
+    def test_createEmptyBoard(self):
+        """Tests the behavior when creating an empty board"""
+        self.testData.compareToTestFile = True
+        self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_createEmptyBoard')
+        board = Board().create_new()
+        self.assertTrue(to_file_and_compare(board, self.testData))
 #
 #     def test_footprintPadNewLines(self):
 #         """Renames the libId token (setting and unsetting) of footprints on a board"""

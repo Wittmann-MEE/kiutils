@@ -16,15 +16,38 @@ from kiutils.schematic import Schematic
 from kiutils.items.common import Property
 
 SCHEMATIC_BASE = path.join(TEST_BASE, 'schematic')
+SCHEMATIC_COMMUNITY = path.join(SCHEMATIC_BASE, 'community')
+
+class Tests_Schematic_Community(unittest.TestCase):
+    """New Test cases for Schematics - based on community KiCad projects"""
+
+    def setUp(self) -> None:
+        prepare_test(self)
+        return super().setUp()
+
+    def test_schematicGlasgow(self):
+        self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicGlasgow')
+        schematic = Schematic().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
+
+    def test_schematicSmartPrintCoreH7x(self):
+        self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicSmartPrintCoreH7x')
+        schematic = Schematic().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
+
+    def test_schematicTokayLite(self):
+        self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicTokayLite')
+        schematic = Schematic().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
+
 
 class Tests_Schematic(unittest.TestCase):
-    pass
-#     """Test cases for Schematics"""
-#
-#     def setUp(self) -> None:
-#         prepare_test(self)
-#         return super().setUp()
-#
+    """Test cases for Schematics"""
+
+    def setUp(self) -> None:
+        prepare_test(self)
+        return super().setUp()
+
 #     def test_addPropertyToSchematicSymbol(self):
 #         """Adds a new property to an already existing symbol in the schematic and verifies the
 #         correct initial values for the Property() class."""
@@ -35,23 +58,12 @@ class Tests_Schematic(unittest.TestCase):
 #         )
 #         self.assertTrue(to_file_and_compare(schematic, self.testData))
 #
-#     def test_createEmptySchematic(self):
-#         """Tests that an empty schematic generates S-Expression as expected from KiCad
-#
-#         Note: This test currently disregards an empty ``(symbol_instances)`` token as it seems that this
-#         only exists when empty KiCad schematics are created. This is what should be expected for
-#         empty schematics:
-#
-#         <pre><code>
-#         (kicad_sch (version 20211123) (generator kicad-python-tools)
-#             (paper "A4")
-#             (lib_symbols)
-#             (symbol_instances)
-#         )
-#         </code</pre>"""
-#         schematic = Schematic.create_new()
-#         self.testData.pathToTestFile = path.join(SCHEMATIC_BASE, 'test_createEmptySchematic')
-#         self.assertTrue(to_file_and_compare(schematic, self.testData))
+    def test_createEmptySchematic(self):
+        """Tests that an empty schematic generates S-Expression as expected from KiCad"""
+
+        schematic = Schematic.create_new()
+        self.testData.pathToTestFile = path.join(SCHEMATIC_BASE, 'test_createEmptySchematic')
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
 #
 #     def test_schematicWithAllPrimitives(self):
 #         """Tests the parsing of a schematic with all primitives (lines, traces, busses, connections,
