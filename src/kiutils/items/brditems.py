@@ -36,7 +36,7 @@ class GeneralSettings():
 
     # Available since KiCad v9
 
-    legacy_teardrops: Optional[str] = None
+    legacy_teardrops: str = 'no'
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GeneralSettings:
@@ -834,7 +834,7 @@ class SetupData():
         if self.stackup is not None:
             expression += self.stackup.to_sexpr(indent+2)
 
-        expression += f'{indents_nest}(pad_to_mask_clearance {self.packToMaskClearance})\n'
+        expression += f'{indents_nest}(pad_to_mask_clearance {format_float(self.packToMaskClearance)})\n'
 
         if self.solderMaskMinWidth is not None:
             expression += f'{indents_nest}(solder_mask_min_width {self.solderMaskMinWidth})\n'

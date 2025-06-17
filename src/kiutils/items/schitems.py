@@ -146,7 +146,7 @@ class NoConnect():
         endline = '\n' if newline else ''
         uuid = f' (uuid "{self.uuid}")' if self.uuid is not None else ''
 
-        return f'{indents}(no_connect (at {self.position.X} {self.position.Y}){uuid}){endline}'
+        return f'{indents}(no_connect (at {format_float(self.position.X)} {format_float(self.position.Y)}){uuid}){endline}'
 
 @dataclass
 class BusEntry():
@@ -210,7 +210,7 @@ class BusEntry():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(bus_entry (at {self.position.X} {self.position.Y}) (size {self.size.X} {self.size.Y})\n'
+        expression =  f'{indents}(bus_entry (at {format_float(self.position.X)} {format_float(self.position.Y)}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n'
         expression += self.stroke.to_sexpr(indent+2)
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
@@ -419,7 +419,7 @@ class PolyLine():
 
         points = ''
         for point in self.points:
-            points += f' (xy {point.X} {point.Y})'
+            points += f' (xy {format_float(point.X)} {format_float(point.Y)})'
 
         expression =  f'{indents}(polyline (pts{points})\n'
         expression += self.stroke.to_sexpr(indent+2)
@@ -499,7 +499,7 @@ class Text():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
 
         expression =  f'{indents}(text "{dequote(self.text)}"{exclude_from_sim}'
@@ -509,7 +509,7 @@ class Text():
             expression += f'\n{indents}  '
         else:
             expression += ' '
-        expression += f'(at {self.position.X} {self.position.Y}{posA})\n'
+        expression += f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})\n'
         expression += self.effects.to_sexpr(indent+2)
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
@@ -1249,9 +1249,9 @@ class HierarchicalPin():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
 
-        expression =  f'{indents}(pin "{dequote(self.name)}" {self.connectionType} (at {self.position.X} {self.position.Y}{posA})\n'
+        expression =  f'{indents}(pin "{dequote(self.name)}" {self.connectionType} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})\n'
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -1506,7 +1506,9 @@ class HierarchicalSheet():
         dnp = f' (dnp {self.dnp})' if self.dnp is not None else ''
         fa = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
-        expression =  f'{indents}(sheet (at {self.position.X} {self.position.Y}) (size {self.width} {self.height}){exclude_from_sim}{in_bom}{on_board}{dnp}{fa}\n'
+        expression =  (f'{indents}(sheet '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) '
+                       f'(size {format_float(self.width)} {format_float(self.height)}){exclude_from_sim}{in_bom}{on_board}{dnp}{fa}\n')
         expression += self.stroke.to_sexpr(indent+2)
         expression += f'{indents}  (fill {self.fill.to_sexpr()})\n'
         if self.uuid is not None:
@@ -1722,7 +1724,7 @@ class Rectangle():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(rectangle (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y})\n'
+        expression =  f'{indents}(rectangle (start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         if self.uuid is not None:
@@ -1802,7 +1804,8 @@ class Arc():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(arc (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y})\n'
+        expression =  (f'{indents}(arc (start {format_float(self.start.X)} {format_float(self.start.Y)}) '
+                       f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n')
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         if self.uuid is not None:
@@ -1878,7 +1881,7 @@ class Circle():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(circle (center {self.center.X} {self.center.Y}) (radius {self.radius})\n'
+        expression =  f'{indents}(circle (center {format_float(self.center.X)} {format_float(self.center.Y)}) (radius {format_float(self.radius)})\n'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         if self.uuid is not None:
@@ -1967,10 +1970,11 @@ class NetclassFlag():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         fa = f' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
 
-        expression =  f'{indents}(netclass_flag "{dequote(self.text)}" (length {self.length}) (shape {self.shape}) (at {self.position.X} {self.position.Y}{posA}){fa}\n'
+        expression =  (f'{indents}(netclass_flag "{dequote(self.text)}" (length {format_float(self.length)}) (shape {self.shape}) '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fa}\n')
         expression += self.effects.to_sexpr(indent+2)
         if self.uuid is not None:
             expression += f'{indents}  (uuid "{self.uuid}")\n'

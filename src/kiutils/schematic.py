@@ -221,6 +221,7 @@ class Schematic():
         schematic.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
         schematic.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
         schematic.sheetInstances.append(HierarchicalSheetInstance(instancePath='/', page='1'))
+        schematic.embedded_fonts = 'no'
         return schematic
 
     def to_file(self, filepath = None, encoding: Optional[str] = None):
