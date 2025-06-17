@@ -202,7 +202,7 @@ class Schematic():
             - Schematic: Object of the Schematic class initialized with the given KiCad schematic
         """
         if not path.isfile(filepath):
-            raise Exception("Given path is not a file!")
+            raise Exception(f"Given path ('{filepath}') is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
             item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))

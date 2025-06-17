@@ -23,19 +23,24 @@ class Tests_Schematic_Community(unittest.TestCase):
 
     def setUp(self) -> None:
         prepare_test(self)
+        self.testData.compareToTestFile = True
         return super().setUp()
 
     def test_schematicGlasgow(self):
+        """Tests the behavior when creating and exporting Glasgow schematic"""
         self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicGlasgow')
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
     def test_schematicSmartPrintCoreH7x(self):
+        """Tests the behavior when creating and exporting SmartPrintCoreH7x schematic"""
         self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicSmartPrintCoreH7x')
+        print("Schematic path: ", self.testData.pathToTestFile)
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
     def test_schematicTokayLite(self):
+        """Tests the behavior when creating and exporting TokayLite schematic"""
         self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicTokayLite')
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))

@@ -21,7 +21,6 @@ from typing import Optional, List
 
 from kiutils.items.common import Position
 from kiutils.utils.strings import dequote
-from xlwings.constants import Placement
 
 from kiutils.utils.format_float import format_float
 

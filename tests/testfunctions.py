@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import Optional
 import filecmp
 import os
+import tempfile
+import shutil
 
 TEST_BASE = os.path.join('tests', 'testdata')
 
@@ -47,7 +49,10 @@ def to_file_and_compare(object, test_data: TestData) -> bool:
     if test_data.pathToTestFile is None:
         raise Exception("pathToTestFile may not be None!")
 
-    object.to_file(f'{test_data.pathToTestFile}.testoutput')
+    tmp_dir = tempfile.mkdtemp(prefix="test_", dir=os.getcwd())  # or use a fixed ./tmp/
+    output_file = os.path.join(tmp_dir, f'{os.path.basename(test_data.pathToTestFile)}.testoutput')
+
+    object.to_file(output_file)
 
     # Compare with the expected result
     if test_data.compareToTestFile:
@@ -55,8 +60,8 @@ def to_file_and_compare(object, test_data: TestData) -> bool:
     else:
         compare_file = f'{test_data.pathToTestFile}.expected'
 
-    test_data.wasSuccessful = filecmp.cmp(f'{test_data.pathToTestFile}.testoutput', compare_file)
-    cleanup_after_test(test_data)
+    test_data.wasSuccessful = filecmp.cmp(output_file, compare_file)
+    cleanup_after_test(test_data, tmp_dir)
     return test_data.wasSuccessful
 
 def load_contents(file: str) -> str:
@@ -79,7 +84,7 @@ def prepare_test(object):
     """
     object.testData = TestData()
 
-def cleanup_after_test(test_data: TestData):
+def cleanup_after_test(test_data: TestData, tmp_dir: str):
     """Cleanup after a unittest test case ran
 
     Args:
@@ -90,11 +95,6 @@ def cleanup_after_test(test_data: TestData):
     """
     if test_data.pathToTestFile is None:
         raise Exception("Path to testfile must not be None!")
-    test_data.producedOutput = load_contents(f'{test_data.pathToTestFile}.testoutput')
-    if test_data.compareToTestFile:
-        test_data.expectedOutput = load_contents(f'{test_data.pathToTestFile}')
-    else:
-        test_data.expectedOutput = load_contents(f'{test_data.pathToTestFile}.expected')
 
     if test_data.wasSuccessful:
-        os.remove(f'{test_data.pathToTestFile}.testoutput')
+        shutil.rmtree(tmp_dir)

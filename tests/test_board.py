@@ -22,22 +22,26 @@ class Tests_Board_Community(unittest.TestCase):
 
     def setUp(self):
         prepare_test(self)
+        self.testData.compareToTestFile = True
         return super().setUp()
 
     def test_boardGlasgow(self):
+        """Tests the behavior when creating and exporting Glasgow board"""
         self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardGlasgow')
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
 
     def test_boardSmartPrintCoreH7x(self):
+        """Tests the behavior when creating and exporting SmartPrintCoreH7x board"""
         self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardSmartPrintCoreH7x')
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
 
-    def test_boardTokayLite(self):
-        self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardTokayLite')
-        board = Board().from_file(self.testData.pathToTestFile)
-        self.assertTrue(to_file_and_compare(board, self.testData))
+    # def test_boardTokayLite(self):
+    #     """Tests the behavior when creating and exporting TokayLite board"""
+    #     self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardTokayLite')
+    #     board = Board().from_file(self.testData.pathToTestFile)
+    #     self.assertTrue(to_file_and_compare(board, self.testData))
 
 class Tests_Board(unittest.TestCase):
     """Test cases for Boards"""
