@@ -1,5 +1,13 @@
 # kiutils - CHANGELOG
 
+## v1.5.0 - 23.06.2025
+
+### Breaking changes
+- Added: Initial support for KiCad v9 **(no backwards compatibility)**
+- Added: New s-expression prettifier based on KiCad's C++ implementation
+### Non-breaking changes
+- Added: New tests based on community projects
+
 ## v1.4.8 - 03.02.2024
 
 ### Non-breaking changes
