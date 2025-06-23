@@ -43,6 +43,9 @@ class Library():
     active: bool = True
     """The ``active`` token sets if the library is loaded by KiCad"""
 
+    visible: bool = True
+    """The ``visible`` token sets if the library is hidden"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Library:
         """Convert the given S-Expresstion into a Library object
@@ -71,6 +74,7 @@ class Library():
             if item[0] == 'options': object.options = item[1]
             if item[0] == 'descr': object.description = item[1]
             if item[0] == 'disabled': object.active = False
+            if item[0] == 'hidden': object.visible = False
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -95,6 +99,9 @@ class Library():
 
         if not self.active:
             expression += '(disabled)'
+
+        if not self.visible:
+            expression += '(hidden)'
 
         expression += f'){endline}'
 

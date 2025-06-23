@@ -9,6 +9,7 @@ License identifier:
 
 import unittest
 from os import path
+from pathlib import Path
 from kiutils.items.schitems import HierarchicalSheetInstance
 
 from tests.testfunctions import to_file_and_compare, prepare_test, cleanup_after_test, TEST_BASE
@@ -28,20 +29,19 @@ class Tests_Schematic_Community(unittest.TestCase):
 
     def test_schematicGlasgow(self):
         """Tests the behavior when creating and exporting Glasgow schematic"""
-        self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicGlasgow')
+        self.testData.pathToTestFile = Path(SCHEMATIC_COMMUNITY) / 'test_schematicGlasgow'
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
     def test_schematicSmartPrintCoreH7x(self):
         """Tests the behavior when creating and exporting SmartPrintCoreH7x schematic"""
-        self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicSmartPrintCoreH7x')
-        print("Schematic path: ", self.testData.pathToTestFile)
+        self.testData.pathToTestFile = Path(SCHEMATIC_COMMUNITY) / 'test_schematicSmartPrintCoreH7x'
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
     def test_schematicTokayLite(self):
         """Tests the behavior when creating and exporting TokayLite schematic"""
-        self.testData.pathToTestFile = path.join(SCHEMATIC_COMMUNITY, 'test_schematicTokayLite')
+        self.testData.pathToTestFile = Path(SCHEMATIC_COMMUNITY) / 'test_schematicTokayLite'
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
@@ -67,7 +67,7 @@ class Tests_Schematic(unittest.TestCase):
         """Tests that an empty schematic generates S-Expression as expected from KiCad"""
 
         schematic = Schematic.create_new()
-        self.testData.pathToTestFile = path.join(SCHEMATIC_BASE, 'test_createEmptySchematic')
+        self.testData.pathToTestFile = Path(SCHEMATIC_BASE) / 'test_createEmptySchematic'
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 #
 #     def test_schematicWithAllPrimitives(self):

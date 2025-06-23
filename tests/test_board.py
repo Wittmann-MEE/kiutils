@@ -9,6 +9,7 @@ License identifier:
 
 import unittest
 from os import path
+from pathlib import Path
 from kiutils.footprint import Attributes
 
 from tests.testfunctions import to_file_and_compare, prepare_test, cleanup_after_test, TEST_BASE
@@ -27,19 +28,20 @@ class Tests_Board_Community(unittest.TestCase):
 
     def test_boardGlasgow(self):
         """Tests the behavior when creating and exporting Glasgow board"""
-        self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardGlasgow')
+        self.testData.pathToTestFile = Path(BOARD_COMMUNITY) / 'test_boardGlasgow'
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
 
     def test_boardSmartPrintCoreH7x(self):
         """Tests the behavior when creating and exporting SmartPrintCoreH7x board"""
-        self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardSmartPrintCoreH7x')
+        self.testData.pathToTestFile = Path(BOARD_COMMUNITY) / 'test_boardSmartPrintCoreH7x'
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
 
+    # TODO - This test contains "dimensions" which are not supported yet
     # def test_boardTokayLite(self):
     #     """Tests the behavior when creating and exporting TokayLite board"""
-    #     self.testData.pathToTestFile = path.join(BOARD_COMMUNITY, 'test_boardTokayLite')
+    #     self.testData.pathToTestFile = Path(BOARD_COMMUNITY) / 'test_boardTokayLite'
     #     board = Board().from_file(self.testData.pathToTestFile)
     #     self.assertTrue(to_file_and_compare(board, self.testData))
 
@@ -100,7 +102,7 @@ class Tests_Board(unittest.TestCase):
     def test_createEmptyBoard(self):
         """Tests the behavior when creating an empty board"""
         self.testData.compareToTestFile = True
-        self.testData.pathToTestFile = path.join(BOARD_BASE, 'test_createEmptyBoard')
+        self.testData.pathToTestFile = Path(BOARD_BASE) / 'test_createEmptyBoard'
         board = Board().create_new()
         self.assertTrue(to_file_and_compare(board, self.testData))
 #
