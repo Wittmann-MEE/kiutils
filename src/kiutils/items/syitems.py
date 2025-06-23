@@ -20,8 +20,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from kiutils.items.common import Fill, Position, Stroke, Effects, Fill
+from kiutils.items.common import Position, Stroke, Effects, Fill
 from kiutils.utils.strings import dequote
+
+from kiutils.utils.format_float import format_float
 
 @dataclass
 class SyArc():
@@ -74,10 +76,19 @@ class SyArc():
 
         object = cls()
 
-        for item in exp:
-            if isinstance(item, str):
-                if item == 'private': object.private = True
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                # Pretty sure this isn't the case but let's be safe
+                if item == 'private':
+                    object.private = True
+                    continue
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'private' and item[1] == 'yes':
+                object.private = True
                 continue
+
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'mid': object.mid = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
@@ -98,12 +109,15 @@ class SyArc():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        startA = f' {self.start.angle}' if self.start.angle is not None else ''
-        midA = f' {self.mid.angle}' if self.mid.angle is not None else ''
-        endA = f' {self.end.angle}' if self.end.angle is not None else ''
+        startA = f' {format_float(self.start.angle)}' if self.start.angle is not None else ''
+        midA = f' {format_float(self.mid.angle)}' if self.mid.angle is not None else ''
+        endA = f' {format_float(self.end.angle)}' if self.end.angle is not None else ''
         private = ' private' if self.private else ''
 
-        expression =  f'{indents}(arc{private} (start {self.start.X} {self.start.Y}{startA}) (mid {self.mid.X} {self.mid.Y}{midA}) (end {self.end.X} {self.end.Y}{endA})\n'
+        expression =  (f'{indents}(arc{private} '
+                       f'(start {format_float(self.start.X)} {format_float(self.start.Y)}{startA}) '
+                       f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}{midA}) '
+                       f'(end {format_float(self.end.X)} {format_float(self.end.Y)}{endA})\n')
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += f'{indents}){endline}'
@@ -157,10 +171,19 @@ class SyCircle():
 
         object = cls()
 
-        for item in exp:
-            if isinstance(item, str):
-                if item == 'private': object.private = True
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                # Pretty sure this isn't the case but let's be safe
+                if item == 'private':
+                    object.private = True
+                    continue
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'private' and item[1] == 'yes':
+                object.private = True
                 continue
+
             if item[0] == 'center': object.center = Position().from_sexpr(item)
             if item[0] == 'radius': object.radius = item[1]
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
@@ -181,7 +204,7 @@ class SyCircle():
         endline = '\n' if newline else ''
         private = ' private' if self.private else ''
 
-        expression =  f'{indents}(circle{private} (center {self.center.X} {self.center.Y}) (radius {self.radius})\n'
+        expression =  f'{indents}(circle{private} (center {format_float(self.center.X)} {format_float(self.center.Y)}) (radius {format_float(self.radius)})\n'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += f'{indents}){endline}'
@@ -225,7 +248,7 @@ class SyCurve():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             if item[0] == 'pts':
@@ -246,14 +269,15 @@ class SyCurve():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(curve\n'
-        expression =  f'{indents}  (pts\n'
+        expression  =  f'{indents}(curve\n'
+        expression +=  f'{indents}  (pts\n'
         for point in self.points:
-            expression =  f'{indents}    (xy {point.X} {point.Y})\n'
-        expression =  f'{indents}  )\n'
+            expression +=  f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
+        expression +=  f'{indents}  )\n'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += f'{indents}){endline}'
+
         return expression
 
 @dataclass
@@ -294,7 +318,7 @@ class SyPolyLine():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             if item[0] == 'pts':
@@ -318,7 +342,7 @@ class SyPolyLine():
         expression =  f'{indents}(polyline\n'
         expression +=  f'{indents}  (pts\n'
         for point in self.points:
-            expression +=  f'{indents}    (xy {point.X} {point.Y})\n'
+            expression +=  f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
@@ -373,10 +397,19 @@ class SyRect():
 
         object = cls()
 
-        for item in exp:
-            if isinstance(item, str):
-                if item == 'private': object.private = True
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                # Pretty sure this isn't the case but let's be safe
+                if item == 'private':
+                    object.private = True
+                    continue
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'private' and item[1] == 'yes':
+                object.private = True
                 continue
+
             if item[0] == 'start': object.start = Position().from_sexpr(item)
             if item[0] == 'end': object.end = Position().from_sexpr(item)
             if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
@@ -397,7 +430,8 @@ class SyRect():
         endline = '\n' if newline else ''
         private = ' private' if self.private else ''
 
-        expression =  f'{indents}(rectangle{private} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y})\n'
+        expression =  (f'{indents}(rectangle{private} '
+                       f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n')
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += f'{indents}){endline}'
@@ -460,9 +494,9 @@ class SyText():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
 
-        expression =  f'{indents}(text "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA})\n'
+        expression =  f'{indents}(text "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})\n'
         expression += f'{indents}  {self.effects.to_sexpr()}'
         expression += f'{indents}){endline}'
         return expression
@@ -558,11 +592,12 @@ class SyTextBox():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         private = ' private' if self.private else ''
 
         expression =  f'{indents}(text_box{private} "{dequote(self.text)}"\n'
-        expression += f'{indents}  (at {self.position.X} {self.position.Y}{posA}) (size {self.size.X} {self.size.Y})\n'
+        expression += (f'{indents} '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n')
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += self.effects.to_sexpr(indent+2)

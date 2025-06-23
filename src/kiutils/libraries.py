@@ -18,6 +18,7 @@ from os import path
 
 from kiutils.utils.strings import dequote
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 
 @dataclass
 class Library():
@@ -41,6 +42,9 @@ class Library():
 
     active: bool = True
     """The ``active`` token sets if the library is loaded by KiCad"""
+
+    visible: bool = True
+    """The ``visible`` token sets if the library is hidden"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Library:
@@ -70,6 +74,7 @@ class Library():
             if item[0] == 'options': object.options = item[1]
             if item[0] == 'descr': object.description = item[1]
             if item[0] == 'disabled': object.active = False
+            if item[0] == 'hidden': object.visible = False
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -94,6 +99,9 @@ class Library():
 
         if not self.active:
             expression += '(disabled)'
+
+        if not self.visible:
+            expression += '(hidden)'
 
         expression += f'){endline}'
 
@@ -194,7 +202,8 @@ class LibTable():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True) -> str:
         """Generate the S-Expression representing this object

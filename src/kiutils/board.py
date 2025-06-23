@@ -15,8 +15,7 @@ Documentation taken from:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Dict
 from os import path
 
 from kiutils.items.common import Group, Image, Net, PageSettings, TitleBlock
@@ -26,8 +25,9 @@ from kiutils.items.gritems import *
 from kiutils.items.dimensions import Dimension
 from kiutils.utils.strings import dequote
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.footprint import Footprint
-from kiutils.misc.config import KIUTILS_CREATE_NEW_VERSION_STR, KIUTILS_CREATE_NEW_GENERATOR_STR
+from kiutils.misc.config import *
 
 @dataclass
 class Board():
@@ -93,6 +93,14 @@ class Board():
     """The ``filePath`` token defines the path-like string to the board file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Board:
         """Convert the given S-Expresstion into a Board object
@@ -114,9 +122,13 @@ class Board():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'general': object.general = GeneralSettings().from_sexpr(item)
             if item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
             if item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
@@ -143,6 +155,7 @@ class Board():
             if item[0] == 'via': object.traceItems.append(Via().from_sexpr(item))
             if item[0] == 'zone': object.zones.append(Zone().from_sexpr(item))
             if item[0] == 'group': object.groups.append(Group().from_sexpr(item))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
 
         return object
 
@@ -177,46 +190,43 @@ class Board():
         Returns:
             - Board: Empty board
         """
-        board = cls(
-            version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = KIUTILS_CREATE_NEW_GENERATOR_STR
-        )
+        board = Board()
+        board.version = KIUTILS_CREATE_NEW_VERSION_STR
+        board.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+        board.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
 
         # Add all standard layers to board
         board.layers.extend([
             LayerToken(ordinal=0, name='F.Cu', type='signal'), 
-            LayerToken(ordinal=31, name='B.Cu', type='signal'), 
-            LayerToken(ordinal=32, name='B.Adhes', type='user', userName="B.Adhesive"),
-            LayerToken(ordinal=33, name='F.Adhes', type='user', userName="F.Adhesive"),
-            LayerToken(ordinal=34, name='B.Paste', type='user'),
-            LayerToken(ordinal=35, name='F.Paste', type='user'),
-            LayerToken(ordinal=36, name='B.SilkS', type='user', userName="B.Silkscreen"),
-            LayerToken(ordinal=37, name='F.SilkS', type='user', userName="F.Silkscreen"),
-            LayerToken(ordinal=38, name='B.Mask', type='user'),
-            LayerToken(ordinal=39, name='F.Mask', type='user'),
-            LayerToken(ordinal=40, name='Dwgs.User', type='user', userName="User.Drawings"),
-            LayerToken(ordinal=41, name='Cmts.User', type='user', userName="User.Comments"),
-            LayerToken(ordinal=42, name='Eco1.User', type='user', userName="User.Eco1"),
-            LayerToken(ordinal=43, name='Eco2.User', type='user', userName="User.Eco2"),
-            LayerToken(ordinal=44, name='Edge.Cuts', type='user'),
-            LayerToken(ordinal=45, name='Margin', type='user'),
-            LayerToken(ordinal=46, name='B.CrtYd', type='user', userName="B.Courtyard"),
-            LayerToken(ordinal=47, name='F.CrtYd', type='user', userName="F.Courtyard"),
-            LayerToken(ordinal=48, name='B.Fab', type='user'),
-            LayerToken(ordinal=49, name='F.Fab', type='user'),
-            LayerToken(ordinal=50, name='User.1', type='user'),
-            LayerToken(ordinal=51, name='User.2', type='user'),
-            LayerToken(ordinal=52, name='User.3', type='user'),
-            LayerToken(ordinal=53, name='User.4', type='user'),
-            LayerToken(ordinal=54, name='User.5', type='user'),
-            LayerToken(ordinal=55, name='User.6', type='user'),
-            LayerToken(ordinal=56, name='User.7', type='user'),
-            LayerToken(ordinal=57, name='User.8', type='user'),
-            LayerToken(ordinal=58, name='User.9', type='user')
+            LayerToken(ordinal=2, name='B.Cu', type='signal'),
+            LayerToken(ordinal=9, name='F.Adhes', type='user', userName="F.Adhesive"),
+            LayerToken(ordinal=11, name='B.Adhes', type='user', userName="B.Adhesive"),
+            LayerToken(ordinal=13, name='F.Paste', type='user'),
+            LayerToken(ordinal=15, name='B.Paste', type='user'),
+            LayerToken(ordinal=5, name='F.SilkS', type='user', userName="F.Silkscreen"),
+            LayerToken(ordinal=7, name='B.SilkS', type='user', userName="B.Silkscreen"),
+            LayerToken(ordinal=1, name='F.Mask', type='user'),
+            LayerToken(ordinal=3, name='B.Mask', type='user'),
+            LayerToken(ordinal=17, name='Dwgs.User', type='user', userName="User.Drawings"),
+            LayerToken(ordinal=19, name='Cmts.User', type='user', userName="User.Comments"),
+            LayerToken(ordinal=21, name='Eco1.User', type='user', userName="User.Eco1"),
+            LayerToken(ordinal=23, name='Eco2.User', type='user', userName="User.Eco2"),
+            LayerToken(ordinal=25, name='Edge.Cuts', type='user'),
+            LayerToken(ordinal=27, name='Margin', type='user'),
+            LayerToken(ordinal=31, name='F.CrtYd', type='user', userName="F.Courtyard"),
+            LayerToken(ordinal=29, name='B.CrtYd', type='user', userName="B.Courtyard"),
+            LayerToken(ordinal=35, name='F.Fab', type='user'),
+            LayerToken(ordinal=33, name='B.Fab', type='user'),
+            LayerToken(ordinal=39, name='User.1', type='user'),
+            LayerToken(ordinal=41, name='User.2', type='user'),
+            LayerToken(ordinal=43, name='User.3', type='user'),
+            LayerToken(ordinal=45, name='User.4', type='user'),
         ])
 
         # Append net0 to netlist
         board.nets.append(Net())
+
+        board.embedded_fonts = 'no'
 
         return board
 
@@ -238,7 +248,8 @@ class Board():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True) -> str:
         """Generate the S-Expression representing this object
@@ -255,7 +266,8 @@ class Board():
 
         addNewLine = False
 
-        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator {self.generator})\n\n'
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator "{self.generator}"){generator_version}\n\n'
         expression += self.general.to_sexpr(indent+2) + '\n'
         expression += self.paper.to_sexpr(indent+2)
         if self.titleBlock is not None:
@@ -318,6 +330,9 @@ class Board():
         # Groups
         for group in self.groups:
             expression += group.to_sexpr(indent+2)
+
+        if self.embedded_fonts is not None:
+            expression += f'{indents} (embedded_fonts {self.embedded_fonts})'
 
         expression += f'{indents}){endline}'
         return expression

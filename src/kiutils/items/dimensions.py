@@ -21,7 +21,10 @@ from typing import Optional, List
 
 from kiutils.items.common import Position
 from kiutils.items.gritems import GrText
+from kiutils.utils.format_float import format_float
 from kiutils.utils.strings import dequote
+
+from kiutils.utils.format_float import format_float
 
 @dataclass
 class DimensionFormat():
@@ -84,16 +87,17 @@ class DimensionFormat():
 
         object = cls()
         for item in exp[1:]:
-            if type(item) != type([]):
-                if item == 'suppress_zeroes': object.suppressZeroes = True
-                continue
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'suppress_zeroes' and item[1] == 'yes': object.suppressZeroes = True
             if item[0] == 'prefix': object.prefix = item[1]
             if item[0] == 'suffix': object.suffix = item[1]
             if item[0] == 'units': object.units = item[1]
             if item[0] == 'units_format': object.unitsFormat = item[1]
             if item[0] == 'precision': object.precision = item[1]
             if item[0] == 'override_value': object.overrideValue = item[1]
-            pass
+
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -112,7 +116,7 @@ class DimensionFormat():
         prefix = f' (prefix "{dequote(self.prefix)}")' if self.prefix is not None else ''
         suffix = f' (suffix "{dequote(self.suffix)}")' if self.suffix is not None else ''
         overwrite_val = f' (override_value "{dequote(self.overrideValue)}")' if self.overrideValue is not None else ''
-        suppress_zeroes = f' suppress_zeroes' if self.suppressZeroes else ''
+        suppress_zeroes = f' (suppress_zeroes yes)' if self.suppressZeroes else ''
 
         expression =  f'{indents}(format{prefix}{suffix} (units {self.units}) (units_format {self.unitsFormat}) (precision {self.precision}){overwrite_val}{suppress_zeroes}){endline}'
         return expression
@@ -159,6 +163,15 @@ class DimensionStyle():
     dimension crossbar. When false, the dimension text is shown horizontally regardless of the
     orientation of the dimension."""
 
+    # Available after KiCad v7
+
+    arrow_direction: Optional[str] = None
+    """The ``arrow_direction`` token attribute defines the direction of the dimension arrows.
+    Only aligned and orthogonal dimensions support this attribute. Valid directions are as follows:
+    outward: The arrows face outward, pointing away from midpoint of the crossbar.
+    inward: The arrows face inward, pointing towards the midpoint of the crossbar.
+    """
+
     @classmethod
     def from_sexpr(cls, exp: list) -> DimensionStyle:
         """Convert the given S-Expresstion into a DimensionStyle object
@@ -181,15 +194,17 @@ class DimensionStyle():
 
         object = cls()
         for item in exp[1:]:
-            if type(item) != type([]):
-                if item == 'keep_text_aligned': object.keepTextAligned = True
-                continue
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'keep_text_aligned' and item[1] == 'yes': object.keepTextAligned = True
             if item[0] == 'thickness': object.thickness = item[1]
             if item[0] == 'arrow_length': object.arrowLength = item[1]
             if item[0] == 'text_position_mode': object.textPositionMode = item[1]
             if item[0] == 'extension_height': object.extensionHeight = item[1]
             if item[0] == 'text_frame': object.textFrame = item[1]
             if item[0] == 'extension_offset': object.extensionOffset = item[1]
+            if item[0] == 'arrow_direction': object.arrow_direction = item[1]
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -208,9 +223,10 @@ class DimensionStyle():
         extension_height = f' (extension_height {self.extensionHeight})' if self.extensionHeight is not None else ''
         text_frame = f' (text_frame {self.textFrame})' if self.textFrame is not None else ''
         extension_offset = f' (extension_offset {self.extensionOffset})' if self.extensionOffset is not None else ''
-        keep_aligned = f' keep_text_aligned' if self.keepTextAligned else ''
+        keep_aligned = f' (keep_text_aligned yes)' if self.keepTextAligned else ''
+        arrow_direction = f' (arrow_direction {self.arrow_direction})' if self.arrow_direction is not None else ''
 
-        expression =  f'{indents}(style (thickness {self.thickness}) (arrow_length {self.arrowLength}) (text_position_mode {self.textPositionMode}){extension_height}{text_frame}{extension_offset}{keep_aligned}){endline}'
+        expression =  f'{indents}(style (thickness {self.thickness}) (arrow_length {self.arrowLength}) (text_position_mode {self.textPositionMode}){arrow_direction}{extension_height}{text_frame}{extension_offset}{keep_aligned}){endline}'
         return expression
 
 @dataclass
@@ -281,12 +297,14 @@ class Dimension():
 
         object = cls()
         for item in exp[1:]:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'type': object.type = item[1]
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'height': object.height = item[1]
             if item[0] == 'orientation': object.orientation = item[1]
             if item[0] == 'leader_length': object.leaderLength = item[1]
@@ -317,11 +335,12 @@ class Dimension():
 
         points = ''
         for point in self.pts:
-            points = f'{points} (xy {point.X} {point.Y})'
+            points = f'{points} (xy {format_float(point.X)} {format_float(point.Y)})'
         if len(points) == 0:
             raise Exception("Number of points must not be zero")
 
-        expression =   f'{indents}(dimension (type {self.type}) (layer "{self.layer}") (tstamp {self.tstamp})\n'
+        locked = ' (locked yes)' if self.locked else ''
+        expression =   f'{indents}(dimension (type {self.type}) (layer "{self.layer}") (uuid "{self.tstamp}"){locked}\n'
         expression +=  f'{indents}  (pts{points})\n'
         if self.height is not None:
             expression +=  f'{indents}  (height {self.height})\n'
@@ -329,10 +348,10 @@ class Dimension():
             expression +=  f'{indents}  (orientation {self.orientation})\n'
         if self.leaderLength is not None:
             expression +=  f'{indents}  (leader_length {self.leaderLength})\n'
-        if self.grText is not None:
-            expression += self.grText.to_sexpr(indent+2)
         if self.format is not None:
             expression += self.format.to_sexpr(indent+2)
         expression += self.style.to_sexpr(indent+2)
+        if self.grText is not None:
+            expression += self.grText.to_sexpr(indent+2)
         expression +=  f'{indents}){endline}'
         return expression

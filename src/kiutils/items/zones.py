@@ -22,6 +22,8 @@ from typing import Optional, List
 from kiutils.items.common import Position
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class KeepoutSettings():
     """The ``keepout `` token attributes define which objects should be kept out of the
@@ -72,9 +74,9 @@ class KeepoutSettings():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'tracks': object.tracks = item[1]
             if item[0] == 'vias': object.vias = item[1]
@@ -199,11 +201,15 @@ class FillSettings():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'yes': object.yes = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                if item == 'yes':
+                    # Ok, very weird
+                    object.yes = True
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
+            if item[0] == 'yes': object.yes = True
             if item[0] == 'mode': object.mode = item[1]
             if item[0] == 'thermal_gap': object.thermalGap = item[1]
             if item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
@@ -308,7 +314,7 @@ class ZonePolygon():
         expression =  f'{indents}(polygon\n'
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += f'{indents})\n'
         return expression
@@ -387,7 +393,7 @@ class FilledPolygon():
             expression += f'{indents}  (island)\n'
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += f'{indents})\n'
         return expression
@@ -461,7 +467,7 @@ class FillSegments():
         expression += f'{indents}  (layer "{dequote(self.layer)}")\n'
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
         expression += f'{indents}  )\n'
         expression += f'{indents})\n'
         return expression
@@ -550,6 +556,9 @@ class Zone():
     """The optional ``fillSegments`` section defines a list of track segments used to fill
     the zone"""
 
+    # Available since KiCad v9
+    placement: Optional[PlacementSettings] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Zone:
         """Convert the given S-Expresstion into a Zone object
@@ -571,17 +580,18 @@ class Zone():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'net': object.net = item[1]
             if item[0] == 'net_name': object.netName = item[1]
             if item[0] == 'layers' or item[0] == 'layer':
                 for layer in item[1:]:
                     object.layers.append(layer)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'name': object.name = item[1]
             if item[0] == 'hatch':
                 object.hatch = Hatch(style=item[1], pitch=item[2])
@@ -599,6 +609,7 @@ class Zone():
             if item[0] == 'polygon': object.polygons.append(ZonePolygon().from_sexpr(item))
             if item[0] == 'filled_polygon': object.filledPolygons.append(FilledPolygon().from_sexpr(item))
             if item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
+            if item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
 
         return object
 
@@ -618,8 +629,8 @@ class Zone():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = f' locked' if self.locked else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        locked = f' (locked yes)' if self.locked else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         name = f' (name "{dequote(self.name)}")' if self.name is not None else ''
         contype = f' {self.connectPads}' if self.connectPads is not None else ''
         fat = f' (filled_areas_thickness {self.filledAreasThickness})' if self.filledAreasThickness is not None else ''
@@ -634,13 +645,15 @@ class Zone():
         else:
             layer_token = f' (layers{layers})'
 
-        expression =  f'{indents}(zone{locked} (net {self.net}) (net_name "{dequote(self.netName)}"){layer_token}{tstamp}{name} (hatch {self.hatch.style} {self.hatch.pitch})\n'
+        expression =  f'{indents}(zone (net {self.net}) (net_name "{dequote(self.netName)}"){locked}{layer_token}{tstamp}{name} (hatch {self.hatch.style} {self.hatch.pitch})\n'
         if self.priority is not None:
             expression += f'{indents}  (priority {self.priority})\n'
         expression += f'{indents}  (connect_pads{contype} (clearance {self.clearance}))\n'
         expression += f'{indents}  (min_thickness {self.minThickness}){fat}\n'
         if self.keepoutSettings is not None:
             expression += f'{indents}  {self.keepoutSettings.to_sexpr()}\n'
+        if self.placement is not None:
+            expression += f'{indents} {self.placement.to_sexpr()}\n'
         if self.fillSettings is not None:
             expression += self.fillSettings.to_sexpr(indent+2, True)
 
@@ -655,3 +668,57 @@ class Zone():
             expression += self.fillSegments.to_sexpr()
         expression += f'{indents}){endline}'
         return expression
+
+@dataclass
+class PlacementSettings():
+
+    enabled: str = "no"
+
+    sheet_name: str = ""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> PlacementSettings:
+        """Convert the given S-Expresstion into a PlacementSettings object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(placement ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not placement
+
+        Returns:
+            - KeepoutSettings: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'placement':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'enabled': object.enabled = item[1]
+            if item[0] == 'sheetname': object.sheet_name = item[1]
+
+        return object
+
+    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
+        """Generate the S-Expression representing this object. When no coordinates are set
+        in the curve, the resulting S-Expression will be left empty.
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
+            - newline (bool): Adds a newline to the end of the output. Defaults to False.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        # KiCad seems to add a whitespace to the pad token here
+        return f'{indents}(placement (enabled {self.enabled}) (sheetname "{self.sheet_name}")){endline}'

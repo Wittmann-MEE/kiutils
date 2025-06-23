@@ -15,15 +15,15 @@ Documentation taken from:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, List, Union
+from typing import Union
 from os import path
 
 from kiutils.items.common import Image, PageSettings, TitleBlock
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils import sexpr
-from kiutils.misc.config import KIUTILS_CREATE_NEW_GENERATOR_STR, KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.misc.config import *
 
 @dataclass
 class Schematic():
@@ -114,6 +114,14 @@ class Schematic():
     """The ``filePath`` token defines the path-like string to the schematic file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Schematic:
         """Convert the given S-Expresstion into a Schematic object
@@ -135,9 +143,13 @@ class Schematic():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'uuid': object.uuid = item[1]
             if item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
             if item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
@@ -169,6 +181,8 @@ class Schematic():
             if item[0] == 'symbol_instances':
                 for instance in item[1:]:
                     object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+
         return object
 
     @classmethod
@@ -188,7 +202,7 @@ class Schematic():
             - Schematic: Object of the Schematic class initialized with the given KiCad schematic
         """
         if not path.isfile(filepath):
-            raise Exception("Given path is not a file!")
+            raise Exception(f"Given path ('{filepath}') is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
             item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))
@@ -202,11 +216,12 @@ class Schematic():
         Returns:
             - Schematic: Empty schematic
         """
-        schematic = cls(
-            version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = KIUTILS_CREATE_NEW_GENERATOR_STR
-        )
+        schematic = Schematic()
+        schematic.version = KIUTILS_CREATE_NEW_VERSION_STR
+        schematic.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+        schematic.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
         schematic.sheetInstances.append(HierarchicalSheetInstance(instancePath='/', page='1'))
+        schematic.embedded_fonts = 'no'
         return schematic
 
     def to_file(self, filepath = None, encoding: Optional[str] = None):
@@ -227,7 +242,8 @@ class Schematic():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True) -> str:
         """Generate the S-Expression representing this object
@@ -242,9 +258,10 @@ class Schematic():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(kicad_sch (version {self.version}) (generator {self.generator})\n'
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        expression =  f'{indents}(kicad_sch (version {self.version}) (generator "{self.generator}"){generator_version}\n'
         if self.uuid is not None:
-            expression += f'\n{indents}  (uuid {self.uuid})\n\n'
+            expression += f' (uuid "{self.uuid}"){endline}'
         expression += f'{self.paper.to_sexpr(indent+2)}'
         if self.titleBlock is not None:
             expression += f'\n{self.titleBlock.to_sexpr(indent+2)}'
@@ -257,6 +274,16 @@ class Schematic():
             expression += f'{indents}  )\n'
         else:
             expression += f'{indents}  (lib_symbols)\n'
+
+        if self.texts:
+            expression += '\n'
+            for item in self.texts:
+                expression += item.to_sexpr(indent + 2)
+
+        if self.textBoxes:
+            expression += '\n'
+            for item in self.textBoxes:
+                expression += item.to_sexpr(indent + 2)
 
         if self.junctions:
             expression += '\n'
@@ -293,15 +320,6 @@ class Schematic():
             for item in self.images:
                 expression += item.to_sexpr(indent+2)
 
-        if self.textBoxes:
-            expression += '\n'
-            for item in self.textBoxes:
-                expression += item.to_sexpr(indent+2)
-
-        if self.texts:
-            expression += '\n'
-            for item in self.texts:
-                expression += item.to_sexpr(indent+2)
 
         if self.labels:
             expression += '\n'
@@ -346,6 +364,9 @@ class Schematic():
             for item in self.symbolInstances:
                 expression += item.to_sexpr(indent+4)
             expression += '  )\n'
+
+        if self.embedded_fonts:
+            expression += f'{indents} (embedded_fonts {self.embedded_fonts})\n'
 
         expression += f'{indents}){endline}'
         return expression

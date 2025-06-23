@@ -14,16 +14,17 @@ Documentation taken from:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional, List
 from os import path
 import re
 
-from kiutils.items.common import Effects, Position, Property, Font
+from kiutils.items.common import Property, Font
 from kiutils.items.syitems import *
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.utils.strings import dequote
-from kiutils.misc.config import KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.misc.config import *
+
+from kiutils.utils.format_float import format_float
 
 @dataclass
 class SymbolAlternativePin():
@@ -146,9 +147,9 @@ class SymbolPin():
         object.electricalType = exp[1]
         object.graphicalStyle = exp[2]
         for item in exp[3:]:
-            if type(item) != type([]):
-                if item == 'hide': object.hide = True
-                else: continue
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'length': object.length = item[1]
             if item[0] == 'name':
@@ -176,12 +177,13 @@ class SymbolPin():
         endline = '\n' if newline else ''
         newLineAdded = False
 
-        hide = ' hide' if self.hide else ''
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        hide = ' (hide yes)' if self.hide else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         nameEffects = f' {self.nameEffects.to_sexpr(newline=False)}' if self.nameEffects is not None else ''
         numberEffects = f' {self.numberEffects.to_sexpr(newline=False)}' if self.numberEffects is not None else ''
 
-        expression =  f'{indents}(pin {self.electricalType} {self.graphicalStyle} (at {self.position.X} {self.position.Y}{posA}) (length {self.length}){hide}'
+        expression =  (f'{indents}(pin {self.electricalType} {self.graphicalStyle} '
+                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (length {format_float(self.length)}){hide}')
         
         # Since KiCad v7 nightly: Missing name and number effects print both other tokens into 
         # the same line.
@@ -355,6 +357,14 @@ class Symbol():
     units: List[Symbol] = field(default_factory=list)
     """The ``units`` can be one or more child symbol tokens embedded in a parent symbol"""
 
+    # Available since KiCad v9
+    # TODO Update docs
+
+    exclude_from_sim: Optional[str] = None
+
+    embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Symbol:
         """Convert the given S-Expression into a Symbol object
@@ -379,16 +389,21 @@ class Symbol():
         object.libId = exp[1]
         for item in exp[2:]:
             if item[0] == 'extends': object.extends = item[1]
+            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
             if item[0] == 'pin_numbers':
-                if item[1] == 'hide':
-                    object.hidePinNumbers = True
+                for prop in item[1:]:
+                    if not isinstance(prop, list):
+                        raise Exception(f"Property {prop} should be key -> value mapped")
+                    if prop[0] == 'hide' and prop[1] == 'yes': object.hidePinNumbers = True
+
             if item[0] == 'pin_names':
-                object.pinNames = True
-                for property in item[1:]:
-                    if type(property) == type([]):
-                        if property[0] == 'offset': object.pinNamesOffset = property[1]
-                    else:
-                        if property == 'hide': object.pinNamesHide = True
+                object.pinNames = True # This feels wrong to set here, what if it will be hidden? But ok...
+                for prop in item[1:]:
+                    if not isinstance(prop, list):
+                        raise Exception(f"Property {prop} should be key -> value mapped")
+                    if prop[0] == 'offset': object.pinNamesOffset = prop[1]
+                    if prop[0] == 'hide' and prop[1] == 'yes': object.pinNamesHide = True
+
             if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
             if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
             if item[0] == 'power': object.isPower = True
@@ -403,7 +418,12 @@ class Symbol():
             if item[0] == 'polyline': object.graphicItems.append(SyPolyLine().from_sexpr(item))
             if item[0] == 'rectangle': object.graphicItems.append(SyRect().from_sexpr(item))
             if item[0] == 'text': object.graphicItems.append(SyText().from_sexpr(item))
-            if item[0] == 'text_box': object.graphicItems.append(SyTextBox().from_sexpr(item))
+            if item[0] == 'text_box':
+                raise Exception('We never dealt with text_box symbols before.'
+                                'The function that parses this is most definitely incompatible.'
+                                'If you see this then fix parsing in SyTextBox and remove this exception.')
+                # object.graphicItems.append(SyTextBox().from_sexpr(item))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
 
         return object
 
@@ -461,13 +481,14 @@ class Symbol():
             obtext = 'yes' if self.onBoard else 'no'
         onboard = f' (on_board {obtext})' if self.onBoard is not None else ''
         power = f' (power)' if self.isPower else ''
-        pnhide = f' hide' if self.pinNamesHide else ''
+        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
+        pnhide = f' (hide yes)' if self.pinNamesHide else ''
         pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
         pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''
-        pinnumbers = f' (pin_numbers hide)' if self.hidePinNumbers else ''
+        pinnumbers = f' (pin_numbers (hide yes))' if self.hidePinNumbers else ''
         extends = f' (extends "{dequote(self.extends)}")' if self.extends is not None else ''
 
-        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{pinnumbers}{pinnames}{inbom}{onboard}\n'
+        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{pinnumbers}{pinnames}{exclude_from_sim}{inbom}{onboard}\n'
         for item in self.properties:
             expression += item.to_sexpr(indent+2)
         for item in self.graphicItems:
@@ -476,6 +497,9 @@ class Symbol():
             expression += item.to_sexpr(indent+2)
         for item in self.units:
             expression += item.to_sexpr(indent+2)
+        if self.embedded_fonts is not None:
+            expression += f' (embedded_fonts {self.embedded_fonts}){endline}'
+
         expression += f'{indents}){endline}'
         return expression
 
@@ -499,6 +523,13 @@ class SymbolLib():
     filePath: Optional[str] = None
     """The ``filePath`` token defines the path-like string to the library file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
+
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
 
     @classmethod
     def from_file(cls, filepath: str, encoding: Optional[str] = None) -> SymbolLib:
@@ -549,7 +580,10 @@ class SymbolLib():
         for item in exp[1:]:
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+
         return object
 
     def to_file(self, filepath = None, encoding: Optional[str] = None):
@@ -570,7 +604,8 @@ class SymbolLib():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent: int = 0, newline: bool = True) -> str:
         """Generate the S-Expression representing this object
@@ -582,11 +617,18 @@ class SymbolLib():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
+        indents = ' ' * indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(kicad_symbol_lib (version {self.version}) (generator {self.generator})\n'
+        version = f' (version {self.version})' if self.version is not None else ''
+        generator = f' (generator "{self.generator}")' if self.generator is not None else ''
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+
+        expression =  f'{indents}(kicad_symbol_lib{version}{generator}{generator_version}\n'
         for item in self.symbols:
             expression += f'{indents}{item.to_sexpr(indent+2)}'
+        if self.embedded_fonts is not None:
+            expression += f' (embedded_fonts {self.embedded_fonts}){endline}'
+
         expression += f'{indents}){endline}'
         return expression

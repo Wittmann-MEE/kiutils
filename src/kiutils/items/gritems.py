@@ -23,6 +23,8 @@ from typing import Optional, List
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class GrText():
     """The ``gr_text`` token defines a graphical text.
@@ -83,9 +85,10 @@ class GrText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'layer': 
                 object.layer = item[1]
@@ -94,6 +97,7 @@ class GrText():
                         object.knockout = True
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
         return object
 
@@ -113,10 +117,10 @@ class GrText():
         ko = ' knockout' if self.knockout else ''
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         layer =  f' (layer "{dequote(self.layer)}"{ko})' if self.layer is not None else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
-        locked = f' locked' if self.locked else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
+        locked = f' (locked yes)' if self.locked else ''
 
-        expression =  f'{indents}(gr_text{locked} "{dequote(self.text)}" (at {self.position.X} {self.position.Y}{posA}){layer}{tstamp}\n'
+        expression =  f'{indents}(gr_text "{dequote(self.text)}"{locked} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){layer}{tstamp}\n'
         expression += f'{indents}  {self.effects.to_sexpr()}'
         if self.renderCache is not None:
             expression += self.renderCache.to_sexpr(indent+2)
@@ -181,49 +185,54 @@ class GrTextBox():
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrTextBox:
-        """Convert the given S-Expression into a GrTextBox object
+        raise Exception('We never dealt with this before.'
+                        'Most definitely there were changes introduced between Kicad 7 and 9.'
+                        'If you know what you are doing, proceed to verify/fix and remove the exception.')
 
-        Args:
-            - exp (list): Part of parsed S-Expression ``(gr_text_box ...)``
-
-        Raises:
-            - Exception: When given parameter's type is not a list
-            - Exception: When the first item of the list is not fp_text_box
-
-        Returns:
-            - GrTextBox: Object of the class initialized with the given S-Expression
-        """
-        if not isinstance(exp, list) or len(exp) < 2:
-            raise Exception("Expression does not have the correct type")
-
-        if exp[0] != 'gr_text_box':
-            raise Exception("Expression does not have the correct type")
-
-        object = cls()
-
-        # Extract "locked" token, if any is present
-        if exp[1] == "locked" and not isinstance(exp[2], list):
-            object.locked = True
-            object.text = exp[2]
-            start_at = 3
-        else:
-            object.text = exp[1]
-            start_at = 2
-
-        for item in exp[start_at:]:
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.pts.append(Position().from_sexpr(point))
-            if item[0] == 'angle': object.angle = item[1]
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
-            if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
-
-        return object
+        # """Convert the given S-Expression into a GrTextBox object
+        #
+        # Args:
+        #     - exp (list): Part of parsed S-Expression ``(gr_text_box ...)``
+        #
+        # Raises:
+        #     - Exception: When given parameter's type is not a list
+        #     - Exception: When the first item of the list is not fp_text_box
+        #
+        # Returns:
+        #     - GrTextBox: Object of the class initialized with the given S-Expression
+        # """
+        # if not isinstance(exp, list) or len(exp) < 2:
+        #     raise Exception("Expression does not have the correct type")
+        #
+        # if exp[0] != 'gr_text_box':
+        #     raise Exception("Expression does not have the correct type")
+        #
+        # object = cls()
+        #
+        # # Extract "locked" token, if any is present
+        # if exp[1] == "locked" and not isinstance(exp[2], list):
+        #     object.locked = True
+        #     object.text = exp[2]
+        #     start_at = 3
+        # else:
+        #     object.text = exp[1]
+        #     start_at = 2
+        #
+        # for item in exp[start_at:]:
+        #     if item[0] == 'start': object.start = Position.from_sexpr(item)
+        #     if item[0] == 'end': object.end = Position.from_sexpr(item)
+        #     if item[0] == 'pts':
+        #         for point in item[1:]:
+        #             object.pts.append(Position().from_sexpr(point))
+        #     if item[0] == 'angle': object.angle = item[1]
+        #     if item[0] == 'layer': object.layer = item[1]
+        #     if item[0] == 'tstamp': object.tstamp = item[1]
+        #     if item[0] == 'tstamp': object.uuid = item[1] # Haha :)
+        #     if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
+        #     if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
+        #     if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+        #
+        # return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
         """Generate the S-Expression representing this object
@@ -292,8 +301,10 @@ class GrLine():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the rectangle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the rectangle. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     tstamp: Optional[str] = None      # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the rectangle object"""
@@ -322,15 +333,19 @@ class GrLine():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width': object.width = item[1]
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -345,13 +360,25 @@ class GrLine():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         angle = f' (angle {self.angle}' if self.angle is not None else ''
 
-        return f'{indents}(gr_line{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){angle}{layer} (width {self.width}){tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {format_float(self.width)})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return (f'{indents}(gr_line '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{angle}{width}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrRect():
@@ -370,8 +397,10 @@ class GrRect():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the rectangle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the rectangle. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     fill: Optional[str] = None
     """The optional ``fill`` toke defines how the rectangle is filled. Valid fill types are solid and none. If not defined, the rectangle is not filled"""
@@ -403,16 +432,20 @@ class GrRect():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width': object.width = item[1]
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -427,13 +460,25 @@ class GrRect():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
-        return f'{indents}(gr_rect{locked} (start {self.start.X} {self.start.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {format_float(self.width)})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return (f'{indents}(gr_rect '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{fill}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrCircle():
@@ -452,8 +497,10 @@ class GrCircle():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the circle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the circle. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     fill: Optional[str] = None
     """The optional ``fill`` toke defines how the circle is filled. Valid fill types are solid and none. If not defined, the rectangle is not filled"""
@@ -485,16 +532,19 @@ class GrCircle():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'center': object.center = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width': object.width = item[1]
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -510,13 +560,25 @@ class GrCircle():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
-        return f'{indents}(gr_circle{locked} (center {self.center.X} {self.center.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){fill}{tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {format_float(self.width)})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return (f'{indents}(gr_circle '
+                f'(center {format_float(self.center.X)} {format_float(self.center.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{fill}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrArc():
@@ -538,8 +600,10 @@ class GrArc():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the arc resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the arc. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     tstamp: Optional[str] = None      # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the arc object."""
@@ -568,16 +632,19 @@ class GrArc():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'start': object.start = Position.from_sexpr(item)
             if item[0] == 'mid': object.mid = Position.from_sexpr(item)
             if item[0] == 'end': object.end = Position.from_sexpr(item)
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width': object.width = item[1]
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -593,12 +660,26 @@ class GrArc():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' locked (yes)' if self.locked else ''
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
 
-        return f'{indents}(gr_arc{locked} (start {self.start.X} {self.start.Y}) (mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}){layer} (width {self.width}){tstamp}){endline}'
+        width = ''
+        if self.width is not None:
+            width = f' (width {format_float(self.width)})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        return (f'{indents}(gr_arc '
+                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) '
+                f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) '
+                f'(end {format_float(self.end.X)} {format_float(self.end.Y)})'
+                f'{width}{locked}{layer}{tstamp}){endline}')
 
 @dataclass
 class GrPoly():
@@ -614,8 +695,10 @@ class GrPoly():
     coordinates: List[Position] = field(default_factory=list)
     """The ``layer`` token defines the canonical layer the polygon resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the polygon. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     fill: Optional[str] = None
     """The optional ``fill`` toke defines how the polygon is filled. Valid fill types are solid and none. If not defined, the rectangle is not filled"""
@@ -648,17 +731,20 @@ class GrPoly():
 
         object = cls()
 
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'fill': object.fill = item[1]
             if item[0] == 'width': object.width = item[1]
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -681,20 +767,30 @@ class GrPoly():
         if len(self.coordinates) == 0:
             return f'{indents}{endline}'
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
         if pts_newline:
-            expression =  f'{indents}(gr_poly{locked}\n'
+            expression =  f'{indents}(gr_poly\n'
             expression += f'{indents}  (pts\n'
         else:
-            expression =  f'{indents}(gr_poly{locked} (pts\n'
+            expression =  f'{indents}(gr_poly (pts\n'
+
+        width = ''
+        if self.width is not None:
+            width = f' (width {format_float(self.width)})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
 
         for point in self.coordinates:
-            expression += f'{indents}    (xy {point.X} {point.Y})\n'
-        expression += f'{indents}  ){layer} (width {self.width}){fill}{tstamp}){endline}'
+            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
+        expression += f'{indents}  ){width}{fill}{locked}{layer}{tstamp}){endline}'
         return expression
 
 @dataclass
@@ -710,8 +806,10 @@ class GrCurve():
     layer: Optional[str] = None
     """The ``layer`` token defines the canonical layer the curve resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = None     # Used for KiCad < 7
     """The ``width`` token defines the line width of the curve. (prior to version 7)"""
+
+    stroke: Optional[GrStroke] = None # Alternative to above
 
     tstamp: Optional[str] = None      # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the curve object"""
@@ -740,16 +838,19 @@ class GrCurve():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'width': object.width = item[1]
+            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
 
         return object
 
@@ -769,12 +870,75 @@ class GrCurve():
         if len(self.coordinates) == 0:
             return f'{indents}{endline}'
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
-        expression = f'{indents}(gr_curve{locked} (pts\n'
+        width = ''
+        if self.width is not None:
+            width = f' (width {format_float(self.width)})'
+            # Little sanity check
+            if self.stroke is not None:
+                raise Exception("I didn't expect both stroke and width. Something is off...")
+
+        if self.stroke is not None:
+            width = f' {self.stroke.to_sexpr()}'
+
+        expression = f'{indents}(gr_curve (pts\n'
         for point in self.coordinates:
-            expression += f'{indents}  (xy {point.X} {point.Y})\n'
-        expression += f'{indents}){layer} (width {self.width}){tstamp}){endline}'
+            expression += f'{indents}  (xy {format_float(point.X)} {format_float(point.Y)})\n'
+        expression += f'{indents}){width}{locked}{layer}{tstamp}){endline}'
         return expression
+
+@dataclass
+class GrStroke():
+
+    width: float = 0.0
+
+    type: str = ""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> GrStroke:
+        """Convert the given S-Expresstion into a GrStroke object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(stroke ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not stroke
+
+        Returns:
+            - KeepoutSettings: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'stroke':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'width': object.width = item[1]
+            if item[0] == 'type': object.type = item[1]
+
+        return object
+
+    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
+        """Generate the S-Expression representing this object. When no coordinates are set
+        in the curve, the resulting S-Expression will be left empty.
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
+            - newline (bool): Adds a newline to the end of the output. Defaults to False.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        return f'{indents}(stroke (width {format_float(self.width)}) (type {self.type})){endline}'

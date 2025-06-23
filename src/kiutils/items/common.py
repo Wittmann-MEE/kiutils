@@ -22,6 +22,8 @@ from typing import Optional, List, Dict
 
 from kiutils.utils.strings import dequote
 
+from kiutils.utils.format_float import format_float
+
 @dataclass
 class Position():
     """The ``position`` token defines the positional coordinates and rotation of an object.
@@ -63,8 +65,8 @@ class Position():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.X = exp[1]
-        object.Y = exp[2]
+        object.X = float(exp[1])
+        object.Y = float(exp[2])
         if len(exp) >= 4:
             # More than four components means X, Y, and either angle or unlocked are present
             if exp[3] != 'unlocked':
@@ -243,12 +245,14 @@ class Stroke():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'width': object.width = item[1]
             if item[0] == 'type':  object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -265,7 +269,7 @@ class Stroke():
         endline = '\n' if newline else ''
         color = f' {self.color.to_sexpr()}' if self.color is not None else ''
         the_type = f' (type {self.type})' if self.type is not None else ''
-        return f'{indents}(stroke (width {self.width}){the_type}{color}){endline}'
+        return f'{indents}(stroke (width {format_float(self.width)}){the_type}{color}){endline}'
 
 
 
@@ -325,11 +329,10 @@ class Font():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'bold': object.bold = True
-                if item == 'italic': object.italic = True
-                continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'face': object.face = item[1]
             if item[0] == 'size':
                 object.height = item[1]
@@ -337,6 +340,9 @@ class Font():
             if item[0] == 'thickness': object.thickness = item[1]
             if item[0] == 'line_spacing': object.lineSpacing = item[1]
             if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+            if item[0] == 'bold' and item[1] == 'yes': object.bold = True
+            if item[0] == 'italic' and item[1] == 'yes': object.italic = True
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -353,12 +359,12 @@ class Font():
         endline = '\n' if newline else ''
         face_name, thickness, bold, italic, linespacing, color = '', '', '', '', '', ''
 
-        if self.face is not None:        face_name = f'(face "{dequote(self.face)}") '
-        if self.thickness is not None:   thickness = f' (thickness {self.thickness})'
-        if self.bold == True:            bold = ' bold'
-        if self.italic == True:          italic = ' italic'
-        if self.lineSpacing is not None: linespacing = f' (line_spacing {self.lineSpacing})'
-        if self.color is not None:       color = f' {self.color.to_sexpr()}'
+        if self.face is not None:           face_name = f'(face "{dequote(self.face)}") '
+        if self.thickness is not None:      thickness = f' (thickness {self.thickness})'
+        if self.bold:                       bold = ' (bold yes)'
+        if self.italic:                     italic = ' (italic yes)'
+        if self.lineSpacing is not None:    linespacing = f' (line_spacing {self.lineSpacing})'
+        if self.color is not None:          color = f' {self.color.to_sexpr()}'
 
         expression = f'{indents}(font {face_name}(size {self.height} {self.width}){color}{thickness}{bold}{italic}{linespacing}){endline}'
         return expression
@@ -401,11 +407,12 @@ class Justify():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             # 'center' is the standard on vertical but not on horizontal in work sheets
             if item == 'left' or item == 'right' or item == 'center': object.horizontally = item
             if item == 'top' or item == 'bottom': object.vertically = item
             if item == 'mirror': object.mirror = True
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -424,7 +431,7 @@ class Justify():
         endline = '\n' if newline else ''
 
         if self.horizontally is None and self.vertically is None and self.mirror == False:
-            return f'{indents}{endline}';
+            return f'{indents}{endline}'
 
         horizontally, vertically, mirror = '', '', ''
 
@@ -478,13 +485,15 @@ class Effects():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'hide': object.hide = True
-                else: continue
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
             if item[0] == 'font': object.font = Font().from_sexpr(item)
             if item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             if item[0] == 'href': object.href = item[1]
+
         return object
 
     def to_sexpr(self, indent=0, newline=True) -> str:
@@ -501,7 +510,7 @@ class Effects():
         endline = '\n' if newline else ''
 
         justify = f' {self.justify.to_sexpr()}' if self.justify.to_sexpr() != '' else ''
-        hide = f' hide' if self.hide else ''
+        hide = f' (hide yes)' if self.hide else ''
         href = f' (href "{dequote(self.href)}")' if self.href is not None else ''
 
         expression =  f'{indents}(effects {self.font.to_sexpr()}{justify}{href}{hide}){endline}'
@@ -600,11 +609,13 @@ class Group():
 
         object = cls()
         object.name = exp[1]
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
-                continue
+        for item in exp[2:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'id': object.id = item[1]
+            if item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
             if item[0] == 'members':
                 for member in item[1:]:
                     object.members.append(member)
@@ -622,14 +633,14 @@ class Group():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked' if self.locked else ''
+        locked = f' (locked yes)' if self.locked else ''
 
-        expression =  f'{indents}(group "{dequote(self.name)}"{locked} (id {self.id})\n'
-        expression += f'{indents}  (members\n'
+        expression =  f'{indents}(group "{dequote(self.name)}" (uuid "{self.id}"){locked}\n'
+        expression += f'{indents}(members\n'
         for member in self.members:
-            expression += f'{indents}    {member}\n'
+            expression += f' "{member}"'
 
-        expression += f'{indents}  )\n'
+        expression += f')\n'
         expression += f'{indents}){endline}'
         return expression
 
@@ -683,10 +694,13 @@ class PageSettings():
 
             object.width = exp[2]
             object.height = exp[3]
-        for item in exp:
-            if type(item) != type([]):
-                if item == 'portrait': object.portrait = True
-                continue
+        else:
+            for item in exp[2:]:
+                if not isinstance(item, list):
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
+                if item[0] == 'portrait': object.portrait = True
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -765,6 +779,7 @@ class TitleBlock():
             if item[0] == 'rev': object.revision = item[1]
             if item[0] == 'company': object.company = item[1]
             if item[0] == 'comment': object.comments.update({item[1]: item[2]})
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -858,6 +873,7 @@ class Property():
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             if item[0] == 'show_name': object.showName = True
+
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -873,11 +889,11 @@ class Property():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         id = f' (id {self.id})' if self.id is not None else ''
         sn = ' (show_name)' if self.showName else ''
 
-        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {self.position.X} {self.position.Y}{posA}){sn}'
+        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}'
         if self.effects is not None:
             expression += f'\n{self.effects.to_sexpr(indent+2)}'
             expression += f'{indents}){endline}'
@@ -942,7 +958,7 @@ class RenderCachePolygon():
             if i % 4 == 0:
                 expression += f'\n'
             expression += f'{indents}    '
-            expression += f'(xy {point.X} {point.Y})'
+            expression += f'(xy {format_float(point.X)} {format_float(point.Y)})'
 
         # NOTE: This expects the length of the points array to be a multiple of four to get the
         #       formatting right.
@@ -966,7 +982,7 @@ class RenderCache():
     id: int = 0
     """The ``id`` token is some number after the text. Defaults to 0."""
 
-    polygons: List[Position] = field(default_factory=list)
+    polygons: List[RenderCachePolygon] = field(default_factory=list)
     """The ``polygons`` token is a list of polygons that define the outline of the cached text"""
 
     @classmethod
@@ -1011,7 +1027,7 @@ class RenderCache():
 
         expression = f'{indents}(render_cache "{dequote(self.text)}" {self.id}\n'
         for poly in self.polygons:
-            expression += poly.to_sexpr(indent+2)
+            expression += poly.to_sexpr()
         expression += f'{indents}){endline}'
         return expression
 
@@ -1056,7 +1072,9 @@ class Fill():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
             if item[0] == 'type': object.type = item[1]
             if item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
         return object
@@ -1132,6 +1150,7 @@ class Image():
             if item[0] == 'data':
                 for b64part in item[1:]:
                     object.data.append(b64part)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -1171,7 +1190,7 @@ class ProjectInstance(ABC):
     """The ``name`` token defines the name of the project instance"""
 
     @abstractmethod
-    def from_sexpr(cls, exp: list) -> ProjectInstance:
+    def from_sexpr(self, cls, exp: list) -> ProjectInstance:
         raise NotImplementedError
 
     @abstractmethod

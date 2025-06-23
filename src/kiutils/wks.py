@@ -22,7 +22,8 @@ from os import path
 from kiutils.items.common import Justify
 from kiutils.utils.strings import dequote
 from kiutils.utils import sexpr
-from kiutils.misc.config import KIUTILS_CREATE_NEW_GENERATOR_STR, KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.misc.config import *
 
 @dataclass
 class WksFontSize():
@@ -110,13 +111,14 @@ class WksFont():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
+        for item in exp[1:]:
+            if not isinstance(item, list):
                 if item == 'bold': object.bold = True
-                if item == 'italic': object.italic = True
-                continue
-            if item[0] == 'linewidth': object.linewidth = item[1]
-            if item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
+                elif item == 'italic': object.italic = True
+            else:
+                if item[0] == 'linewidth': object.linewidth = item[1]
+                if item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
+
         return object
 
     def to_sexpr(self, indent=0, newline=False):
@@ -135,8 +137,8 @@ class WksFont():
 
         lw = f' (linewidth {self.linewidth})' if self.linewidth is not None else ''
         size = f' {self.size.to_sexpr()}' if self.size is not None else ''
-        bold = f' bold' if self.bold else ''
-        italic = f' italic' if self.italic else ''
+        bold = ' bold' if self.bold else ''
+        italic = ' italic' if self.italic else ''
 
         if lw == '' and size == '' and bold == '' and italic == '':
             return ''
@@ -492,17 +494,7 @@ class Bitmap():
     comment: Optional[str] = None
     """The optional ``comment`` token is a comment for the bitmap object"""
 
-    # TODO: Parse this nonesense as a binary struct to make it more useful
-    pngdata: List[str] = field(default_factory=list)
-    """The ``pngdata`` token defines a list of strings representing up to 32 bytes per entry of
-    the image being saved.
-
-    Format:
-    - "xx xx xx xx xx (..) xx "
-
-    The list must be 32byte aligned, leaving a space after the last byte as shown in the format
-    example.
-    """
+    data: list[str] = field(default_factory=list)
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Bitmap:
@@ -534,11 +526,10 @@ class Bitmap():
             if item[0] == 'incrx': object.incrx = item[1]
             if item[0] == 'incry': object.incry = item[1]
             if item[0] == 'comment': object.comment = item[1]
-            if item[0] == 'pngdata':
-                if len(item) < 2: continue
-                for data in item[1:]:
-                    if data[0] != 'data': continue
-                    object.pngdata.append(data[1])
+            if item[0] == 'data':
+                for data_str in item[1:]:
+                    object.data.append(data_str)
+
         return object
 
     def to_sexpr(self, indent=2, newline=True):
@@ -566,10 +557,9 @@ class Bitmap():
         if self.comment is not None:
             # Here KiCad decides to only use 1 space for some unknown reason ..
             expression += f' (comment "{dequote(self.comment)}")\n'
-        expression += f'{indents}(pngdata\n'
-        for data in self.pngdata:
-            expression += f'{indents}  (data "{data}")\n'
-        expression += f'{indents}  )\n'
+        if len(self.data) > 0:
+            data_str = ' '.join(f'"{d}"' for d in self.data)
+            expression += f'{indents}(data {data_str})\n'
         expression += f'{indents}){endline}'
         return expression
 
@@ -689,7 +679,7 @@ class TbText():
         maxlen = f' (maxlen {self.maxlen})' if self.maxlen is not None else ''
         maxheight = f' (maxheight {self.maxheight})' if self.maxheight is not None else ''
         incrlabel = f' (incrlabel {self.incrlabel})' if self.incrlabel is not None else ''
-        font = f' {self.font.to_sexpr()}' if self.font.to_sexpr() != '' else ''
+        font = f' {self.font.to_sexpr()}'
 
         expression  = f'{indents}(tbtext "{dequote(self.text)}" (name "{dequote(self.name)}") '
         expression += f'(pos {self.position.X} {self.position.Y}{corner}){option}{rotate}'
@@ -854,6 +844,13 @@ class WorkSheet():
     """The ``filePath`` token defines the path-like string to the board file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> WorkSheet:
         """Convert the given S-Expresstion into a WorkSheet object
@@ -878,6 +875,7 @@ class WorkSheet():
         for item in exp[1:]:
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
             if item[0] == 'setup': object.setup = Setup().from_sexpr(item)
             if item[0] == 'rect': object.drawingObjects.append(Rect().from_sexpr(item))
             if item[0] == 'line': object.drawingObjects.append(Line().from_sexpr(item))
@@ -919,7 +917,8 @@ class WorkSheet():
         """
         return cls(
             version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+            generator = KIUTILS_CREATE_NEW_GENERATOR_STR,
+            generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR,
         )
 
     def to_file(self, filepath = None):
@@ -938,7 +937,8 @@ class WorkSheet():
             filepath = self.filePath
 
         with open(filepath, 'w') as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True):
         """Generate the S-Expression representing this object
@@ -953,7 +953,9 @@ class WorkSheet():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression =  f'{indents}(kicad_wks (version {self.version}) (generator {self.generator})\n'
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+
+        expression =  f'{indents}(kicad_wks (version {self.version}) (generator "{self.generator}"){generator_version}\n'
         expression += self.setup.to_sexpr(indent+2)
         for item in self.drawingObjects:
             expression += item.to_sexpr(indent+2)

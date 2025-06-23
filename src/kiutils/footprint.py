@@ -18,17 +18,19 @@ from __future__ import annotations
 import calendar
 import datetime
 import re
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Dict
 from os import path
 
 from kiutils.items.zones import Zone
-from kiutils.items.common import Image, Position, Coordinate, Net, Group, Font
+from kiutils.items.common import Image, Coordinate, Net, Group, Font
 from kiutils.items.fpitems import *
 from kiutils.items.gritems import *
 from kiutils.utils import sexpr
+from kiutils.utils.sexp_prettify import sexp_prettify as prettify
 from kiutils.utils.strings import dequote, remove_prefix
-from kiutils.misc.config import KIUTILS_CREATE_NEW_VERSION_STR
+from kiutils.misc.config import *
+
+from kiutils.utils.format_float import format_float
 
 @dataclass
 class Attributes():
@@ -59,6 +61,11 @@ class Attributes():
     "missing courtyard" DRC violation.
     
     Available since KiCad 7"""
+
+    # Available since KiCad v9
+    # TODO Update docs
+
+    dnp: Optional[bool] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Attributes:
@@ -92,6 +99,8 @@ class Attributes():
             if item == 'exclude_from_pos_files': object.excludeFromPosFiles = True
             if item == 'exclude_from_bom': object.excludeFromBom = True
             if item == 'allow_missing_courtyard': object.allowMissingCourtyard = True
+            if item == 'dnp': object.dnp = True
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -112,7 +121,7 @@ class Attributes():
         Returns:
             - str: S-Expression of this object
         """
-        if (self.type == None
+        if (self.type is None
             and self.boardOnly == False
             and self.excludeFromBom == False
             and self.excludeFromPosFiles == False
@@ -128,6 +137,7 @@ class Attributes():
         if self.excludeFromPosFiles: expression += ' exclude_from_pos_files'
         if self.excludeFromBom: expression += ' exclude_from_bom'
         if self.allowMissingCourtyard: expression += ' allow_missing_courtyard'
+        if self.dnp: expression += ' dnp'
         expression += f'){endline}'
         return expression
 
@@ -180,18 +190,16 @@ class Model():
         object = cls()
         object.path = exp[1]
 
-        if exp[2] == 'hide':
-            object.hide = True
-
         for e in exp[2:]:
-            if e[0] == 'opacity':
-                object.opacity = e[1]
-            elif e[0] == 'offset':
-                object.pos = Coordinate.from_sexpr(e[1])
-            elif e[0] == 'scale':
-                object.scale = Coordinate.from_sexpr(e[1])
-            elif e[0] == 'rotate':
-                object.rotate = Coordinate.from_sexpr(e[1])
+            if not isinstance(e, list):
+                raise Exception(f"Property '{e}' which is not in key -> value mapping. Expression: {exp}")
+
+            if e[0] == 'hide' and e[1] == 'yes': object.hide = True
+            if e[0] == 'opacity': object.opacity = e[1]
+            elif e[0] == 'offset': object.pos = Coordinate.from_sexpr(e[1])
+            elif e[0] == 'scale': object.scale = Coordinate.from_sexpr(e[1])
+            elif e[0] == 'rotate': object.rotate = Coordinate.from_sexpr(e[1])
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -206,7 +214,7 @@ class Model():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        hide = " hide" if self.hide else ""
+        hide = " (hide yes)" if self.hide else ""
 
         expression =  f'{indents}(model "{dequote(self.path)}"{hide}\n'
         if self.opacity is not None:
@@ -228,7 +236,7 @@ class DrillDefinition():
     oval: bool = False
     """The ``oval`` token defines if the drill is oval instead of round"""
 
-    diameter: float = 0.0
+    diameter: Optional[float] = None
     """The ``diameter`` attribute defines the drill diameter"""
 
     width: Optional[float] = None
@@ -258,20 +266,21 @@ class DrillDefinition():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        # Depending on the ``oval`` token, the fields may be shifted ..
-        if exp[1] == 'oval':
-            object.oval = True
-            object.diameter = exp[2]
-            object.width = exp[3]
-        else:
-            object.diameter = exp[1]
-            if len(exp) > 2:
-                object.width = exp[2]
 
-        # The ``offset`` token may not be given
-        for item in exp:
-            if type(item) != type([]): continue
-            if item[0] == 'offset': object.offset = Position().from_sexpr(item)
+        # If offset is given, others won't be present
+        if isinstance(exp[1], list):
+            object.offset = Position().from_sexpr(exp[1])
+        else:
+            # Depending on the ``oval`` token, the fields may be shifted ..
+            if exp[1] == 'oval':
+                object.oval = True
+                object.diameter = exp[2]
+                object.width = exp[3]
+            else:
+                object.diameter = exp[1]
+                if len(exp) > 2:
+                    object.width = exp[2]
+
         return object
 
     def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
@@ -287,11 +296,12 @@ class DrillDefinition():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
+        diameter = f' {self.diameter}' if self.diameter is not None else ''
         oval = f' oval' if self.oval else ''
         width = f' {self.width}' if self.oval and self.width is not None else ''
-        offset = f' (offset {self.offset.X} {self.offset.Y})' if self.offset is not None else ''
+        offset = f' (offset {format_float(self.offset.X)} {format_float(self.offset.Y)})' if self.offset is not None else ''
 
-        return f'{indents}(drill{oval} {self.diameter}{width}{offset}){endline}'
+        return f'{indents}(drill{oval}{diameter}{width}{offset}){endline}'
 
 @dataclass
 class PadOptions():
@@ -330,9 +340,13 @@ class PadOptions():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+
             if item[0] == 'clearance': object.clearance = item[1]
             if item[0] == 'anchor': object.anchor = item[1]
+
         return object
 
     def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
@@ -389,11 +403,11 @@ class Pad():
     are ``pad_prop_bga``, ``pad_prop_fiducial_glob``, ``pad_prop_fiducial_loc``, ``pad_prop_testpoint``,
     ``pad_prop_heatsink``, ``pad_prop_heatsink``, and ``pad_prop_castellated``"""
 
-    removeUnusedLayers: bool = False
+    removeUnusedLayers: Optional[str] = None
     """The optional ``removeUnusedLayers`` token specifies that the copper should be removed from
     any layers the pad is not connected to"""
 
-    keepEndLayers: bool = False
+    keepEndLayers: Optional[str] = None
     """The optional ``keepEndLayers`` token specifies that the top and bottom layers should be
     retained when removing the copper from unused layers"""
 
@@ -477,6 +491,15 @@ class Pad():
     """The optional ``customPadPrimitives`` defines the drawing objects and options used to define
     a custom pad"""
 
+    # Available since KiCad v9
+    # TODO Update docs
+
+    zone_layer_connections: bool = False
+
+    thermal_bridge_width: Optional[float] = None
+
+    thermal_bridge_angle: Optional[float] = None
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Pad:
         """Convert the given S-Expresstion into a Pad object
@@ -502,26 +525,33 @@ class Pad():
         object.type = exp[2]
         object.shape = exp[3]
 
-        for item in exp[3:]:
-            if type(item) != type([]):
-                if item == 'locked': object.locked = True
+        for item in exp[4:]:
+            if not isinstance(item, list):
+                if item[0] == 'zone_layer_connections':
+                    object.zone_layer_connections = True
+                else:
+                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
             if item[0] == 'at': object.position = Position().from_sexpr(item)
             if item[0] == 'size': object.size = Position().from_sexpr(item)
             if item[0] == 'drill': object.drill = DrillDefinition().from_sexpr(item)
             if item[0] == 'layers':
                 for layer in item[1:]:
                     object.layers.append(layer)
+
             if item[0] == 'property': object.property = item[1]
-            if item[0] == 'remove_unused_layers': object.removeUnusedLayers = True
-            if item[0] == 'keep_end_layers': object.keepEndLayers = True
+            if item[0] == 'remove_unused_layers': object.removeUnusedLayers = item[1]
+            if item[0] == 'keep_end_layers': object.keepEndLayers = item[1]
             if item[0] == 'roundrect_rratio': object.roundrectRatio = item[1]
             if item[0] == 'chamfer_ratio': object.chamferRatio = item[1]
             if item[0] == 'chamfer':
                 for chamfer in item[1:]:
                     object.chamfer.append(chamfer)
+
             if item[0] == 'net': object.net = Net().from_sexpr(item)
             if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             if item[0] == 'pinfunction': object.pinFunction = item[1]
             if item[0] == 'pintype': object.pinType = item[1]
             if item[0] == 'die_length': object.dieLength = item[1]
@@ -546,6 +576,12 @@ class Pad():
 
                     # XXX: Are dimentions even implemented here?
                     if primitive[0] == 'dimension': raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+
+            if item[0] == 'zone_layer_connections': object.zone_layer_connections = True
+            if item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
+            if item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
+
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -561,25 +597,20 @@ class Pad():
         indents = ' '*indent
         endline = '\n' if newline else ''
         champferFound, marginFound, schematicSymbolAssociated = False, False, False
-        c, cr, smm, spm, spmr, cl, zc, tw, tg = '', '', '', '', '', '', '', '', ''
+        c, cr, smm, spm, spmr, cl, zc, tw, tg, tbw, tba = '', '', '', '', '', '', '', '', '', '', ''
 
         layers = ' (layers'
         for layer in self.layers:
-            # For some reason KiCad does not escape a layer with double-quotes if it has a
-            # wildcard (*) or an ampersant (&) in it
-            if "*." in layer or "&" in layer:
-                layers += f' {layer}'
-            else:
-                layers += f' "{dequote(layer)}"'
-
+            layers += f' "{dequote(layer)}"'
         layers += ')'
 
-        locked = ' locked' if self.locked else ''
+        locked = ' (locked yes)' if self.locked else ''
         drill = f' {self.drill.to_sexpr()}' if self.drill is not None else ''
         ppty = f' (property {self.property})' if self.property is not None else ''
-        rul = ' (remove_unused_layers)' if self.removeUnusedLayers else ''
-        kel = ' (keep_end_layers)' if self.keepEndLayers else ''
+        rul = f' (remove_unused_layers {self.removeUnusedLayers})' if self.removeUnusedLayers is not None else ''
+        kel = f' (keep_end_layers {self.keepEndLayers})' if self.keepEndLayers is not None else ''
         rrr = f' (roundrect_rratio {self.roundrectRatio})' if self.roundrectRatio is not None else ''
+        zlc = ' (zone_layer_connections)' if self.zone_layer_connections else ''
 
         net = f' {self.net.to_sexpr()}' if self.net is not None else ''
         pf = f' (pinfunction "{dequote(self.pinFunction)}")' if self.pinFunction is not None else ''
@@ -590,7 +621,7 @@ class Pad():
         if net != '' or pf != '' or pt != '':
             schematicSymbolAssociated = True
 
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         if len(self.chamfer) > 0:
             champferFound = True
@@ -603,9 +634,9 @@ class Pad():
             cr = f' (chamfer_ratio {self.chamferRatio})'
 
         if self.position.angle is not None:
-            position = f'(at {self.position.X} {self.position.Y} {self.position.angle})'
+            position = f' (at {format_float(self.position.X)} {format_float(self.position.Y)} {self.position.angle})'
         else:
-            position = f'(at {self.position.X} {self.position.Y})'
+            position = f' (at {format_float(self.position.X)} {format_float(self.position.Y)})'
 
         if self.solderMaskMargin is not None:
             marginFound = True
@@ -627,6 +658,12 @@ class Pad():
             marginFound = True
             zc = f' (zone_connect {self.zoneConnect})'
 
+        if self.thermal_bridge_width is not None:
+            tbw = f' (thermal_bridge_width {self.thermal_bridge_width})'
+
+        if self.thermal_bridge_angle is not None:
+            tba = f' (thermal_bridge_angle {self.thermal_bridge_angle})'
+
         if self.thermalWidth is not None:
             marginFound = True
             tw = f' (thermal_width {self.thermalWidth})'
@@ -635,7 +672,8 @@ class Pad():
             marginFound = True
             tg = f' (thermal_gap {self.thermalGap})'
 
-        expression =  f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked} {position} (size {self.size.X} {self.size.Y}){drill}{ppty}{layers}{rul}{kel}{rrr}'
+        expression =  (f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked}{position} '
+                       f'(size {format_float(self.size.X)} {format_float(self.size.Y)}){drill}{ppty}{layers}{rul}{kel}{rrr}{zlc}')
         if champferFound:
             # Only one whitespace here as all temporary strings have at least one leading whitespace
             expression += f'\n{indents} {cr}{c}'
@@ -645,7 +683,7 @@ class Pad():
 
         if marginFound or schematicSymbolAssociated:
             # Only one whitespace here as all temporary strings have at least one leading whitespace
-            expression += f'\n{indents} {net}{pf}{pt}{smm}{spm}{spmr}{cl}{zc}{tw}{tg}'
+            expression += f'\n{indents} {net}{pf}{pt}{smm}{spm}{spmr}{cl}{zc}{tw}{tbw}{tba}{tg}'
 
         if self.customPadOptions is not None:
             expression += f'\n{indents}  {self.customPadOptions.to_sexpr()}'
@@ -743,9 +781,9 @@ class Footprint():
     tags: Optional[str] = None
     """The optional ``tags`` token defines a string of search tags for the footprint"""
 
-    properties: Dict = field(default_factory=dict)
+    properties: Dict[str, FpProperty] = field(default_factory=dict)
     """The ``properties`` token defines dictionary of properties as key / value pairs where key being
-    the name of the property and value being the description of the property"""
+    the name of the property and value being the description of the property, the FpProperty item"""
 
     path: Optional[str] = None
     """The ``path`` token defines the hierarchical path of the schematic symbol linked to the footprint.
@@ -837,6 +875,18 @@ class Footprint():
     """The ``filePath`` token defines the path-like string to the library file. Automatically set when
     ``self.from_file()`` is used. Allows the use of ``self.to_file()`` without parameters."""
 
+    # Available since KiCad v9
+
+    generator_version: Optional[str] = None
+    """The ``generator_version`` token attribute defines the version of the program used to write the file"""
+
+    embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines if the embedded fonts are used in the footprint."""
+
+    sheet_name: str = ""
+
+    sheet_file: str = ""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Footprint:
         """Convert the given S-Expresstion into a Footprint object
@@ -861,15 +911,20 @@ class Footprint():
         object.libId = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                if item == 'locked': object.locked = True
-                if item == 'placed': object.placed = True
-                continue
+                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
 
             if item[0] == 'version': object.version = item[1]
             if item[0] == 'generator': object.generator = item[1]
+            if item[0] == 'generator_version': object.generator_version = item[1]
+
+            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
+            if item[0] == 'placed' and item[1] == 'yes': object.placed = True
+
+            if item[0] == 'tstamp': object.tstamp = item[1]
+            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+
             if item[0] == 'layer': object.layer = item[1]
             if item[0] == 'tedit': object.tedit = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
             if item[0] == 'descr': object.description = item[1]
             if item[0] == 'tags': object.tags = item[1]
             if item[0] == 'path': object.path = item[1]
@@ -896,7 +951,9 @@ class Footprint():
             if item[0] == 'image':object.graphicItems.append(Image.from_sexpr(item))
             if item[0] == 'pad': object.pads.append(Pad.from_sexpr(item))
             if item[0] == 'zone': object.zones.append(Zone.from_sexpr(item))
-            if item[0] == 'property': object.properties.update({ item[1]: item[2] })
+            if item[0] == 'sheetname': object.sheet_name = item[1]
+            if item[0] == 'sheetfile': object.sheet_file = item[1]
+            if item[0] == 'property': object.properties.update({ item[1]: FpProperty.from_sexpr(item) })
             if item[0] == 'group': object.groups.append(Group.from_sexpr(item))
             if item[0] == 'private_layers':
                 for layer in item[1:]:
@@ -906,6 +963,7 @@ class Footprint():
                     object.netTiePadGroups.append(layer)
             if item[0] == 'dimension':
                 raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
 
         return object
 
@@ -953,31 +1011,29 @@ class Footprint():
         if type not in ['smd', 'through_hole', 'other']:
             raise Exception("Unsupported type was given")
 
-        fp = cls(
-            version = KIUTILS_CREATE_NEW_VERSION_STR,
-            generator = 'kiutils'
-        )
+        fp = Footprint()
+        fp.version = KIUTILS_CREATE_NEW_VERSION_STR
+        fp.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
+        fp.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
         fp.libId = library_id
 
         # Create text items that are created when adding a new footprint to a library
-        fp.graphicItems.extend(
-            [
-                FpText(
-                    type = 'reference', text = reference, layer = 'F.SilkS',
-                    effects = Effects(font=Font(thickness=0.15)),
-                    position = Position(X=0, Y=-0.5, unlocked=True)
-                ),
-                FpText(
-                    type = 'value', text = value, layer ='F.Fab',
-                    effects  = Effects(font=Font(thickness=0.15)),
-                    position = Position(X=0, Y=1, unlocked=True)
-                ),
-                FpText(
-                    type = 'user', text = '${REFERENCE}', layer = 'F.Fab',
-                    effects = Effects(font=Font(thickness=0.15)),
-                    position = Position(X=0, Y=2.5, unlocked=True)
-                )
-            ]
+        fp.properties['Reference'] = FpProperty(
+            type='Reference', text=reference, layer='F.SilkS',
+            effects=Effects(font=Font(thickness=0.15)),
+            at=Position(X=0, Y=-0.5, unlocked=True)
+        ),
+        fp.properties['Value'] = FpProperty(
+            type='Value', text=value, layer='F.Fab',
+            effects=Effects(font=Font(thickness=0.15)),
+            at=Position(X=0, Y=1, unlocked=True)
+        ),
+        fp.graphicItems.append(
+            FpText(
+                type = 'user', text = '${REFERENCE}', layer = 'F.Fab',
+                effects = Effects(font=Font(thickness=0.15)),
+                position = Position(X=0, Y=2.5, unlocked=True)
+            )
         )
 
         # The type ``other`` does not set the attributes type token
@@ -1004,7 +1060,8 @@ class Footprint():
             filepath = self.filePath
 
         with open(filepath, 'w', encoding=encoding) as outfile:
-            outfile.write(self.to_sexpr())
+            pre_formatted_sexpr = self.to_sexpr()
+            outfile.write(prettify(pre_formatted_sexpr))
 
     def to_sexpr(self, indent=0, newline=True, layerInFirstLine=False) -> str:
         """Generate the S-Expression representing this object
@@ -1017,33 +1074,42 @@ class Footprint():
         Returns:
             - str: S-Expression of this object
         """
+
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = ' locked' if self.locked else ''
-        placed = ' placed' if self.placed else ''
+        locked = f' (locked yes)' if self.locked else ''
+        placed = f' (placed yes)' if self.placed else ''
         version = f' (version {self.version})' if self.version is not None else ''
-        generator = f' (generator {self.generator})' if self.generator is not None else ''
-        tstamp = f' (tstamp {self.tstamp})' if self.tstamp is not None else ''
+        generator = f' (generator "{self.generator}")' if self.generator is not None else ''
+        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
 
-        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}'
+        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}'
         if layerInFirstLine:
             expression += f' (layer "{dequote(self.layer)}")\n'
         else:
             expression += f'\n{indents}  (layer "{dequote(self.layer)}")\n'
-        expression += f'{indents}  (tedit {self.tedit}){tstamp}\n'
+
+        expression += f'{indents} (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         if self.position is not None:
             angle = f' {self.position.angle}' if self.position.angle is not None else ''
-            expression += f'{indents}  (at {self.position.X} {self.position.Y}{angle})\n'
+            expression += f'{indents}  (at {format_float(self.position.X)} {format_float(self.position.Y)}{angle})\n'
         if self.description is not None:
             expression += f'{indents}  (descr "{dequote(self.description)}")\n'
         if self.tags is not None:
             expression += f'{indents}  (tags "{dequote(self.tags)}")\n'
-        for item in self.properties:
-            expression += f'{indents}  (property "{dequote(item)}" "{dequote(self.properties[item])}")\n'
+        for item in self.properties.values():
+            expression += item.to_sexpr(indent=indent+2)
+
         if self.path is not None:
             expression += f'{indents}  (path "{dequote(self.path)}")\n'
+
+        if self.sheet_name != "":
+            expression += f'{indents}  (sheetname "{self.sheet_name}")\n'
+
+        if self.sheet_file != "":
+            expression += f'{indents}  (sheetfile "{self.sheet_file}")\n'
 
         # Additional parameters used in board
         if self.autoplaceCost90 is not None:
@@ -1088,9 +1154,11 @@ class Footprint():
             expression += item.to_sexpr(indent=indent+2)
         for item in self.zones:
             expression += item.to_sexpr(indent=indent+2)
-        for item in self.models:
-            expression += item.to_sexpr(indent=indent+2)
         for item in self.groups:
+            expression += item.to_sexpr(indent=indent+2)
+        if self.embedded_fonts is not None:
+            expression += f'{indents}  (embedded_fonts {self.embedded_fonts})\n'
+        for item in self.models:
             expression += item.to_sexpr(indent=indent+2)
 
         expression += f'{indents}){endline}'
