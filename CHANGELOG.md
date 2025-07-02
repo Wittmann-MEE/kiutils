@@ -1,5 +1,10 @@
 # kiutils - CHANGELOG
 
+## v1.6.0 - 02.07.2025
+
+### Non-breaking changes
+- Added: Backwards compatibility for KiCad 8 and less (only reading, writing still enforces new syntax)
+
 ## v1.5.0 - 23.06.2025
 
 ### Breaking changes
