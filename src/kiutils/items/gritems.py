@@ -22,8 +22,8 @@ from typing import Optional, List
 
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
 from kiutils.utils.string_utils import dequote
-
 from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class GrText():
@@ -85,20 +85,21 @@ class GrText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'layer': 
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'layer':
                 object.layer = item[1]
-                if(len(item) > 2):
-                    if(item[2] == "knockout"):
-                        object.knockout = True
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+                if (len(item) > 2) and item[2] == "knockout":
+                    object.knockout = True
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -118,7 +119,7 @@ class GrText():
         posA = f' {self.position.angle}' if self.position.angle is not None else ''
         layer =  f' (layer "{dequote(self.layer)}"{ko})' if self.layer is not None else ''
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         expression =  f'{indents}(gr_text "{dequote(self.text)}"{locked} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){layer}{tstamp}\n'
         expression += f'{indents}  {self.effects.to_sexpr()}'
@@ -334,17 +335,18 @@ class GrLine():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -360,7 +362,7 @@ class GrLine():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
@@ -433,18 +435,19 @@ class GrRect():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'fill': object.fill = item[1]
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -460,7 +463,7 @@ class GrRect():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
@@ -533,18 +536,19 @@ class GrCircle():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'center': object.center = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'center': object.center = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'fill': object.fill = item[1]
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -560,7 +564,7 @@ class GrCircle():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
@@ -633,18 +637,19 @@ class GrArc():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'mid': object.mid = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'mid': object.mid = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -660,7 +665,7 @@ class GrArc():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' locked (yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
@@ -732,19 +737,19 @@ class GrPoly():
         object = cls()
 
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.coordinates.append(Position().from_sexpr(point))
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
+                for point in item[1:]: object.coordinates.append(Position().from_sexpr(point))
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'fill': object.fill = item[1]
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -770,7 +775,7 @@ class GrPoly():
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
         fill = f' (fill {self.fill})' if self.fill is not None else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         if pts_newline:
             expression =  f'{indents}(gr_poly\n'
@@ -839,18 +844,18 @@ class GrCurve():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.coordinates.append(Position().from_sexpr(point))
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
+                for point in item[1:]: object.coordinates.append(Position().from_sexpr(point))
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -872,7 +877,7 @@ class GrCurve():
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         width = ''
         if self.width is not None:
@@ -919,11 +924,12 @@ class GrStroke():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'type': object.type = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'type': object.type = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
