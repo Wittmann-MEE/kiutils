@@ -21,9 +21,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 
-from kiutils.utils.format_float import format_float
+from kiutils.utils.format_utils import format_float
 
 @dataclass
 class GrText():

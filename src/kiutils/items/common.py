@@ -20,9 +20,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 
-from kiutils.utils.format_float import format_float
+from kiutils.utils.format_utils import format_float
 
 @dataclass
 class Position():

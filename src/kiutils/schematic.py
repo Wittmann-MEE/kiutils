@@ -22,7 +22,7 @@ from kiutils.items.common import Image, PageSettings, TitleBlock
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 from kiutils.misc.config import *
 
 @dataclass

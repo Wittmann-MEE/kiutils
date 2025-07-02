@@ -20,9 +20,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
 from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 
-from kiutils.utils.format_float import format_float
+from kiutils.utils.format_utils import format_float
 
 @dataclass
 class Junction():

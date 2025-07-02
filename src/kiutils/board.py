@@ -23,9 +23,9 @@ from kiutils.items.zones import Zone
 from kiutils.items.brditems import *
 from kiutils.items.gritems import *
 from kiutils.items.dimensions import Dimension
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
 

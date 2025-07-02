@@ -20,11 +20,11 @@ import re
 from kiutils.items.common import Property, Font
 from kiutils.items.syitems import *
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
-from kiutils.utils.strings import dequote
+from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.string_utils import dequote
 from kiutils.misc.config import *
 
-from kiutils.utils.format_float import format_float
+from kiutils.utils.format_utils import format_float
 
 @dataclass
 class SymbolAlternativePin():

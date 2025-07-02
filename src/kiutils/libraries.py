@@ -16,9 +16,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from os import path
 
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 
 @dataclass
 class Library():
