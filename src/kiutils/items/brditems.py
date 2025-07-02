@@ -20,8 +20,9 @@ from typing import Optional, List
 
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import dequote
-
 from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
+
 
 @dataclass
 class GeneralSettings():
@@ -60,11 +61,13 @@ class GeneralSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'thickness': object.thickness = item[1]
+            elif item[0] == 'legacy_teardrops': object.legacy_teardrops = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
-            if item[0] == 'thickness': object.thickness = item[1]
-            if item[0] == 'legacy_teardrops': object.legacy_teardrops = item[1]
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -133,6 +136,7 @@ class LayerToken():
         object.type = exp[2]
         if len(exp) == 4:
             object.userName = exp[3]
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -266,7 +270,7 @@ class StackupLayer():
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
-            if type(item) != type([]):
+            if not isinstance(item, list):
                 # Start parsing the layer's sublayer if the first sublayer token was found
                 if item == 'addsublayer':
                     if parsingSublayer:
@@ -381,15 +385,17 @@ class Stackup():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+            if parse_bool(item, 'castellated_pads'): object.castellatedPads = True
+            elif parse_bool(item, 'edge_plating'): object.edgePlating = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'layer': object.layers.append(StackupLayer().from_sexpr(item))
+            elif item[0] == 'copper_finish': object.copperFinish = item[1]
+            elif item[0] == 'dielectric_constraints': object.dielectricContraints = item[1]
+            elif item[0] == 'edge_connector': object.edgeConnector = item[1]
+            else:
+                raise ValueError("Unrecognized property key: {item[0]}")
 
-            if item[0] == 'layer': object.layers.append(StackupLayer().from_sexpr(item))
-            if item[0] == 'copper_finish': object.copperFinish = item[1]
-            if item[0] == 'dielectric_constraints': object.dielectricContraints = item[1]
-            if item[0] == 'edge_connector': object.edgeConnector = item[1]
-            if item[0] == 'castellated_pads': object.castellatedPads = True
-            if item[0] == 'edge_plating': object.edgePlating = True
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -411,8 +417,8 @@ class Stackup():
         if self.copperFinish is not None:         expression += f'{indents}  (copper_finish "{dequote(self.copperFinish)}")\n'
         if self.dielectricContraints is not None: expression += f'{indents}  (dielectric_constraints {self.dielectricContraints})\n'
         if self.edgeConnector is not None:        expression += f'{indents}  (edge_connector {self.edgeConnector})\n'
-        if self.castellatedPads:                  expression += f'{indents}  (castellated_pads yes)\n'
-        if self.edgePlating:                      expression += f'{indents}  (edge_plating yes)\n'
+        if self.castellatedPads:                  expression += f'{indents}  {format_bool("castellated_pads", self.castellatedPads)}\n'
+        if self.edgePlating:                      expression += f'{indents}  {format_bool("edge_plating", self.edgePlating)}\n'
         expression += f'{indents}){endline}'
         return expression
 
@@ -597,53 +603,53 @@ class PlotSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'layerselection': object.layerSelection = item[1]
-            if item[0] == 'plot_on_all_layers_selection': object.plotOnAllLayersSelection = item[1]
-            if item[0] == 'disableapertmacros': object.disableApertMacros = item[1]
-            if item[0] == 'usegerberextensions' : object.useGerberExtensions = item[1]
-            if item[0] == 'usegerberattributes' : object.useGerberAttributes = item[1]
-            if item[0] == 'usegerberadvancedattributes' : object.useGerberAdvancedAttributes = item[1]
-            if item[0] == 'creategerberjobfile' : object.createGerberJobFile = item[1]
-            if item[0] == 'dashed_line_dash_ratio': object.dashedLineDashRatio = item[1]
-            if item[0] == 'dashed_line_gap_ratio': object.dashedLineGapRatio = item[1]
-            if item[0] == 'svguseinch' : object.svgUseInch = item[1]
-            if item[0] == 'svgprecision' : object.svgPrecision = item[1]
-            if item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = item[1]
-            if item[0] == 'plotframeref' : object.plotFameRef = item[1]
-            if item[0] == 'viasonmask' : object.viasOnMask = item[1]
-            if item[0] == 'mode' : object.mode = item[1]
-            if item[0] == 'useauxorigin' : object.useAuxOrigin = item[1]
-            if item[0] == 'hpglpennumber' : object.hpglPenNumber = item[1]
-            if item[0] == 'hpglpenspeed' : object.hpglPenSpeed = item[1]
-            if item[0] == 'hpglpendiameter' : object.hpglPenDiameter = item[1]
-            if item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = item[1]
-            if item[0] == 'dxfimperialunits' : object.dxfImperialUnits = item[1]
-            if item[0] == 'dxfusepcbnewfont' : object.dxfUsePcbnewFont = item[1]
-            if item[0] == 'psnegative' : object.psNegative = item[1]
-            if item[0] == 'psa4output' : object.psA4Output = item[1]
-            if item[0] == 'plotreference' : object.plotReference = item[1]
-            if item[0] == 'plotvalue' : object.plotValue = item[1]
-            if item[0] == 'plotinvisibletext' : object.plotInvisibleText = item[1]
-            if item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = item[1]
-            if item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = item[1]
-            if item[0] == 'outputformat' : object.outputFormat = item[1]
-            if item[0] == 'mirror' : object.mirror = item[1]
-            if item[0] == 'drillshape' : object.drillShape = item[1]
-            if item[0] == 'scaleselection' : object.scaleSelection = item[1]
-            if item[0] == 'outputdirectory' : object.outputDirectory = item[1]
-
-            if item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = item[1]
-            if item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = item[1]
-            if item[0] == 'pdf_metadata': object.pdf_metadata = item[1]
-            if item[0] == 'pdf_single_document': object.pdf_single_document = item[1]
-            if item[0] == 'plot_black_and_white': object.plot_black_and_white = item[1]
-            if item[0] == 'hidednponfab': object.hide_dnp_on_fab = item[1]
-            if item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = item[1]
-            if item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = item[1]
-            if item[0] == 'plotpadnumbers': object.plot_pad_numbers = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'layerselection': object.layerSelection = item[1]
+            elif item[0] == 'plot_on_all_layers_selection': object.plotOnAllLayersSelection = item[1]
+            elif item[0] == 'disableapertmacros': object.disableApertMacros = item[1]
+            elif item[0] == 'usegerberextensions' : object.useGerberExtensions = item[1]
+            elif item[0] == 'usegerberattributes' : object.useGerberAttributes = item[1]
+            elif item[0] == 'usegerberadvancedattributes' : object.useGerberAdvancedAttributes = item[1]
+            elif item[0] == 'creategerberjobfile' : object.createGerberJobFile = item[1]
+            elif item[0] == 'dashed_line_dash_ratio': object.dashedLineDashRatio = item[1]
+            elif item[0] == 'dashed_line_gap_ratio': object.dashedLineGapRatio = item[1]
+            elif item[0] == 'svguseinch' : object.svgUseInch = item[1]
+            elif item[0] == 'svgprecision' : object.svgPrecision = item[1]
+            elif item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = item[1]
+            elif item[0] == 'plotframeref' : object.plotFameRef = item[1]
+            elif item[0] == 'viasonmask' : object.viasOnMask = item[1]
+            elif item[0] == 'mode' : object.mode = item[1]
+            elif item[0] == 'useauxorigin' : object.useAuxOrigin = item[1]
+            elif item[0] == 'hpglpennumber' : object.hpglPenNumber = item[1]
+            elif item[0] == 'hpglpenspeed' : object.hpglPenSpeed = item[1]
+            elif item[0] == 'hpglpendiameter' : object.hpglPenDiameter = item[1]
+            elif item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = item[1]
+            elif item[0] == 'dxfimperialunits' : object.dxfImperialUnits = item[1]
+            elif item[0] == 'dxfusepcbnewfont' : object.dxfUsePcbnewFont = item[1]
+            elif item[0] == 'psnegative' : object.psNegative = item[1]
+            elif item[0] == 'psa4output' : object.psA4Output = item[1]
+            elif item[0] == 'plotreference' : object.plotReference = item[1]
+            elif item[0] == 'plotvalue' : object.plotValue = item[1]
+            elif item[0] == 'plotinvisibletext' : object.plotInvisibleText = item[1]
+            elif item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = item[1]
+            elif item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = item[1]
+            elif item[0] == 'outputformat' : object.outputFormat = item[1]
+            elif item[0] == 'mirror' : object.mirror = item[1]
+            elif item[0] == 'drillshape' : object.drillShape = item[1]
+            elif item[0] == 'scaleselection' : object.scaleSelection = item[1]
+            elif item[0] == 'outputdirectory' : object.outputDirectory = item[1]
+            elif item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = item[1]
+            elif item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = item[1]
+            elif item[0] == 'pdf_metadata': object.pdf_metadata = item[1]
+            elif item[0] == 'pdf_single_document': object.pdf_single_document = item[1]
+            elif item[0] == 'plot_black_and_white': object.plot_black_and_white = item[1]
+            elif item[0] == 'hidednponfab': object.hide_dnp_on_fab = item[1]
+            elif item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = item[1]
+            elif item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = item[1]
+            elif item[0] == 'plotpadnumbers': object.plot_pad_numbers = item[1]
+            else:
+                raise ValueError("Unrecognized property key: {item[0]}")
 
         return object
 
@@ -795,24 +801,25 @@ class SetupData():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'stackup': object.stackup = Stackup().from_sexpr(item)
-            if item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
-            if item[0] == 'pad_to_mask_clearance': object.packToMaskClearance = item[1]
-            if item[0] == 'solder_mask_min_width': object.solderMaskMinWidth = item[1]
-            if item[0] == 'pad_to_paste_clearance': object.padToPasteClearance = item[1]
-            if item[0] == 'pad_to_paste_clearance_ratio': object.padToPasteClearanceRatio = item[1]
-            if item[0] == 'aux_axis_origin': object.auxAxisOrigin = Position().from_sexpr(item)
-            if item[0] == 'grid_origin': object.gridOrigin = Position().from_sexpr(item)
-            if item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
-            if item[0] == 'allow_soldermask_bridges_in_footprints': object.allow_soldermask_bridges_in_footprints = item[1]
-            if item[0] == 'tenting': object.tenting.extend(item[1:])
-            if item[0] == 'covering': object.covering.extend(item[1:])
-            if item[0] == 'plugging': object.plugging.extend(item[1:])
-            if item[0] == 'capping': object.capping.extend(item[1:])
-            if item[0] == 'filling': object.filling.extend(item[1:])
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'stackup': object.stackup = Stackup().from_sexpr(item)
+            elif item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
+            elif item[0] == 'pad_to_mask_clearance': object.packToMaskClearance = item[1]
+            elif item[0] == 'solder_mask_min_width': object.solderMaskMinWidth = item[1]
+            elif item[0] == 'pad_to_paste_clearance': object.padToPasteClearance = item[1]
+            elif item[0] == 'pad_to_paste_clearance_ratio': object.padToPasteClearanceRatio = item[1]
+            elif item[0] == 'aux_axis_origin': object.auxAxisOrigin = Position().from_sexpr(item)
+            elif item[0] == 'grid_origin': object.gridOrigin = Position().from_sexpr(item)
+            elif item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
+            elif item[0] == 'allow_soldermask_bridges_in_footprints': object.allow_soldermask_bridges_in_footprints = item[1]
+            elif item[0] == 'tenting': object.tenting.extend(item[1:])
+            elif item[0] == 'covering': object.covering.extend(item[1:])
+            elif item[0] == 'plugging': object.plugging.extend(item[1:])
+            elif item[0] == 'capping': object.capping.extend(item[1:])
+            elif item[0] == 'filling': object.filling.extend(item[1:])
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -922,17 +929,18 @@ class Segment():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position().from_sexpr(item)
-            if item[0] == 'end': object.end = Position().from_sexpr(item)
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'net': object.net = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position().from_sexpr(item)
+            elif item[0] == 'end': object.end = Position().from_sexpr(item)
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -948,7 +956,7 @@ class Segment():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         return (f'{indents}(segment '
                 f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}) (width {format_float(self.width)})'
@@ -1025,30 +1033,23 @@ class Via():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                if item in ['micro','blind']:
-                    object.type = item
-                    continue
-                elif item == 'zone_layer_connections':
-                    object.zone_layer_connections = True
-                    continue
-                else:
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'size': object.size = item[1]
-            if item[0] == 'drill': object.drill = item[1]
-            if item[0] == 'layers':
-                for layer in item[1:]:
-                    object.layers.append(layer)
-            if item[0] == 'remove_unused_layers' and item[1] == 'yes': object.removeUnusedLayers = True
-            if item[0] == 'keep_end_layers' and item[1] == 'yes': object.keepEndLayers = True
-            if item[0] == 'free' and item[1] == 'yes': object.free = True
-            if item[0] == 'net': object.net = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'zone_layer_connections': object.zone_layer_connections = True
+            if parse_bool(item, 'locked'): object.locked = True
+            elif parse_bool(item, 'remove_unused_layers'): object.removeUnusedLayers = True
+            elif parse_bool(item, 'keepEndLayers'): object.keepEndLayers = True
+            elif parse_bool(item, 'free'): object.free = True
+            elif parse_bool(item, 'zone_layer_connections'): object.zone_layer_connections = True
+            elif not isinstance(item, list) and item in ['micro','blind']: object.type = item
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'size': object.size = item[1]
+            elif item[0] == 'drill': object.drill = item[1]
+            elif item[0] == 'layers': object.layers.extend(item[1:])
+            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -1066,20 +1067,20 @@ class Via():
         endline = '\n' if newline else ''
 
         type = f' {self.type}' if self.type is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         layers = ''
         for layer in self.layers:
             layers += f' "{dequote(layer)}"'
-        rum = ' (remove_unused_layers yes)' if self.removeUnusedLayers else ''
-        kel = ' (keep_end_layers yes)' if self.keepEndLayers else ''
-        free = ' (free yes)' if self.free else ''
+        rum = f' {format_bool("remove_unused_layers", self.removeUnusedLayers)}'
+        kel = f' {format_bool("keep_end_layers", self.keepEndLayers)}'
+        free = f' {format_bool("free", self.free)}'
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        zone_layer_connections = ' (zone_layer_connections)' if self.zone_layer_connections else ''
+        zlc = ' (zone_layer_connections)' if self.zone_layer_connections else ''
 
         return (f'{indents}(via{type} '
                 f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) (size {format_float(self.size)}) (drill {self.drill}) '
-                f'(layers{layers}){rum}{kel}{locked}{free}{zone_layer_connections} (net {self.net}){tstamp}){endline}')
+                f'(layers{layers}){rum}{kel}{locked}{free}{zlc} (net {self.net}){tstamp}){endline}')
 
 @dataclass
 class Arc():
@@ -1137,11 +1138,10 @@ class Arc():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position().from_sexpr(item)
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
             elif item[0] == 'width': object.width = item[1]
@@ -1149,6 +1149,8 @@ class Arc():
             elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -1165,7 +1167,7 @@ class Arc():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
 
         expression = f'{indents}(arc{locked} (start {self.start.X} {self.start.Y}) '
@@ -1224,12 +1226,16 @@ class Target():
         object = cls()
         object.type = exp[1]
         for item in exp[2:]:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'size': object.size = item[1]
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'size': object.size = item[1]
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -1246,4 +1252,5 @@ class Target():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        return f'{indents}(target {self.type} (at {self.position.X} {self.position.Y}) (size {self.size}) (width {self.width}) (layer "{self.layer}") (uuid "{self.tstamp}")){endline}'
+        return (f'{indents}(target {self.type} (at {format_float(self.position.X)} {format_float(self.position.Y)}) '
+                f'(size {format_float(self.size)}) (width {format_float(self.width)}) (layer "{self.layer}") (uuid "{self.tstamp}")){endline}')
