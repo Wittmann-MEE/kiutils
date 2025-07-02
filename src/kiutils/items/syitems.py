@@ -22,8 +22,8 @@ from typing import List, Optional
 
 from kiutils.items.common import Position, Stroke, Effects, Fill
 from kiutils.utils.string_utils import dequote
-
 from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class SyArc():
@@ -75,25 +75,18 @@ class SyArc():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-
         for item in exp[1:]:
-            if not isinstance(item, list):
-                # Pretty sure this isn't the case but let's be safe
-                if item == 'private':
-                    object.private = True
-                    continue
-                else:
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+            if parse_bool(item, 'private'): object.private = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position().from_sexpr(item)
+            elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
+            elif item[0] == 'end': object.end = Position().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
-            if item[0] == 'private' and item[1] == 'yes':
-                object.private = True
-                continue
-
-            if item[0] == 'start': object.start = Position().from_sexpr(item)
-            if item[0] == 'mid': object.mid = Position().from_sexpr(item)
-            if item[0] == 'end': object.end = Position().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -112,7 +105,7 @@ class SyArc():
         startA = f' {format_float(self.start.angle)}' if self.start.angle is not None else ''
         midA = f' {format_float(self.mid.angle)}' if self.mid.angle is not None else ''
         endA = f' {format_float(self.end.angle)}' if self.end.angle is not None else ''
-        private = ' private' if self.private else ''
+        private = f' {format_bool("private", self.private, compact=True)}'
 
         expression =  (f'{indents}(arc{private} '
                        f'(start {format_float(self.start.X)} {format_float(self.start.Y)}{startA}) '
@@ -172,22 +165,15 @@ class SyCircle():
         object = cls()
 
         for item in exp[1:]:
-            if not isinstance(item, list):
-                # Pretty sure this isn't the case but let's be safe
-                if item == 'private':
-                    object.private = True
-                    continue
-                else:
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'private' and item[1] == 'yes':
-                object.private = True
-                continue
-
-            if item[0] == 'center': object.center = Position().from_sexpr(item)
-            if item[0] == 'radius': object.radius = item[1]
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            if parse_bool(item, 'private'): object.private = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'center': object.center = Position().from_sexpr(item)
+            elif item[0] == 'radius': object.radius = item[1]
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -202,7 +188,7 @@ class SyCircle():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        private = ' private' if self.private else ''
+        private = f' {format_bool("private", self.private, compact=True)}'
 
         expression =  f'{indents}(circle{private} (center {format_float(self.center.X)} {format_float(self.center.Y)}) (radius {format_float(self.radius)})\n'
         expression += self.stroke.to_sexpr(indent+2)
@@ -249,11 +235,15 @@ class SyCurve():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.points.append(Position().from_sexpr(point))
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'pts':
+                for point in item[1:]: object.points.append(Position().from_sexpr(point))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -319,11 +309,15 @@ class SyPolyLine():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.points.append(Position().from_sexpr(point))
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'pts':
+                for point in item[1:]: object.points.append(Position().from_sexpr(point))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -398,22 +392,16 @@ class SyRect():
         object = cls()
 
         for item in exp[1:]:
-            if not isinstance(item, list):
-                # Pretty sure this isn't the case but let's be safe
-                if item == 'private':
-                    object.private = True
-                    continue
-                else:
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+            if parse_bool(item, 'private'): object.private = True
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position().from_sexpr(item)
+            elif item[0] == 'end': object.end = Position().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
-            if item[0] == 'private' and item[1] == 'yes':
-                object.private = True
-                continue
-
-            if item[0] == 'start': object.start = Position().from_sexpr(item)
-            if item[0] == 'end': object.end = Position().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -428,7 +416,7 @@ class SyRect():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        private = ' private' if self.private else ''
+        private = f' {format_bool("private", self.private, compact=True)}'
 
         expression =  (f'{indents}(rectangle{private} '
                        f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n')
@@ -477,8 +465,13 @@ class SyText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -571,12 +564,16 @@ class SyTextBox():
             start_at = 2
 
         for item in exp[start_at:]:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'size': object.size = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'size': object.size = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -593,7 +590,7 @@ class SyTextBox():
         endline = '\n' if newline else ''
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        private = ' private' if self.private else ''
+        private = f' {format_bool("private", self.private, compact=True)}'
 
         expression =  f'{indents}(text_box{private} "{dequote(self.text)}"\n'
         expression += (f'{indents} '
