@@ -21,9 +21,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import RenderCache, Stroke, Position, Effects
-from kiutils.utils.strings import dequote
-
-from kiutils.utils.format_float import format_float
+from kiutils.utils.string_utils import dequote
+from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 # FIXME: Several classes have a ``stroke`` member. This feature will be introduced in KiCad 7 and
 #        has yet to be tested here.
@@ -97,21 +97,21 @@ class FpText():
         object.type = exp[1]
         object.text = exp[2]
         for item in exp[3:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'unlocked' and item[1] == 'yes': object.unlocked = True
-            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'layer': 
+            if parse_bool(item, 'unlocked'): object.unlocked = True
+            elif parse_bool(item, 'hide'): object.hide = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'layer':
                 object.layer = item[1]
-                if(len(item) > 2):
-                    if(item[2] == "knockout"):
-                        object.knockout = True
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+                if(len(item) > 2) and item[2] == "knockout":
+                    object.knockout = True
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -128,10 +128,10 @@ class FpText():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        hide = ' (hide yes)' if self.hide else ''
-        unlocked = ' (unlocked yes)' if self.unlocked else ''
-        unlocked_pos = ' (unlocked yes)' if self.position.unlocked else ''
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
+        hide = f' {format_bool("hide", self.hide)}'
+        unlocked = f' {format_bool("unlocked", self.unlocked)}'
+        unlocked_pos = f' {format_bool("unlocked", self.position.unlocked)}'
+        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         ko = ' knockout' if self.knockout else ''
 
         expression =  (f'{indents}(fp_text {self.type} "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}'
@@ -197,21 +197,22 @@ class FpLine():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
-            if item[0] == 'stroke':
+            elif item[0] == 'stroke':
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -228,6 +229,7 @@ class FpLine():
         indents = ' '*indent
         endline = '\n' if newline else ''
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
+        locked = f' {format_bool("locked", self.locked)}'
         if self.width is not None:
             width = f' (width {self.width})'
         elif self.stroke is not None:
@@ -235,8 +237,8 @@ class FpLine():
         else:
             width = ''
 
-        return (f'{indents}(fp_line (start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}){width}'
-                f' (layer "{dequote(self.layer)}"){tstamp}){endline}')
+        return (f'{indents}(fp_line(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}){width}'
+                f'{locked}(layer "{dequote(self.layer)}"){tstamp}){endline}')
 
 @dataclass
 class FpRect():
@@ -293,22 +295,23 @@ class FpRect():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'fill': object.fill = item[1]
+            elif item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
-            if item[0] == 'stroke':
+            elif item[0] == 'stroke':
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -326,7 +329,7 @@ class FpRect():
         endline = '\n' if newline else ''
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
         if self.width is not None:
@@ -425,19 +428,22 @@ class FpTextBox():
             start_at = 2
 
         for item in exp[start_at:]:
-            if item[0] == 'unlocked' and item[1] == 'yes': object.locked = False
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.pts.append(Position().from_sexpr(point))
-            if item[0] == 'angle': object.angle = item[1]
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
-            if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'unlocked' and item[1] == 'yes': object.locked = False
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'pts':
+                for point in item[1:]: object.pts.append(Position().from_sexpr(point))
+            elif item[0] == 'angle': object.angle = item[1]
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
+            elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -471,12 +477,13 @@ class FpTextBox():
         angle = f'(angle {self.angle}) ' if self.angle is not None else ''
         start = f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) ' if self.start is not None else ''
         end = f'(end {format_float(self.end.X)} {format_float(self.end.Y)}) ' if self.end is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         expression = f'{indents}(fp_text_box{locked} "{dequote(self.text)}"\n'
         if len(self.pts) == 4:
             expression += f'{indents}  (pts\n'
-            expression += f'{indents}    (xy {self.pts[0].X} {self.pts[0].Y})      (xy {self.pts[1].X} {self.pts[1].Y})      (xy {self.pts[2].X} {self.pts[2].Y})      (xy {self.pts[3].X} {self.pts[3].Y})\n'
+            expression += (f'{indents}    (xy {format_float(self.pts[0].X)} {format_float(self.pts[0].Y)}) (xy {format_float(self.pts[1].X)} {format_float(self.pts[1].Y)})'
+                           f'(xy {format_float(self.pts[2].X)} {format_float(self.pts[2].Y)}) (xy {format_float(self.pts[3].X)} {format_float(self.pts[3].Y)})\n')
             expression += f'{indents}  )\n'
         expression += f'{indents}  {start}{end}{angle}(layer "{dequote(self.layer)}"){tstamp}\n'
         if self.effects is not None:
@@ -543,22 +550,23 @@ class FpCircle():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'center': object.center = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'center': object.center = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'fill': object.fill = item[1]
+            elif item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
-            if item[0] == 'stroke':
+            elif item[0] == 'stroke':
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -576,7 +584,7 @@ class FpCircle():
         endline = '\n' if newline else ''
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
         if self.width is not None:
@@ -643,22 +651,23 @@ class FpArc():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'start': object.start = Position.from_sexpr(item)
-            if item[0] == 'mid': object.mid = Position.from_sexpr(item)
-            if item[0] == 'end': object.end = Position.from_sexpr(item)
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position.from_sexpr(item)
+            elif item[0] == 'mid': object.mid = Position.from_sexpr(item)
+            elif item[0] == 'end': object.end = Position.from_sexpr(item)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
-            if item[0] == 'stroke':
+            elif item[0] == 'stroke':
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -676,7 +685,7 @@ class FpArc():
         endline = '\n' if newline else ''
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         if self.width is not None:
             width = f' (width {self.width})'
@@ -741,23 +750,24 @@ class FpPoly():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'pts':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'fill': object.fill = item[1]
-            if item[0] == 'width':
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'fill': object.fill = item[1]
+            elif item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
-            if item[0] == 'stroke':
+            elif item[0] == 'stroke':
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -778,7 +788,7 @@ class FpPoly():
             return f'{indents}{endline}'
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
         fill = f' (fill {self.fill})' if self.fill is not None else ''
 
         if self.width is not None:
@@ -842,22 +852,23 @@ class FpCurve():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'pts':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'width':
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'width':
                 object.width = item[1]
                 object.stroke = None
-            if item[0] == 'stroke':
+            elif item[0] == 'stroke':
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -878,7 +889,7 @@ class FpCurve():
             return f'{indents}{endline}'
 
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         if self.width is not None:
             width = f' (width {self.width})'
@@ -944,18 +955,19 @@ class FpProperty:
         object.text = exp[2]
         for item in exp[3:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'hide': object.hide = item[1]
-            if item[0] == 'unlocked': object.unlocked = item[1]
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'layer':
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'hide': object.hide = item[1]
+            elif item[0] == 'unlocked': object.unlocked = item[1]
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'layer':
                 object.layer = item[1]
                 if len(item) > 2 and item[2] == "knockout":
                     object.ko = True
-            if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            if item[0] == 'uuid': object.tstamp = item[1]
-            if item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
+            elif item[0] == 'uuid': object.tstamp = item[1]
+            elif item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

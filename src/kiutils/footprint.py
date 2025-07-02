@@ -26,11 +26,11 @@ from kiutils.items.common import Image, Coordinate, Net, Group, Font
 from kiutils.items.fpitems import *
 from kiutils.items.gritems import *
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
-from kiutils.utils.strings import dequote, remove_prefix
+from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.string_utils import dequote, remove_prefix
 from kiutils.misc.config import *
-
-from kiutils.utils.format_float import format_float
+from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class Attributes():
@@ -94,12 +94,12 @@ class Attributes():
             if exp[1] == 'through_hole' or exp[1] == 'smd':
                 object.type = exp[1]
 
-        for item in exp:
-            if item == 'board_only': object.boardOnly = True
-            if item == 'exclude_from_pos_files': object.excludeFromPosFiles = True
-            if item == 'exclude_from_bom': object.excludeFromBom = True
-            if item == 'allow_missing_courtyard': object.allowMissingCourtyard = True
-            if item == 'dnp': object.dnp = True
+        for item in exp[1:]:
+            if parse_bool(item, 'board_only'): object.boardOnly = True
+            elif parse_bool(item, 'exclude_from_pos_files'): object.excludeFromPosFiles = True
+            elif parse_bool(item, 'exclude_from_bom'): object.excludeFromBom = True
+            elif parse_bool(item, 'allow_missing_courtyard'): object.allowMissingCourtyard = True
+            elif parse_bool(item, 'dnp'): object.dnp = True
 
         return object
 
@@ -133,11 +133,11 @@ class Attributes():
         type = f' {self.type}' if self.type is not None else ''
 
         expression = f'{indents}(attr{type}'
-        if self.boardOnly: expression += ' board_only'
-        if self.excludeFromPosFiles: expression += ' exclude_from_pos_files'
-        if self.excludeFromBom: expression += ' exclude_from_bom'
-        if self.allowMissingCourtyard: expression += ' allow_missing_courtyard'
-        if self.dnp: expression += ' dnp'
+        expression += f' {format_bool("board_only", self.boardOnly, compact=True)}'
+        expression += f' {format_bool("exclude_from_pos_files", self.excludeFromPosFiles, compact=True)}'
+        expression += f' {format_bool("exclude_from_bom", self.excludeFromBom, compact=True)}'
+        expression += f' {format_bool("allow_missing_courtyard", self.allowMissingCourtyard, compact=True)}'
+        expression += f' {format_bool("dnp", self.dnp, compact=True)}' if self.dnp else ''
         expression += f'){endline}'
         return expression
 
@@ -190,15 +190,16 @@ class Model():
         object = cls()
         object.path = exp[1]
 
-        for e in exp[2:]:
-            if not isinstance(e, list):
-                raise Exception(f"Property '{e}' which is not in key -> value mapping. Expression: {exp}")
-
-            if e[0] == 'hide' and e[1] == 'yes': object.hide = True
-            if e[0] == 'opacity': object.opacity = e[1]
-            elif e[0] == 'offset': object.pos = Coordinate.from_sexpr(e[1])
-            elif e[0] == 'scale': object.scale = Coordinate.from_sexpr(e[1])
-            elif e[0] == 'rotate': object.rotate = Coordinate.from_sexpr(e[1])
+        for item in exp[2:]:
+            if parse_bool(item, 'hide'): object.hide = True
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'opacity': object.opacity = item[1]
+            elif item[0] == 'offset': object.pos = Coordinate.from_sexpr(item[1])
+            elif item[0] == 'scale': object.scale = Coordinate.from_sexpr(item[1])
+            elif item[0] == 'rotate': object.rotate = Coordinate.from_sexpr(item[1])
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -214,7 +215,7 @@ class Model():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        hide = " (hide yes)" if self.hide else ""
+        hide = f' {format_bool("hide", self.hide)}'
 
         expression =  f'{indents}(model "{dequote(self.path)}"{hide}\n'
         if self.opacity is not None:
@@ -266,7 +267,6 @@ class DrillDefinition():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-
         # If offset is given, others won't be present
         if isinstance(exp[1], list):
             object.offset = Position().from_sexpr(exp[1])
@@ -342,10 +342,11 @@ class PadOptions():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'clearance': object.clearance = item[1]
-            if item[0] == 'anchor': object.anchor = item[1]
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'clearance': object.clearance = item[1]
+            elif item[0] == 'anchor': object.anchor = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -526,61 +527,51 @@ class Pad():
         object.shape = exp[3]
 
         for item in exp[4:]:
-            if not isinstance(item, list):
-                if item[0] == 'zone_layer_connections':
-                    object.zone_layer_connections = True
-                else:
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'size': object.size = Position().from_sexpr(item)
-            if item[0] == 'drill': object.drill = DrillDefinition().from_sexpr(item)
-            if item[0] == 'layers':
-                for layer in item[1:]:
-                    object.layers.append(layer)
-
-            if item[0] == 'property': object.property = item[1]
-            if item[0] == 'remove_unused_layers': object.removeUnusedLayers = item[1]
-            if item[0] == 'keep_end_layers': object.keepEndLayers = item[1]
-            if item[0] == 'roundrect_rratio': object.roundrectRatio = item[1]
-            if item[0] == 'chamfer_ratio': object.chamferRatio = item[1]
-            if item[0] == 'chamfer':
-                for chamfer in item[1:]:
-                    object.chamfer.append(chamfer)
-
-            if item[0] == 'net': object.net = Net().from_sexpr(item)
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'pinfunction': object.pinFunction = item[1]
-            if item[0] == 'pintype': object.pinType = item[1]
-            if item[0] == 'die_length': object.dieLength = item[1]
-            if item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
-            if item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
-            if item[0] == 'solder_paste_margin_ratio': object.solderPasteMarginRatio = item[1]
-            if item[0] == 'clearance': object.clearance = item[1]
-            if item[0] == 'zone_connect': object.zoneConnect = item[1]
-            if item[0] == 'thermal_width': object.thermalWidth = item[1]
-            if item[0] == 'thermal_gap': object.thermalGap = item[1]
-            if item[0] == 'options': object.customPadOptions = PadOptions().from_sexpr(item)
-            if item[0] == 'primitives':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif parse_bool(item, 'zone_layer_connections'): object.zone_layer_connections = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'size': object.size = Position().from_sexpr(item)
+            elif item[0] == 'drill': object.drill = DrillDefinition().from_sexpr(item)
+            elif item[0] == 'layers': object.layers.extend(item[1:])
+            elif item[0] == 'property': object.property = item[1]
+            elif item[0] == 'remove_unused_layers': object.removeUnusedLayers = item[1]
+            elif item[0] == 'keep_end_layers': object.keepEndLayers = item[1]
+            elif item[0] == 'roundrect_rratio': object.roundrectRatio = item[1]
+            elif item[0] == 'chamfer_ratio': object.chamferRatio = item[1]
+            elif item[0] == 'chamfer': object.chamfer.extend(item[1:])
+            elif item[0] == 'net': object.net = Net().from_sexpr(item)
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1]  # Haha :)
+            elif item[0] == 'pinfunction': object.pinFunction = item[1]
+            elif item[0] == 'pintype': object.pinType = item[1]
+            elif item[0] == 'die_length': object.dieLength = item[1]
+            elif item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
+            elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
+            elif item[0] == 'solder_paste_margin_ratio': object.solderPasteMarginRatio = item[1]
+            elif item[0] == 'clearance': object.clearance = item[1]
+            elif item[0] == 'zone_connect': object.zoneConnect = item[1]
+            elif item[0] == 'thermal_width': object.thermalWidth = item[1]
+            elif item[0] == 'thermal_gap': object.thermalGap = item[1]
+            elif item[0] == 'options': object.customPadOptions = PadOptions().from_sexpr(item)
+            elif item[0] == 'primitives':
                 for primitive in item[1:]:
                     if primitive[0] == 'gr_text': object.customPadPrimitives.append(GrText().from_sexpr(primitive))
-                    if primitive[0] == 'gr_text_box': object.customPadPrimitives.append(GrTextBox().from_sexpr(primitive))
-                    if primitive[0] == 'gr_line': object.customPadPrimitives.append(GrLine().from_sexpr(primitive))
-                    if primitive[0] == 'gr_rect': object.customPadPrimitives.append(GrRect().from_sexpr(primitive))
-                    if primitive[0] == 'gr_circle': object.customPadPrimitives.append(GrCircle().from_sexpr(primitive))
-                    if primitive[0] == 'gr_arc': object.customPadPrimitives.append(GrArc().from_sexpr(primitive))
-                    if primitive[0] == 'gr_poly': object.customPadPrimitives.append(GrPoly().from_sexpr(primitive))
-                    if primitive[0] == 'gr_curve': object.customPadPrimitives.append(GrCurve().from_sexpr(primitive))
-
+                    elif primitive[0] == 'gr_text_box': object.customPadPrimitives.append(GrTextBox().from_sexpr(primitive))
+                    elif primitive[0] == 'gr_line': object.customPadPrimitives.append(GrLine().from_sexpr(primitive))
+                    elif primitive[0] == 'gr_rect': object.customPadPrimitives.append(GrRect().from_sexpr(primitive))
+                    elif primitive[0] == 'gr_circle': object.customPadPrimitives.append(GrCircle().from_sexpr(primitive))
+                    elif primitive[0] == 'gr_arc': object.customPadPrimitives.append(GrArc().from_sexpr(primitive))
+                    elif primitive[0] == 'gr_poly': object.customPadPrimitives.append(GrPoly().from_sexpr(primitive))
+                    elif primitive[0] == 'gr_curve': object.customPadPrimitives.append(GrCurve().from_sexpr(primitive))
                     # XXX: Are dimentions even implemented here?
-                    if primitive[0] == 'dimension': raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
-
-            if item[0] == 'zone_layer_connections': object.zone_layer_connections = True
-            if item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
-            if item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
-
+                    elif primitive[0] == 'dimension': raise NotImplementedError(
+                        "Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+            elif item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
+            elif item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -604,13 +595,13 @@ class Pad():
             layers += f' "{dequote(layer)}"'
         layers += ')'
 
-        locked = ' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
         drill = f' {self.drill.to_sexpr()}' if self.drill is not None else ''
         ppty = f' (property {self.property})' if self.property is not None else ''
         rul = f' (remove_unused_layers {self.removeUnusedLayers})' if self.removeUnusedLayers is not None else ''
         kel = f' (keep_end_layers {self.keepEndLayers})' if self.keepEndLayers is not None else ''
         rrr = f' (roundrect_rratio {self.roundrectRatio})' if self.roundrectRatio is not None else ''
-        zlc = ' (zone_layer_connections)' if self.zone_layer_connections else ''
+        zlc = f' {format_bool("zone_layer_connections", self.zone_layer_connections)}'
 
         net = f' {self.net.to_sexpr()}' if self.net is not None else ''
         pf = f' (pinfunction "{dequote(self.pinFunction)}")' if self.pinFunction is not None else ''
@@ -910,60 +901,55 @@ class Footprint():
         object = cls()
         object.libId = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'version': object.version = item[1]
-            if item[0] == 'generator': object.generator = item[1]
-            if item[0] == 'generator_version': object.generator_version = item[1]
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'placed' and item[1] == 'yes': object.placed = True
-
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'tedit': object.tedit = item[1]
-            if item[0] == 'descr': object.description = item[1]
-            if item[0] == 'tags': object.tags = item[1]
-            if item[0] == 'path': object.path = item[1]
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'autoplace_cost90': object.autoplaceCost90 = item[1]
-            if item[0] == 'autoplace_cost180': object.autoplaceCost180 = item[1]
-            if item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
-            if item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
-            if item[0] == 'solder_paste_ratio': object.solderPasteRatio = item[1]
-            if item[0] == 'clearance': object.clearance = item[1]
-            if item[0] == 'zone_connect': object.zoneConnect = item[1]
-            if item[0] == 'thermal_width': object.thermalWidth = item[1]
-            if item[0] == 'thermal_gap': object.thermalGap = item[1]
-            if item[0] == 'attr': object.attributes = Attributes.from_sexpr(item)
-            if item[0] == 'model': object.models.append(Model.from_sexpr(item))
-            if item[0] == 'fp_text': object.graphicItems.append(FpText.from_sexpr(item))
-            if item[0] == 'fp_text_box': object.graphicItems.append(FpTextBox.from_sexpr(item))
-            if item[0] == 'fp_line': object.graphicItems.append(FpLine.from_sexpr(item))
-            if item[0] == 'fp_rect': object.graphicItems.append(FpRect.from_sexpr(item))
-            if item[0] == 'fp_circle': object.graphicItems.append(FpCircle.from_sexpr(item))
-            if item[0] == 'fp_arc': object.graphicItems.append(FpArc.from_sexpr(item))
-            if item[0] == 'fp_poly': object.graphicItems.append(FpPoly.from_sexpr(item))
-            if item[0] == 'fp_curve': object.graphicItems.append(FpCurve.from_sexpr(item))
-            if item[0] == 'image':object.graphicItems.append(Image.from_sexpr(item))
-            if item[0] == 'pad': object.pads.append(Pad.from_sexpr(item))
-            if item[0] == 'zone': object.zones.append(Zone.from_sexpr(item))
-            if item[0] == 'sheetname': object.sheet_name = item[1]
-            if item[0] == 'sheetfile': object.sheet_file = item[1]
-            if item[0] == 'property': object.properties.update({ item[1]: FpProperty.from_sexpr(item) })
-            if item[0] == 'group': object.groups.append(Group.from_sexpr(item))
-            if item[0] == 'private_layers':
-                for layer in item[1:]:
-                    object.privateLayers.append(layer)
-            if item[0] == 'net_tie_pad_groups':
-                for layer in item[1:]:
-                    object.netTiePadGroups.append(layer)
-            if item[0] == 'dimension':
-                raise NotImplementedError("Dimensions are not yet handled! Please report this bug along with the file being parsed.")
-            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            if parse_bool(item, 'locked'): object.locked = True
+            elif parse_bool(item, 'placed'): object.placed = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'version': object.version = item[1]
+            elif item[0] == 'generator': object.generator = item[1]
+            elif item[0] == 'generator_version': object.generator_version = item[1]
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1]  # Haha :)
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'tedit': object.tedit = item[1]
+            elif item[0] == 'descr': object.description = item[1]
+            elif item[0] == 'tags': object.tags = item[1]
+            elif item[0] == 'path': object.path = item[1]
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'autoplace_cost90': object.autoplaceCost90 = item[1]
+            elif item[0] == 'autoplace_cost180': object.autoplaceCost180 = item[1]
+            elif item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
+            elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
+            elif item[0] == 'solder_paste_ratio': object.solderPasteRatio = item[1]
+            elif item[0] == 'clearance': object.clearance = item[1]
+            elif item[0] == 'zone_connect': object.zoneConnect = item[1]
+            elif item[0] == 'thermal_width': object.thermalWidth = item[1]
+            elif item[0] == 'thermal_gap': object.thermalGap = item[1]
+            elif item[0] == 'attr': object.attributes = Attributes.from_sexpr(item)
+            elif item[0] == 'model': object.models.append(Model.from_sexpr(item))
+            elif item[0] == 'fp_text': object.graphicItems.append(FpText.from_sexpr(item))
+            elif item[0] == 'fp_text_box': object.graphicItems.append(FpTextBox.from_sexpr(item))
+            elif item[0] == 'fp_line': object.graphicItems.append(FpLine.from_sexpr(item))
+            elif item[0] == 'fp_rect': object.graphicItems.append(FpRect.from_sexpr(item))
+            elif item[0] == 'fp_circle': object.graphicItems.append(FpCircle.from_sexpr(item))
+            elif item[0] == 'fp_arc': object.graphicItems.append(FpArc.from_sexpr(item))
+            elif item[0] == 'fp_poly': object.graphicItems.append(FpPoly.from_sexpr(item))
+            elif item[0] == 'fp_curve': object.graphicItems.append(FpCurve.from_sexpr(item))
+            elif item[0] == 'image': object.graphicItems.append(Image.from_sexpr(item))
+            elif item[0] == 'pad': object.pads.append(Pad.from_sexpr(item))
+            elif item[0] == 'zone': object.zones.append(Zone.from_sexpr(item))
+            elif item[0] == 'sheetname': object.sheet_name = item[1]
+            elif item[0] == 'sheetfile': object.sheet_file = item[1]
+            elif item[0] == 'property': object.properties.update({item[1]: FpProperty.from_sexpr(item)})
+            elif item[0] == 'group': object.groups.append(Group.from_sexpr(item))
+            elif item[0] == 'private_layers': object.privateLayers.extend(item[1:])
+            elif item[0] == 'net_tie_pad_groups': object.netTiePadGroups.extend(item[1:])
+            elif item[0] == 'dimension':
+                raise NotImplementedError(
+                    "Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -1078,8 +1064,8 @@ class Footprint():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = f' (locked yes)' if self.locked else ''
-        placed = f' (placed yes)' if self.placed else ''
+        locked = f' {format_bool("locked", self.locked)}'
+        placed = f' {format_bool("placed", self.placed)}'
         version = f' (version {self.version})' if self.version is not None else ''
         generator = f' (generator "{self.generator}")' if self.generator is not None else ''
         generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''

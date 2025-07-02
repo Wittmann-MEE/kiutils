@@ -20,9 +20,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
-from kiutils.utils.strings import dequote
-
-from kiutils.utils.format_float import format_float
+from kiutils.utils.string_utils import dequote
+from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class Position():
@@ -73,7 +73,7 @@ class Position():
                 object.angle = exp[3]
 
         for item in exp:
-            if item == 'unlocked': object.unlocked = True
+            if parse_bool(item, 'unlocked'): object.unlocked = True
 
         return object
 
@@ -119,6 +119,7 @@ class Coordinate():
         object.X = exp[1]
         object.Y = exp[2]
         object.Z = exp[3]
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -181,6 +182,7 @@ class ColorRGBA():
         object.G = exp[2]
         object.B = exp[3]
         object.A = exp[4]
+
         return object
 
     def to_sexpr(self, indent=0, newline=False) -> str:
@@ -247,11 +249,12 @@ class Stroke():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'width': object.width = item[1]
-            if item[0] == 'type':  object.type = item[1]
-            if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'width': object.width = item[1]
+            elif item[0] == 'type':  object.type = item[1]
+            elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -268,8 +271,8 @@ class Stroke():
         indents = ' '*indent
         endline = '\n' if newline else ''
         color = f' {self.color.to_sexpr()}' if self.color is not None else ''
-        the_type = f' (type {self.type})' if self.type is not None else ''
-        return f'{indents}(stroke (width {format_float(self.width)}){the_type}{color}){endline}'
+        ttype = f' (type {self.type})' if self.type is not None else ''
+        return f'{indents}(stroke (width {format_float(self.width)}){ttype}{color}){endline}'
 
 
 
@@ -330,18 +333,18 @@ class Font():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'face': object.face = item[1]
-            if item[0] == 'size':
-                object.height = item[1]
-                object.width = item[2]
-            if item[0] == 'thickness': object.thickness = item[1]
-            if item[0] == 'line_spacing': object.lineSpacing = item[1]
-            if item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
-            if item[0] == 'bold' and item[1] == 'yes': object.bold = True
-            if item[0] == 'italic' and item[1] == 'yes': object.italic = True
+            if parse_bool(item, 'bold'): object.bold = True
+            elif parse_bool(item, 'italic'): object.italic = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'face': object.face = item[1]
+            elif item[0] == 'size':
+                object.height, object.width = item[1], item[2]
+            elif item[0] == 'thickness': object.thickness = item[1]
+            elif item[0] == 'line_spacing': object.lineSpacing = item[1]
+            elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -357,14 +360,15 @@ class Font():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        face_name, thickness, bold, italic, linespacing, color = '', '', '', '', '', ''
+        face_name, thickness, linespacing, color = '', '', '', ''
 
         if self.face is not None:           face_name = f'(face "{dequote(self.face)}") '
         if self.thickness is not None:      thickness = f' (thickness {self.thickness})'
-        if self.bold:                       bold = ' (bold yes)'
-        if self.italic:                     italic = ' (italic yes)'
         if self.lineSpacing is not None:    linespacing = f' (line_spacing {self.lineSpacing})'
         if self.color is not None:          color = f' {self.color.to_sexpr()}'
+
+        bold = f' {format_bool("bold", self.bold)}'
+        italic = f' {format_bool("italic", self.italic)}'
 
         expression = f'{indents}(font {face_name}(size {self.height} {self.width}){color}{thickness}{bold}{italic}{linespacing}){endline}'
         return expression
@@ -486,13 +490,14 @@ class Effects():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
-            if item[0] == 'font': object.font = Font().from_sexpr(item)
-            if item[0] == 'justify': object.justify = Justify().from_sexpr(item)
-            if item[0] == 'href': object.href = item[1]
+            if parse_bool(item, 'hide'): object.hide = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'font': object.font = Font().from_sexpr(item)
+            elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
+            elif item[0] == 'href': object.href = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -510,7 +515,7 @@ class Effects():
         endline = '\n' if newline else ''
 
         justify = f' {self.justify.to_sexpr()}' if self.justify.to_sexpr() != '' else ''
-        hide = f' (hide yes)' if self.hide else ''
+        hide = f' {format_bool("hide", self.hide)}'
         href = f' (href "{dequote(self.href)}")' if self.href is not None else ''
 
         expression =  f'{indents}(effects {self.font.to_sexpr()}{justify}{href}{hide}){endline}'
@@ -550,6 +555,7 @@ class Net():
         object = cls()
         object.number = exp[1]
         object.name = exp[2]
+
         return object
 
     def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
@@ -610,15 +616,15 @@ class Group():
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
+            if parse_bool(item, 'locked'): object.locked = True
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'id': object.id = item[1]
+            elif item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
+            elif item[0] == 'members': object.members.extend(item[1:])
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'id': object.id = item[1]
-            if item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
-            if item[0] == 'members':
-                for member in item[1:]:
-                    object.members.append(member)
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -633,7 +639,7 @@ class Group():
         """
         indents = ' '*indent
         endline = '\n' if newline else ''
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
 
         expression =  f'{indents}(group "{dequote(self.name)}" (uuid "{self.id}"){locked}\n'
         expression += f'{indents}(members\n'
@@ -697,9 +703,10 @@ class PageSettings():
         else:
             for item in exp[2:]:
                 if not isinstance(item, list):
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-                if item[0] == 'portrait': object.portrait = True
+                    raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+                elif item[0] == 'portrait': object.portrait = True
+                else:
+                    raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -773,12 +780,16 @@ class TitleBlock():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'title': object.title = item[1]
-            if item[0] == 'date': object.date = item[1]
-            if item[0] == 'rev': object.revision = item[1]
-            if item[0] == 'company': object.company = item[1]
-            if item[0] == 'comment': object.comments.update({item[1]: item[2]})
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'title': object.title = item[1]
+            elif item[0] == 'date': object.date = item[1]
+            elif item[0] == 'rev': object.revision = item[1]
+            elif item[0] == 'company': object.company = item[1]
+            elif item[0] == 'comment': object.comments.update({item[1]: item[2]})
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -845,6 +856,8 @@ class Property():
 
     Available since KiCad v7"""
 
+    do_not_autoplace: bool = False
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Property:
         """Convert the given S-Expresstion into a Property object
@@ -869,10 +882,15 @@ class Property():
         object.key = exp[1]
         object.value = exp[2]
         for item in exp[3:]:
-            if item[0] == 'id': object.id = item[1]
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'show_name': object.showName = True
+            if parse_bool(item, 'show_name'): object.showName = True
+            elif parse_bool(item, 'do_not_autoplace'): object.do_not_autoplace = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'id': object.id = item[1]
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -891,9 +909,10 @@ class Property():
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         id = f' (id {self.id})' if self.id is not None else ''
-        sn = ' (show_name)' if self.showName else ''
+        sn = f' ({format_bool("show_name", self.showName, compact=True)})' if self.showName else ''
+        dna = f' ({format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)})' if self.do_not_autoplace else ''
 
-        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}'
+        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}{dna}'
         if self.effects is not None:
             expression += f'\n{self.effects.to_sexpr(indent+2)}'
             expression += f'{indents}){endline}'
@@ -932,10 +951,14 @@ class RenderCachePolygon():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.pts.append(Position.from_sexpr(point))
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
+                for point in item[1:]: object.pts.append(Position.from_sexpr(point))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -1008,8 +1031,12 @@ class RenderCache():
         object = cls()
         object.text = exp[1]
         object.id = exp[2]
-        for item in exp:
-            if item[0] == 'polygon': object.polygons.append(RenderCachePolygon.from_sexpr(item))
+        for item in exp[3:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'polygon': object.polygons.append(RenderCachePolygon.from_sexpr(item))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -1074,9 +1101,12 @@ class Fill():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-            if item[0] == 'type': object.type = item[1]
-            if item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'type': object.type = item[1]
+            elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -1142,14 +1172,16 @@ class Image():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'scale': object.scale = item[1]
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'data':
-                for b64part in item[1:]:
-                    object.data.append(b64part)
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'scale': object.scale = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'data': object.data.extend(item[1:])
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

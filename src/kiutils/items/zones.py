@@ -20,9 +20,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import Position
-from kiutils.utils.strings import dequote
-
-from kiutils.utils.format_float import format_float
+from kiutils.utils.string_utils import dequote
+from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class KeepoutSettings():
@@ -76,13 +76,14 @@ class KeepoutSettings():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'tracks': object.tracks = item[1]
-            if item[0] == 'vias': object.vias = item[1]
-            if item[0] == 'pads': object.pads = item[1]
-            if item[0] == 'copperpour': object.copperpour = item[1]
-            if item[0] == 'footprints': object.footprints = item[1]
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'tracks': object.tracks = item[1]
+            elif item[0] == 'vias': object.vias = item[1]
+            elif item[0] == 'pads': object.pads = item[1]
+            elif item[0] == 'copperpour': object.copperpour = item[1]
+            elif item[0] == 'footprints': object.footprints = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -202,28 +203,25 @@ class FillSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                if item == 'yes':
-                    # Ok, very weird
-                    object.yes = True
-                else:
-                    raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'yes': object.yes = True
-            if item[0] == 'mode': object.mode = item[1]
-            if item[0] == 'thermal_gap': object.thermalGap = item[1]
-            if item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
-            if item[0] == 'smoothing': object.smoothingStyle = item[1]
-            if item[0] == 'radius': object.smoothingRadius = item[1]
-            if item[0] == 'island_removal_mode': object.islandRemovalMode = item[1]
-            if item[0] == 'island_area_min': object.islandAreaMin = item[1]
-            if item[0] == 'hatch_thickness': object.hatchThickness = item[1]
-            if item[0] == 'hatch_gap': object.hatchGap = item[1]
-            if item[0] == 'hatch_orientation': object.hatchOrientation = item[1]
-            if item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = item[1]
-            if item[0] == 'hatch_smoothing_value': object.hatchSmoothingValue = item[1]
-            if item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
-            if item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
+            if parse_bool(item, 'yes'): object.yes = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'mode': object.mode = item[1]
+            elif item[0] == 'thermal_gap': object.thermalGap = item[1]
+            elif item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
+            elif item[0] == 'smoothing': object.smoothingStyle = item[1]
+            elif item[0] == 'radius': object.smoothingRadius = item[1]
+            elif item[0] == 'island_removal_mode': object.islandRemovalMode = item[1]
+            elif item[0] == 'island_area_min': object.islandAreaMin = item[1]
+            elif item[0] == 'hatch_thickness': object.hatchThickness = item[1]
+            elif item[0] == 'hatch_gap': object.hatchGap = item[1]
+            elif item[0] == 'hatch_orientation': object.hatchOrientation = item[1]
+            elif item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = item[1]
+            elif item[0] == 'hatch_smoothing_value': object.hatchSmoothingValue = item[1]
+            elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
+            elif item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -241,7 +239,7 @@ class FillSettings():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        yes = ' yes' if self.yes else ''
+        yes = f' {format_bool("yes", self.yes, compact=True)}'
         mode = f' (mode {self.mode})' if self.mode is not None else ''
         smoothing = f' (smoothing {self.smoothingStyle})' if self.smoothingStyle is not None else ''
         radius = f' (radius {self.smoothingRadius})' if self.smoothingRadius is not None else ''
@@ -285,12 +283,13 @@ class ZonePolygon():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
-            if item[0] == 'pts':
-                for position in item[1:]:
-                    object.coordinates.append(Position().from_sexpr(position))
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
+                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -358,15 +357,15 @@ class FilledPolygon():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
-
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'island': object.island = True
-            if item[0] == 'pts':
-                for position in item[1:]:
-                    object.coordinates.append(Position().from_sexpr(position))
+        for item in exp[1:]:
+            if parse_bool(item, 'island'): object.island = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'pts':
+                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -389,8 +388,7 @@ class FilledPolygon():
 
         expression =  f'{indents}(filled_polygon\n'
         expression += f'{indents}  (layer "{dequote(self.layer)}")\n'
-        if self.island:
-            expression += f'{indents}  (island)\n'
+        expression += f'{indents}  (island)\n' if self.island else ''
         expression += f'{indents}  (pts\n'
         for point in self.coordinates:
             expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
@@ -435,14 +433,14 @@ class FillSegments():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if type(item) != type([]):
-                continue
-
-            if item[0] == 'layer': object.layer = item[1]
-            if item[0] == 'pts':
-                for position in item[1:]:
-                    object.coordinates.append(Position().from_sexpr(position))
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'pts':
+                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -581,35 +579,35 @@ class Zone():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            if item[0] == 'net': object.net = item[1]
-            if item[0] == 'net_name': object.netName = item[1]
-            if item[0] == 'layers' or item[0] == 'layer':
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'net_name': object.netName = item[1]
+            elif item[0] == 'layers' or item[0] == 'layer':
                 for layer in item[1:]:
                     object.layers.append(layer)
-            if item[0] == 'tstamp': object.tstamp = item[1]
-            if item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            if item[0] == 'name': object.name = item[1]
-            if item[0] == 'hatch':
-                object.hatch = Hatch(style=item[1], pitch=item[2])
-            if item[0] == 'priority': object.priority = item[1]
-            if item[0] == 'connect_pads':
+            elif item[0] == 'tstamp': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            elif item[0] == 'name': object.name = item[1]
+            elif item[0] == 'hatch': object.hatch = Hatch(style=item[1], pitch=item[2])
+            elif item[0] == 'priority': object.priority = item[1]
+            elif item[0] == 'connect_pads':
                 if len(item) == 2:
                     object.clearance = item[1][1]
                 else:
                     object.connectPads = item[1]
                     object.clearance = item[2][1]
-            if item[0] == 'min_thickness': object.minThickness = item[1]
-            if item[0] == 'filled_areas_thickness': object.filledAreasThickness = item[1]
-            if item[0] == 'keepout': object.keepoutSettings = KeepoutSettings().from_sexpr(item)
-            if item[0] == 'fill': object.fillSettings = FillSettings().from_sexpr(item)
-            if item[0] == 'polygon': object.polygons.append(ZonePolygon().from_sexpr(item))
-            if item[0] == 'filled_polygon': object.filledPolygons.append(FilledPolygon().from_sexpr(item))
-            if item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
-            if item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
+            elif item[0] == 'min_thickness': object.minThickness = item[1]
+            elif item[0] == 'filled_areas_thickness': object.filledAreasThickness = item[1]
+            elif item[0] == 'keepout': object.keepoutSettings = KeepoutSettings().from_sexpr(item)
+            elif item[0] == 'fill': object.fillSettings = FillSettings().from_sexpr(item)
+            elif item[0] == 'polygon': object.polygons.append(ZonePolygon().from_sexpr(item))
+            elif item[0] == 'filled_polygon': object.filledPolygons.append(FilledPolygon().from_sexpr(item))
+            elif item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
+            elif item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -629,7 +627,7 @@ class Zone():
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        locked = f' (locked yes)' if self.locked else ''
+        locked = f' {format_bool("locked", self.locked)}'
         tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
         name = f' (name "{dequote(self.name)}")' if self.name is not None else ''
         contype = f' {self.connectPads}' if self.connectPads is not None else ''
@@ -699,10 +697,11 @@ class PlacementSettings():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'enabled': object.enabled = item[1]
-            if item[0] == 'sheetname': object.sheet_name = item[1]
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'enabled': object.enabled = item[1]
+            elif item[0] == 'sheetname': object.sheet_name = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

@@ -23,11 +23,12 @@ from kiutils.items.zones import Zone
 from kiutils.items.brditems import *
 from kiutils.items.gritems import *
 from kiutils.items.dimensions import Dimension
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class Board():
@@ -98,7 +99,7 @@ class Board():
     generator_version: Optional[str] = None
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
-    embedded_fonts: Optional[str] = None
+    embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
 
     @classmethod
@@ -124,38 +125,38 @@ class Board():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'version': object.version = item[1]
-            if item[0] == 'generator': object.generator = item[1]
-            if item[0] == 'generator_version': object.generator_version = item[1]
-            if item[0] == 'general': object.general = GeneralSettings().from_sexpr(item)
-            if item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
-            if item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
-            if item[0] == 'layers':
-                for layer in item[1:]:
-                    object.layers.append(LayerToken().from_sexpr(layer))
-            if item[0] == 'setup': object.setup = SetupData().from_sexpr(item)
-            if item[0] == 'property': object.properties.update({item[1]: item[2]})
-            if item[0] == 'net': object.nets.append(Net().from_sexpr(item))
-            if item[0] == 'footprint': object.footprints.append(Footprint().from_sexpr(item))
-            if item[0] == 'gr_text': object.graphicItems.append(GrText().from_sexpr(item))
-            if item[0] == 'gr_text_box': object.graphicItems.append(GrTextBox().from_sexpr(item))
-            if item[0] == 'gr_line': object.graphicItems.append(GrLine().from_sexpr(item))
-            if item[0] == 'gr_rect': object.graphicItems.append(GrRect().from_sexpr(item))
-            if item[0] == 'gr_circle': object.graphicItems.append(GrCircle().from_sexpr(item))
-            if item[0] == 'gr_arc': object.graphicItems.append(GrArc().from_sexpr(item))
-            if item[0] == 'gr_poly': object.graphicItems.append(GrPoly().from_sexpr(item))
-            if item[0] == 'gr_curve': object.graphicItems.append(GrCurve().from_sexpr(item))
-            if item[0] == 'image': object.graphicItems.append(Image().from_sexpr(item))
-            if item[0] == 'dimension': object.dimensions.append(Dimension().from_sexpr(item))
-            if item[0] == 'target': object.targets.append(Target().from_sexpr(item))
-            if item[0] == 'segment': object.traceItems.append(Segment().from_sexpr(item))
-            if item[0] == 'arc': object.traceItems.append(Arc().from_sexpr(item))
-            if item[0] == 'via': object.traceItems.append(Via().from_sexpr(item))
-            if item[0] == 'zone': object.zones.append(Zone().from_sexpr(item))
-            if item[0] == 'group': object.groups.append(Group().from_sexpr(item))
-            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'version': object.version = item[1]
+            elif item[0] == 'generator': object.generator = item[1]
+            elif item[0] == 'generator_version': object.generator_version = item[1]
+            elif item[0] == 'general': object.general = GeneralSettings().from_sexpr(item)
+            elif item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
+            elif item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
+            elif item[0] == 'layers':
+                for layer in item[1:]: object.layers.append(LayerToken().from_sexpr(layer))
+            elif item[0] == 'setup': object.setup = SetupData().from_sexpr(item)
+            elif item[0] == 'property': object.properties.update({item[1]: item[2]})
+            elif item[0] == 'net': object.nets.append(Net().from_sexpr(item))
+            elif item[0] == 'footprint': object.footprints.append(Footprint().from_sexpr(item))
+            elif item[0] == 'gr_text': object.graphicItems.append(GrText().from_sexpr(item))
+            elif item[0] == 'gr_text_box': object.graphicItems.append(GrTextBox().from_sexpr(item))
+            elif item[0] == 'gr_line': object.graphicItems.append(GrLine().from_sexpr(item))
+            elif item[0] == 'gr_rect': object.graphicItems.append(GrRect().from_sexpr(item))
+            elif item[0] == 'gr_circle': object.graphicItems.append(GrCircle().from_sexpr(item))
+            elif item[0] == 'gr_arc': object.graphicItems.append(GrArc().from_sexpr(item))
+            elif item[0] == 'gr_poly': object.graphicItems.append(GrPoly().from_sexpr(item))
+            elif item[0] == 'gr_curve': object.graphicItems.append(GrCurve().from_sexpr(item))
+            elif item[0] == 'image': object.graphicItems.append(Image().from_sexpr(item))
+            elif item[0] == 'dimension': object.dimensions.append(Dimension().from_sexpr(item))
+            elif item[0] == 'target': object.targets.append(Target().from_sexpr(item))
+            elif item[0] == 'segment': object.traceItems.append(Segment().from_sexpr(item))
+            elif item[0] == 'arc': object.traceItems.append(Arc().from_sexpr(item))
+            elif item[0] == 'via': object.traceItems.append(Via().from_sexpr(item))
+            elif item[0] == 'zone': object.zones.append(Zone().from_sexpr(item))
+            elif item[0] == 'group': object.groups.append(Group().from_sexpr(item))
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -226,7 +227,7 @@ class Board():
         # Append net0 to netlist
         board.nets.append(Net())
 
-        board.embedded_fonts = 'no'
+        board.embedded_fonts = False
 
         return board
 
@@ -332,7 +333,7 @@ class Board():
             expression += group.to_sexpr(indent+2)
 
         if self.embedded_fonts is not None:
-            expression += f'{indents} (embedded_fonts {self.embedded_fonts})'
+            expression += f'{indents} {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}\n'
 
         expression += f'{indents}){endline}'
         return expression

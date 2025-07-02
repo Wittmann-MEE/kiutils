@@ -20,11 +20,11 @@ import re
 from kiutils.items.common import Property, Font
 from kiutils.items.syitems import *
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
-from kiutils.utils.strings import dequote
+from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.string_utils import dequote
 from kiutils.misc.config import *
-
-from kiutils.utils.format_float import format_float
+from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class SymbolAlternativePin():
@@ -63,6 +63,7 @@ class SymbolAlternativePin():
         object.pinName = exp[1]
         object.electricalType = exp[2]
         object.graphicalStyle = exp[3]
+
         return object
 
     def to_sexpr(self, indent: int = 8, newline: bool = True) -> str:
@@ -147,20 +148,21 @@ class SymbolPin():
         object.electricalType = exp[1]
         object.graphicalStyle = exp[2]
         for item in exp[3:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-            if item[0] == 'hide' and item[1] == 'yes': object.hide = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'length': object.length = item[1]
-            if item[0] == 'name':
+            if parse_bool(item, 'hide'): object.hide = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'length': object.length = item[1]
+            elif item[0] == 'name':
                 object.name = item[1]
-                if len(item) > 2:
-                    object.nameEffects = Effects().from_sexpr(item[2])
-            if item[0] == 'number':
+                if len(item) > 2: object.nameEffects = Effects().from_sexpr(item[2])
+            elif item[0] == 'number':
                 object.number = item[1]
-                if len(item) > 2:
-                    object.numberEffects = Effects().from_sexpr(item[2])
-            if item[0] == 'alternate': object.alternatePins.append(SymbolAlternativePin().from_sexpr(item))
+                if len(item) > 2: object.numberEffects = Effects().from_sexpr(item[2])
+            elif item[0] == 'alternate': object.alternatePins.append(SymbolAlternativePin().from_sexpr(item))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}, exp: {exp}")
+
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -177,7 +179,7 @@ class SymbolPin():
         endline = '\n' if newline else ''
         newLineAdded = False
 
-        hide = ' (hide yes)' if self.hide else ''
+        hide = f' {format_bool("hide", self.hide)}'
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         nameEffects = f' {self.nameEffects.to_sexpr(newline=False)}' if self.nameEffects is not None else ''
         numberEffects = f' {self.numberEffects.to_sexpr(newline=False)}' if self.numberEffects is not None else ''
@@ -360,7 +362,7 @@ class Symbol():
     # Available since KiCad v9
     # TODO Update docs
 
-    exclude_from_sim: Optional[str] = None
+    exclude_from_sim: Optional[bool] = None
 
     embedded_fonts: Optional[str] = None
     """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol."""
@@ -388,42 +390,38 @@ class Symbol():
         object = cls()
         object.libId = exp[1]
         for item in exp[2:]:
-            if item[0] == 'extends': object.extends = item[1]
-            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            if item[0] == 'pin_numbers':
+            if parse_bool(item, 'power'): object.isPower = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'extends': object.extends = item[1]
+            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
+            elif item[0] == 'pin_numbers':
                 for prop in item[1:]:
-                    if not isinstance(prop, list):
-                        raise Exception(f"Property {prop} should be key -> value mapped")
-                    if prop[0] == 'hide' and prop[1] == 'yes': object.hidePinNumbers = True
-
-            if item[0] == 'pin_names':
-                object.pinNames = True # This feels wrong to set here, what if it will be hidden? But ok...
+                    if parse_bool(prop, 'hide'): object.hidePinNumbers = True
+            elif item[0] == 'pin_names':
+                object.pinNames = True  # This feels wrong to set here, what if it will be hidden? But ok...
                 for prop in item[1:]:
-                    if not isinstance(prop, list):
-                        raise Exception(f"Property {prop} should be key -> value mapped")
-                    if prop[0] == 'offset': object.pinNamesOffset = prop[1]
-                    if prop[0] == 'hide' and prop[1] == 'yes': object.pinNamesHide = True
-
-            if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
-            if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
-            if item[0] == 'power': object.isPower = True
-
-            if item[0] == 'symbol': object.units.append(Symbol().from_sexpr(item))
-            if item[0] == 'property': object.properties.append(Property().from_sexpr(item))
-
-            if item[0] == 'pin': object.pins.append(SymbolPin().from_sexpr(item))
-            if item[0] == 'arc': object.graphicItems.append(SyArc().from_sexpr(item))
-            if item[0] == 'circle': object.graphicItems.append(SyCircle().from_sexpr(item))
-            if item[0] == 'curve': object.graphicItems.append(SyCurve().from_sexpr(item))
-            if item[0] == 'polyline': object.graphicItems.append(SyPolyLine().from_sexpr(item))
-            if item[0] == 'rectangle': object.graphicItems.append(SyRect().from_sexpr(item))
-            if item[0] == 'text': object.graphicItems.append(SyText().from_sexpr(item))
-            if item[0] == 'text_box':
+                    if parse_bool(prop, 'hide'): object.pinNamesHide = True
+                    elif prop[0] == 'offset': object.pinNamesOffset = prop[1]
+            elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
+            elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
+            elif item[0] == 'symbol': object.units.append(Symbol().from_sexpr(item))
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
+            elif item[0] == 'pin': object.pins.append(SymbolPin().from_sexpr(item))
+            elif item[0] == 'arc': object.graphicItems.append(SyArc().from_sexpr(item))
+            elif item[0] == 'circle': object.graphicItems.append(SyCircle().from_sexpr(item))
+            elif item[0] == 'curve': object.graphicItems.append(SyCurve().from_sexpr(item))
+            elif item[0] == 'polyline': object.graphicItems.append(SyPolyLine().from_sexpr(item))
+            elif item[0] == 'rectangle': object.graphicItems.append(SyRect().from_sexpr(item))
+            elif item[0] == 'text': object.graphicItems.append(SyText().from_sexpr(item))
+            elif item[0] == 'text_box':
                 raise Exception('We never dealt with text_box symbols before.'
                                 'The function that parses this is most definitely incompatible.'
                                 'If you see this then fix parsing in SyTextBox and remove this exception.')
                 # object.graphicItems.append(SyTextBox().from_sexpr(item))
-            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -474,15 +472,11 @@ class Symbol():
         endline = '\n' if newline else ''
         obtext, ibtext = '', ''
 
-        if self.inBom is not None:
-            ibtext = 'yes' if self.inBom else 'no'
-        inbom = f' (in_bom {ibtext})' if self.inBom is not None else ''
-        if self.onBoard is not None:
-            obtext = 'yes' if self.onBoard else 'no'
-        onboard = f' (on_board {obtext})' if self.onBoard is not None else ''
-        power = f' (power)' if self.isPower else ''
-        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
-        pnhide = f' (hide yes)' if self.pinNamesHide else ''
+        inbom = f' {format_bool("in_bom", self.inBom, compact=False, yesno=True)}' if self.inBom is not None else ''
+        onboard = f' {format_bool("on_board", self.onBoard, compact=False, yesno=True)}' if self.onBoard is not None else ''
+        power = f' ({format_bool("power", self.isPower, compact=True)})' if self.isPower else ''
+        exclude_from_sim = f' {format_bool("exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True)}' if self.exclude_from_sim is not None else ''
+        pnhide = f' {format_bool("hide", self.pinNamesHide)}'
         pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
         pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''
         pinnumbers = f' (pin_numbers (hide yes))' if self.hidePinNumbers else ''
@@ -498,7 +492,7 @@ class Symbol():
         for item in self.units:
             expression += item.to_sexpr(indent+2)
         if self.embedded_fonts is not None:
-            expression += f' (embedded_fonts {self.embedded_fonts}){endline}'
+            expression += f' {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}{endline}'
 
         expression += f'{indents}){endline}'
         return expression
@@ -578,11 +572,15 @@ class SymbolLib():
         object = cls()
 
         for item in exp[1:]:
-            if item[0] == 'version': object.version = item[1]
-            if item[0] == 'generator': object.generator = item[1]
-            if item[0] == 'generator_version': object.generator_version = item[1]
-            if item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
-            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'version': object.version = item[1]
+            elif item[0] == 'generator': object.generator = item[1]
+            elif item[0] == 'generator_version': object.generator_version = item[1]
+            elif item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

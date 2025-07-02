@@ -16,9 +16,9 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from os import path
 
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 
 @dataclass
 class Library():
@@ -67,14 +67,17 @@ class Library():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
+        for item in exp[1:]:
             if item[0] == 'name': object.name = item[1]
-            if item[0] == 'type': object.type = item[1]
-            if item[0] == 'uri': object.uri = item[1]
-            if item[0] == 'options': object.options = item[1]
-            if item[0] == 'descr': object.description = item[1]
-            if item[0] == 'disabled': object.active = False
-            if item[0] == 'hidden': object.visible = False
+            elif item[0] == 'type': object.type = item[1]
+            elif item[0] == 'uri': object.uri = item[1]
+            elif item[0] == 'options': object.options = item[1]
+            elif item[0] == 'descr': object.description = item[1]
+            elif item[0] == 'disabled': object.active = False
+            elif item[0] == 'hidden': object.visible = False
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -144,8 +147,11 @@ class LibTable():
 
         object = cls()
         object.type = exp[0]
-        for item in exp:
+        for item in exp[1:]:
             if item[0] == 'lib': object.libs.append(Library().from_sexpr(item))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
         return object
 
     @classmethod

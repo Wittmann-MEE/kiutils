@@ -22,8 +22,9 @@ from kiutils.items.common import Image, PageSettings, TitleBlock
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 from kiutils.misc.config import *
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class Schematic():
@@ -119,7 +120,7 @@ class Schematic():
     generator_version: Optional[str] = None
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
-    embedded_fonts: Optional[str] = None
+    embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
 
     @classmethod
@@ -145,43 +146,41 @@ class Schematic():
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'version': object.version = item[1]
-            if item[0] == 'generator': object.generator = item[1]
-            if item[0] == 'generator_version': object.generator_version = item[1]
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
-            if item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
-            if item[0] == 'lib_symbols':
-                for symbol in item[1:]:
-                    object.libSymbols.append(Symbol().from_sexpr(symbol))
-            if item[0] == 'junction': object.junctions.append(Junction().from_sexpr(item))
-            if item[0] == 'no_connect': object.noConnects.append(NoConnect().from_sexpr(item))
-            if item[0] == 'bus_entry': object.busEntries.append(BusEntry().from_sexpr(item))
-            if item[0] == 'bus_alias': object.busAliases.append(BusAlias().from_sexpr(item))
-            if item[0] == 'wire': object.graphicalItems.append(Connection().from_sexpr(item))
-            if item[0] == 'bus': object.graphicalItems.append(Connection().from_sexpr(item))
-            if item[0] == 'polyline': object.graphicalItems.append(PolyLine().from_sexpr(item))
-            if item[0] == 'arc': object.shapes.append(Arc.from_sexpr(item))
-            if item[0] == 'circle': object.shapes.append(Circle.from_sexpr(item))
-            if item[0] == 'rectangle': object.shapes.append(Rectangle.from_sexpr(item))
-            if item[0] == 'image': object.images.append(Image().from_sexpr(item))
-            if item[0] == 'text': object.texts.append(Text().from_sexpr(item))
-            if item[0] == 'text_box': object.textBoxes.append(TextBox().from_sexpr(item))
-            if item[0] == 'label': object.labels.append(LocalLabel().from_sexpr(item))
-            if item[0] == 'global_label': object.globalLabels.append(GlobalLabel().from_sexpr(item))
-            if item[0] == 'hierarchical_label': object.hierarchicalLabels.append(HierarchicalLabel().from_sexpr(item))
-            if item[0] == 'netclass_flag': object.netclassFlags.append(NetclassFlag.from_sexpr(item))
-            if item[0] == 'symbol': object.schematicSymbols.append(SchematicSymbol().from_sexpr(item))
-            if item[0] == 'sheet': object.sheets.append(HierarchicalSheet().from_sexpr(item))
-            if item[0] == 'sheet_instances':
-                for instance in item[1:]:
-                    object.sheetInstances.append(HierarchicalSheetInstance().from_sexpr(instance))
-            if item[0] == 'symbol_instances':
-                for instance in item[1:]:
-                    object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
-            if item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'version': object.version = item[1]
+            elif item[0] == 'generator': object.generator = item[1]
+            elif item[0] == 'generator_version': object.generator_version = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
+            elif item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
+            elif item[0] == 'lib_symbols':
+                for symbol in item[1:]: object.libSymbols.append(Symbol().from_sexpr(symbol))
+            elif item[0] == 'junction': object.junctions.append(Junction().from_sexpr(item))
+            elif item[0] == 'no_connect': object.noConnects.append(NoConnect().from_sexpr(item))
+            elif item[0] == 'bus_entry': object.busEntries.append(BusEntry().from_sexpr(item))
+            elif item[0] == 'bus_alias': object.busAliases.append(BusAlias().from_sexpr(item))
+            elif item[0] == 'wire': object.graphicalItems.append(Connection().from_sexpr(item))
+            elif item[0] == 'bus': object.graphicalItems.append(Connection().from_sexpr(item))
+            elif item[0] == 'polyline': object.graphicalItems.append(PolyLine().from_sexpr(item))
+            elif item[0] == 'arc': object.shapes.append(Arc.from_sexpr(item))
+            elif item[0] == 'circle': object.shapes.append(Circle.from_sexpr(item))
+            elif item[0] == 'rectangle': object.shapes.append(Rectangle.from_sexpr(item))
+            elif item[0] == 'image': object.images.append(Image().from_sexpr(item))
+            elif item[0] == 'text': object.texts.append(Text().from_sexpr(item))
+            elif item[0] == 'text_box': object.textBoxes.append(TextBox().from_sexpr(item))
+            elif item[0] == 'label': object.labels.append(LocalLabel().from_sexpr(item))
+            elif item[0] == 'global_label': object.globalLabels.append(GlobalLabel().from_sexpr(item))
+            elif item[0] == 'hierarchical_label': object.hierarchicalLabels.append(HierarchicalLabel().from_sexpr(item))
+            elif item[0] == 'netclass_flag': object.netclassFlags.append(NetclassFlag.from_sexpr(item))
+            elif item[0] == 'symbol': object.schematicSymbols.append(SchematicSymbol().from_sexpr(item))
+            elif item[0] == 'sheet': object.sheets.append(HierarchicalSheet().from_sexpr(item))
+            elif item[0] == 'sheet_instances':
+                for instance in item[1:]: object.sheetInstances.append(HierarchicalSheetInstance().from_sexpr(instance))
+            elif item[0] == 'symbol_instances':
+                for instance in item[1:]: object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -221,7 +220,7 @@ class Schematic():
         schematic.generator = KIUTILS_CREATE_NEW_GENERATOR_STR
         schematic.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
         schematic.sheetInstances.append(HierarchicalSheetInstance(instancePath='/', page='1'))
-        schematic.embedded_fonts = 'no'
+        schematic.embedded_fonts = False
         return schematic
 
     def to_file(self, filepath = None, encoding: Optional[str] = None):
@@ -365,8 +364,8 @@ class Schematic():
                 expression += item.to_sexpr(indent+4)
             expression += '  )\n'
 
-        if self.embedded_fonts:
-            expression += f'{indents} (embedded_fonts {self.embedded_fonts})\n'
+        if self.embedded_fonts is not None:
+            expression += f'{indents} {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}\n'
 
         expression += f'{indents}){endline}'
         return expression

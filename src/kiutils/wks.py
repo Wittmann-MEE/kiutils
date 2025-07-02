@@ -20,10 +20,12 @@ from typing import Optional, List
 from os import path
 
 from kiutils.items.common import Justify
-from kiutils.utils.strings import dequote
+from kiutils.utils.string_utils import dequote
 from kiutils.utils import sexpr
-from kiutils.utils.sexp_prettify import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify
 from kiutils.misc.config import *
+from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class WksFontSize():
@@ -58,6 +60,7 @@ class WksFontSize():
         object = cls()
         object.width = exp[1]
         object.height = exp[2]
+
         return object
 
     def to_sexpr(self, indent=0, newline=False):
@@ -112,12 +115,14 @@ class WksFont():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list):
-                if item == 'bold': object.bold = True
-                elif item == 'italic': object.italic = True
+            if parse_bool(item, 'bold'): object.bold = True
+            elif parse_bool(item, 'italic'): object.italic = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'linewidth': object.linewidth = item[1]
+            elif item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
             else:
-                if item[0] == 'linewidth': object.linewidth = item[1]
-                if item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -137,13 +142,13 @@ class WksFont():
 
         lw = f' (linewidth {self.linewidth})' if self.linewidth is not None else ''
         size = f' {self.size.to_sexpr()}' if self.size is not None else ''
-        bold = ' bold' if self.bold else ''
-        italic = ' italic' if self.italic else ''
+        bold = format_bool('bold', self.bold, compact=True)
+        italic = format_bool('italic', self.italic, compact=True)
 
         if lw == '' and size == '' and bold == '' and italic == '':
             return ''
         else:
-            return f'{indents}(font{lw}{size}{bold}{italic}){endline}'
+            return f'{indents}(font{lw}{size} {bold} {italic}){endline}'
 
 @dataclass
 class WksPosition():
@@ -251,15 +256,19 @@ class Line():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'name': object.name = item[1]
-            if item[0] == 'start': object.start = WksPosition().from_sexpr(item)
-            if item[0] == 'end': object.end = WksPosition().from_sexpr(item)
-            if item[0] == 'option': object.option = item[1]
-            if item[0] == 'linewidth': object.lineWidth = item[1]
-            if item[0] == 'repeat': object.repeat = item[1]
-            if item[0] == 'incrx': object.incrx = item[1]
-            if item[0] == 'incry': object.incry = item[1]
-            if item[0] == 'comment': object.comment = item[1]
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'name': object.name = item[1]
+            elif item[0] == 'start': object.start = WksPosition().from_sexpr(item)
+            elif item[0] == 'end': object.end = WksPosition().from_sexpr(item)
+            elif item[0] == 'option': object.option = item[1]
+            elif item[0] == 'linewidth': object.lineWidth = item[1]
+            elif item[0] == 'repeat': object.repeat = item[1]
+            elif item[0] == 'incrx': object.incrx = item[1]
+            elif item[0] == 'incry': object.incry = item[1]
+            elif item[0] == 'comment': object.comment = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     def to_sexpr(self, indent=2, newline=True):
@@ -384,8 +393,8 @@ class Rect():
         lw = f' (linewidth {self.lineWidth})' if self.lineWidth is not None else ''
 
         expression  = f'{indents}(rect (name "{dequote(self.name)}") '
-        expression += f'(start {self.start.X} {self.start.Y}{start_corner}) '
-        expression += f'(end {self.end.X} {self.end.Y}{end_corner})'
+        expression += f'(start {format_float(self.start.X)} {format_float(self.start.Y)}{start_corner}) '
+        expression += f'(end {format_float(self.end.X)} {format_float(self.end.Y)}{end_corner})'
         expression += f'{option}{lw}{repeat}{incrx}{incry}{comment}){endline}'
         return expression
 
@@ -518,17 +527,19 @@ class Bitmap():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'name': object.name = item[1]
-            if item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
-            if item[0] == 'option': object.option = item[1]
-            if item[0] == 'scale': object.scale = item[1]
-            if item[0] == 'repeat': object.repeat = item[1]
-            if item[0] == 'incrx': object.incrx = item[1]
-            if item[0] == 'incry': object.incry = item[1]
-            if item[0] == 'comment': object.comment = item[1]
-            if item[0] == 'data':
-                for data_str in item[1:]:
-                    object.data.append(data_str)
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'name': object.name = item[1]
+            elif item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
+            elif item[0] == 'option': object.option = item[1]
+            elif item[0] == 'scale': object.scale = item[1]
+            elif item[0] == 'repeat': object.repeat = item[1]
+            elif item[0] == 'incrx': object.incrx = item[1]
+            elif item[0] == 'incry': object.incry = item[1]
+            elif item[0] == 'comment': object.comment = item[1]
+            elif item[0] == 'data': object.data.extend(item[1:])
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -552,7 +563,7 @@ class Bitmap():
         corner = f' {self.position.corner}' if self.position.corner is not None else ''
 
         expression  = f'{indents}(bitmap (name "{dequote(self.name)}") '
-        expression += f'(pos {self.position.X} {self.position.Y}{corner}){option} (scale {self.scale})'
+        expression += f'(pos {format_float(self.position.X)} {format_float(self.position.Y)}{corner}){option} (scale {self.scale})'
         expression += f'{repeat}{incrx}{incry}\n'
         if self.comment is not None:
             # Here KiCad decides to only use 1 space for some unknown reason ..
@@ -641,19 +652,24 @@ class TbText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'name': object.name = item[1]
-            if item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
-            if item[0] == 'option': object.option = item[1]
-            if item[0] == 'rotate': object.rotate = item[1]
-            if item[0] == 'font': object.font = WksFont().from_sexpr(item)
-            if item[0] == 'justify': object.justify = Justify().from_sexpr(item)
-            if item[0] == 'maxlen': object.maxlen = item[1]
-            if item[0] == 'maxheight': object.maxheight = item[1]
-            if item[0] == 'repeat': object.repeat = item[1]
-            if item[0] == 'incrx': object.incrx = item[1]
-            if item[0] == 'incry': object.incry = item[1]
-            if item[0] == 'incrlabel': object.incrlabel = item[1]
-            if item[0] == 'comment': object.comment = item[1]
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'name': object.name = item[1]
+            elif item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
+            elif item[0] == 'option': object.option = item[1]
+            elif item[0] == 'rotate': object.rotate = item[1]
+            elif item[0] == 'font': object.font = WksFont().from_sexpr(item)
+            elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
+            elif item[0] == 'maxlen': object.maxlen = item[1]
+            elif item[0] == 'maxheight': object.maxheight = item[1]
+            elif item[0] == 'repeat': object.repeat = item[1]
+            elif item[0] == 'incrx': object.incrx = item[1]
+            elif item[0] == 'incry': object.incry = item[1]
+            elif item[0] == 'incrlabel': object.incrlabel = item[1]
+            elif item[0] == 'comment': object.comment = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True):
@@ -682,7 +698,7 @@ class TbText():
         font = f' {self.font.to_sexpr()}'
 
         expression  = f'{indents}(tbtext "{dequote(self.text)}" (name "{dequote(self.name)}") '
-        expression += f'(pos {self.position.X} {self.position.Y}{corner}){option}{rotate}'
+        expression += f'(pos {format_float(self.position.X)} {format_float(self.position.Y)}{corner}){option}{rotate}'
         expression += f'{font}{justify}{maxlen}{maxheight}{repeat}{incrx}{incry}{incrlabel}'
         if self.comment is not None:
             expression += f' (comment "{dequote(self.comment)}")\n'
@@ -723,6 +739,7 @@ class TextSize():
         object = cls()
         object.width = exp[1]
         object.height = exp[2]
+
         return object
 
     def to_sexpr(self, indent=0, newline=False):
@@ -790,13 +807,18 @@ class Setup():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'textsize': object.textSize = TextSize().from_sexpr(item)
-            if item[0] == 'linewidth': object.lineWidth = item[1]
-            if item[0] == 'textlinewidth': object.textLineWidth = item[1]
-            if item[0] == 'left_margin': object.leftMargin = item[1]
-            if item[0] == 'right_margin': object.rightMargin = item[1]
-            if item[0] == 'top_margin': object.topMargin = item[1]
-            if item[0] == 'bottom_margin': object.bottomMargin = item[1]
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'textsize': object.textSize = TextSize().from_sexpr(item)
+            elif item[0] == 'linewidth': object.lineWidth = item[1]
+            elif item[0] == 'textlinewidth': object.textLineWidth = item[1]
+            elif item[0] == 'left_margin': object.leftMargin = item[1]
+            elif item[0] == 'right_margin': object.rightMargin = item[1]
+            elif item[0] == 'top_margin': object.topMargin = item[1]
+            elif item[0] == 'bottom_margin': object.bottomMargin = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True):
@@ -849,7 +871,7 @@ class WorkSheet():
     generator_version: Optional[str] = None
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
-    embedded_fonts: Optional[str] = None
+    embedded_fonts: Optional[bool] = None
 
     @classmethod
     def from_sexpr(cls, exp: list) -> WorkSheet:
@@ -873,15 +895,20 @@ class WorkSheet():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'version': object.version = item[1]
-            if item[0] == 'generator': object.generator = item[1]
-            if item[0] == 'generator_version': object.generator_version = item[1]
-            if item[0] == 'setup': object.setup = Setup().from_sexpr(item)
-            if item[0] == 'rect': object.drawingObjects.append(Rect().from_sexpr(item))
-            if item[0] == 'line': object.drawingObjects.append(Line().from_sexpr(item))
-            if item[0] == 'polygon': object.drawingObjects.append(Polygon().from_sexpr(item))
-            if item[0] == 'tbtext': object.drawingObjects.append(TbText().from_sexpr(item))
-            if item[0] == 'bitmap': object.drawingObjects.append(Bitmap().from_sexpr(item))
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'version': object.version = item[1]
+            elif item[0] == 'generator': object.generator = item[1]
+            elif item[0] == 'generator_version': object.generator_version = item[1]
+            elif item[0] == 'setup': object.setup = Setup().from_sexpr(item)
+            elif item[0] == 'rect': object.drawingObjects.append(Rect().from_sexpr(item))
+            elif item[0] == 'line': object.drawingObjects.append(Line().from_sexpr(item))
+            elif item[0] == 'polygon': object.drawingObjects.append(Polygon().from_sexpr(item))
+            elif item[0] == 'tbtext': object.drawingObjects.append(TbText().from_sexpr(item))
+            elif item[0] == 'bitmap': object.drawingObjects.append(Bitmap().from_sexpr(item))
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     @classmethod
@@ -954,8 +981,9 @@ class WorkSheet():
         endline = '\n' if newline else ''
 
         generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        embedded_fonts = f' {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}' if self.embedded_fonts is not None else ''
 
-        expression =  f'{indents}(kicad_wks (version {self.version}) (generator "{self.generator}"){generator_version}\n'
+        expression =  f'{indents}(kicad_wks (version {self.version}) (generator "{self.generator}"){generator_version}{embedded_fonts}\n'
         expression += self.setup.to_sexpr(indent+2)
         for item in self.drawingObjects:
             expression += item.to_sexpr(indent+2)
