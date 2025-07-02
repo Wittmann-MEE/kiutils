@@ -86,7 +86,7 @@ class GrText():
         object.text = exp[1]
         for item in exp[2:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'layer':
@@ -98,7 +98,7 @@ class GrText():
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -336,7 +336,7 @@ class GrLine():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
             elif item[0] == 'end': object.end = Position.from_sexpr(item)
@@ -346,7 +346,7 @@ class GrLine():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -436,7 +436,7 @@ class GrRect():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
             elif item[0] == 'end': object.end = Position.from_sexpr(item)
@@ -447,7 +447,7 @@ class GrRect():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -537,7 +537,7 @@ class GrCircle():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'center': object.center = Position.from_sexpr(item)
             elif item[0] == 'end': object.end = Position.from_sexpr(item)
@@ -548,7 +548,7 @@ class GrCircle():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -638,7 +638,7 @@ class GrArc():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
             elif item[0] == 'mid': object.mid = Position.from_sexpr(item)
@@ -649,7 +649,7 @@ class GrArc():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -738,7 +738,7 @@ class GrPoly():
 
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
                 for point in item[1:]: object.coordinates.append(Position().from_sexpr(point))
@@ -749,7 +749,7 @@ class GrPoly():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -845,7 +845,7 @@ class GrCurve():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
                 for point in item[1:]: object.coordinates.append(Position().from_sexpr(point))
@@ -855,7 +855,7 @@ class GrCurve():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -924,12 +924,12 @@ class GrStroke():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'type': object.type = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

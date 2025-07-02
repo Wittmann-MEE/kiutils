@@ -99,7 +99,7 @@ class FpText():
         for item in exp[3:]:
             if parse_bool(item, 'unlocked'): object.unlocked = True
             elif parse_bool(item, 'hide'): object.hide = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'layer':
@@ -111,7 +111,7 @@ class FpText():
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -198,7 +198,7 @@ class FpLine():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
             elif item[0] == 'end': object.end = Position.from_sexpr(item)
@@ -212,7 +212,7 @@ class FpLine():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -296,7 +296,7 @@ class FpRect():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
             elif item[0] == 'end': object.end = Position.from_sexpr(item)
@@ -311,7 +311,7 @@ class FpRect():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -428,7 +428,7 @@ class FpTextBox():
             start_at = 2
 
         for item in exp[start_at:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'unlocked' and item[1] == 'yes': object.locked = False
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -443,7 +443,7 @@ class FpTextBox():
             elif item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
             elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -551,7 +551,7 @@ class FpCircle():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'center': object.center = Position.from_sexpr(item)
             elif item[0] == 'end': object.end = Position.from_sexpr(item)
@@ -566,7 +566,7 @@ class FpCircle():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -652,7 +652,7 @@ class FpArc():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
             elif item[0] == 'mid': object.mid = Position.from_sexpr(item)
@@ -667,7 +667,7 @@ class FpArc():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -751,7 +751,7 @@ class FpPoly():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
                 for point in item[1:]:
@@ -767,7 +767,7 @@ class FpPoly():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -853,7 +853,7 @@ class FpCurve():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
                 for point in item[1:]:
@@ -868,7 +868,7 @@ class FpCurve():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -954,7 +954,7 @@ class FpProperty:
         object.type = exp[1]
         object.text = exp[2]
         for item in exp[3:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'hide': object.hide = item[1]
             elif item[0] == 'unlocked': object.unlocked = item[1]
@@ -967,7 +967,7 @@ class FpProperty:
             elif item[0] == 'uuid': object.tstamp = item[1]
             elif item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

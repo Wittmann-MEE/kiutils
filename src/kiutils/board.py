@@ -124,7 +124,7 @@ class Board():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'version': object.version = item[1]
             elif item[0] == 'generator': object.generator = item[1]
@@ -156,7 +156,7 @@ class Board():
             elif item[0] == 'group': object.groups.append(Group().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

@@ -149,7 +149,7 @@ class SymbolPin():
         object.graphicalStyle = exp[2]
         for item in exp[3:]:
             if parse_bool(item, 'hide'): object.hide = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'length': object.length = item[1]
@@ -391,22 +391,18 @@ class Symbol():
         object.libId = exp[1]
         for item in exp[2:]:
             if parse_bool(item, 'power'): object.isPower = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'extends': object.extends = item[1]
             elif item[0] == 'exclude_from_sim': object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
             elif item[0] == 'pin_numbers':
                 for prop in item[1:]:
-                    if not isinstance(prop, list):
-                        raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
                     if parse_bool(prop, 'hide'): object.hidePinNumbers = True
             elif item[0] == 'pin_names':
                 object.pinNames = True  # This feels wrong to set here, what if it will be hidden? But ok...
                 for prop in item[1:]:
-                    if not isinstance(prop, list):
-                        raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-                    if prop[0] == 'offset': object.pinNamesOffset = prop[1]
                     if parse_bool(prop, 'hide'): object.pinNamesHide = True
+                    elif prop[0] == 'offset': object.pinNamesOffset = prop[1]
             elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
             elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
             elif item[0] == 'symbol': object.units.append(Symbol().from_sexpr(item))
@@ -425,7 +421,7 @@ class Symbol():
                 # object.graphicItems.append(SyTextBox().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -576,7 +572,7 @@ class SymbolLib():
         object = cls()
 
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'version': object.version = item[1]
             elif item[0] == 'generator': object.generator = item[1]
@@ -584,7 +580,7 @@ class SymbolLib():
             elif item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

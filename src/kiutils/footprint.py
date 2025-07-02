@@ -192,14 +192,14 @@ class Model():
 
         for item in exp[2:]:
             if parse_bool(item, 'hide'): object.hide = True
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'opacity': object.opacity = item[1]
             elif item[0] == 'offset': object.pos = Coordinate.from_sexpr(item[1])
             elif item[0] == 'scale': object.scale = Coordinate.from_sexpr(item[1])
             elif item[0] == 'rotate': object.rotate = Coordinate.from_sexpr(item[1])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -341,12 +341,12 @@ class PadOptions():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'clearance': object.clearance = item[1]
             elif item[0] == 'anchor': object.anchor = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -529,7 +529,7 @@ class Pad():
         for item in exp[4:]:
             if parse_bool(item, 'locked'): object.locked = True
             elif parse_bool(item, 'zone_layer_connections'): object.zone_layer_connections = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'size': object.size = Position().from_sexpr(item)
@@ -571,7 +571,7 @@ class Pad():
             elif item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
             elif item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -903,7 +903,7 @@ class Footprint():
         for item in exp[2:]:
             if parse_bool(item, 'locked'): object.locked = True
             elif parse_bool(item, 'placed'): object.placed = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'version': object.version = item[1]
             elif item[0] == 'generator': object.generator = item[1]
@@ -949,7 +949,7 @@ class Footprint():
                     "Dimensions are not yet handled! Please report this bug along with the file being parsed.")
             elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

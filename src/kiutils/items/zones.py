@@ -75,7 +75,7 @@ class KeepoutSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'tracks': object.tracks = item[1]
             elif item[0] == 'vias': object.vias = item[1]
@@ -83,7 +83,7 @@ class KeepoutSettings():
             elif item[0] == 'copperpour': object.copperpour = item[1]
             elif item[0] == 'footprints': object.footprints = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -204,7 +204,7 @@ class FillSettings():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'yes'): object.yes = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'mode': object.mode = item[1]
             elif item[0] == 'thermal_gap': object.thermalGap = item[1]
@@ -221,7 +221,7 @@ class FillSettings():
             elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
             elif item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -284,12 +284,12 @@ class ZonePolygon():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
                 for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -359,13 +359,13 @@ class FilledPolygon():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'island'): object.island = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'pts':
                 for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -434,13 +434,13 @@ class FillSegments():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'pts':
                 for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -580,7 +580,7 @@ class Zone():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'net_name': object.netName = item[1]
@@ -607,7 +607,7 @@ class Zone():
             elif item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
             elif item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -696,12 +696,12 @@ class PlacementSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'enabled': object.enabled = item[1]
             elif item[0] == 'sheetname': object.sheet_name = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

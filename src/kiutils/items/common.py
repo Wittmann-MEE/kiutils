@@ -248,13 +248,13 @@ class Stroke():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'type':  object.type = item[1]
             elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -335,7 +335,7 @@ class Font():
         for item in exp[1:]:
             if parse_bool(item, 'bold'): object.bold = True
             elif parse_bool(item, 'italic'): object.italic = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'face': object.face = item[1]
             elif item[0] == 'size':
@@ -344,7 +344,7 @@ class Font():
             elif item[0] == 'line_spacing': object.lineSpacing = item[1]
             elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -491,13 +491,13 @@ class Effects():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'hide'): object.hide = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'font': object.font = Font().from_sexpr(item)
             elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             elif item[0] == 'href': object.href = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -617,13 +617,13 @@ class Group():
         object.name = exp[1]
         for item in exp[2:]:
             if parse_bool(item, 'locked'): object.locked = True
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'id': object.id = item[1]
             elif item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
             elif item[0] == 'members': object.members.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -702,11 +702,11 @@ class PageSettings():
             object.height = exp[3]
         else:
             for item in exp[2:]:
-                if not isinstance(item, list) or len(item) < 2:
+                if not isinstance(item, list):
                     raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
                 elif item[0] == 'portrait': object.portrait = True
                 else:
-                    raise ValueError(f"Unrecognized property key: {item[0]}")
+                    raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -781,7 +781,7 @@ class TitleBlock():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'title': object.title = item[1]
             elif item[0] == 'date': object.date = item[1]
@@ -789,7 +789,7 @@ class TitleBlock():
             elif item[0] == 'company': object.company = item[1]
             elif item[0] == 'comment': object.comments.update({item[1]: item[2]})
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -856,6 +856,8 @@ class Property():
 
     Available since KiCad v7"""
 
+    do_not_autoplace: bool = False
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Property:
         """Convert the given S-Expresstion into a Property object
@@ -880,14 +882,15 @@ class Property():
         object.key = exp[1]
         object.value = exp[2]
         for item in exp[3:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if parse_bool(item, 'show_name'): object.showName = True
+            elif parse_bool(item, 'do_not_autoplace'): object.do_not_autoplace = True
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'id': object.id = item[1]
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'show_name': object.showName = True
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -906,9 +909,10 @@ class Property():
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         id = f' (id {self.id})' if self.id is not None else ''
-        sn = ' (show_name)' if self.showName else ''
+        sn = f' ({format_bool("show_name", self.showName, compact=True)})' if self.showName else ''
+        dna = f' ({format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)})' if self.do_not_autoplace else ''
 
-        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}'
+        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}{dna}'
         if self.effects is not None:
             expression += f'\n{self.effects.to_sexpr(indent+2)}'
             expression += f'{indents}){endline}'
@@ -948,12 +952,12 @@ class RenderCachePolygon():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
                 for point in item[1:]: object.pts.append(Position.from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -1028,11 +1032,11 @@ class RenderCache():
         object.text = exp[1]
         object.id = exp[2]
         for item in exp[3:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'polygon': object.polygons.append(RenderCachePolygon.from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -1096,12 +1100,12 @@ class Fill():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'type': object.type = item[1]
             elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -1169,7 +1173,7 @@ class Image():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'scale': object.scale = item[1]
@@ -1177,7 +1181,7 @@ class Image():
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'data': object.data.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

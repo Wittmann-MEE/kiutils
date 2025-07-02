@@ -77,7 +77,7 @@ class SyArc():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'private'): object.private = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
@@ -85,7 +85,7 @@ class SyArc():
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -166,14 +166,14 @@ class SyCircle():
 
         for item in exp[1:]:
             if parse_bool(item, 'private'): object.private = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'center': object.center = Position().from_sexpr(item)
             elif item[0] == 'radius': object.radius = item[1]
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -235,14 +235,14 @@ class SyCurve():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             elif item[0] == 'pts':
                 for point in item[1:]: object.points.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -309,14 +309,14 @@ class SyPolyLine():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             elif item[0] == 'pts':
                 for point in item[1:]: object.points.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -393,14 +393,14 @@ class SyRect():
 
         for item in exp[1:]:
             if parse_bool(item, 'private'): object.private = True
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -465,12 +465,12 @@ class SyText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -564,7 +564,7 @@ class SyTextBox():
             start_at = 2
 
         for item in exp[start_at:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'size': object.size = Position().from_sexpr(item)
@@ -573,7 +573,7 @@ class SyTextBox():
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             elif item[0] == 'uuid': object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:

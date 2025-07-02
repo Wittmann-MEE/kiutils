@@ -145,7 +145,7 @@ class Schematic():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'version': object.version = item[1]
             elif item[0] == 'generator': object.generator = item[1]
@@ -180,7 +180,7 @@ class Schematic():
                 for instance in item[1:]: object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

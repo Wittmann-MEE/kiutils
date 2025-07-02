@@ -87,7 +87,7 @@ class DimensionFormat():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'suppress_zeroes'): object.suppressZeroes = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'prefix': object.prefix = item[1]
             elif item[0] == 'suffix': object.suffix = item[1]
@@ -96,7 +96,7 @@ class DimensionFormat():
             elif item[0] == 'precision': object.precision = item[1]
             elif item[0] == 'override_value': object.overrideValue = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -195,7 +195,7 @@ class DimensionStyle():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'keep_text_aligned'): object.keepTextAligned = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'thickness': object.thickness = item[1]
             elif item[0] == 'arrow_length': object.arrowLength = item[1]
@@ -205,7 +205,7 @@ class DimensionStyle():
             elif item[0] == 'extension_offset': object.extensionOffset = item[1]
             elif item[0] == 'arrow_direction': object.arrow_direction = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -300,7 +300,7 @@ class Dimension():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'locked' and item[1] == 'yes': object.locked = True
             elif item[0] == 'type': object.type = item[1]
@@ -316,7 +316,7 @@ class Dimension():
             elif item[0] == 'pts':
                 for point in item[1:]: object.pts.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

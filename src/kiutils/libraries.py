@@ -76,7 +76,7 @@ class Library():
             elif item[0] == 'disabled': object.active = False
             elif item[0] == 'hidden': object.visible = False
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -150,7 +150,7 @@ class LibTable():
         for item in exp[1:]:
             if item[0] == 'lib': object.libs.append(Library().from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

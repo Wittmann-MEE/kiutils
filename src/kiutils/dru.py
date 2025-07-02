@@ -168,14 +168,14 @@ class Rule():
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'constraint': object.constraints.append(Constraint().from_sexpr(item))
             elif item[0] == 'condition': object.condition = item[1]
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'severity': object.severity = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 

@@ -117,12 +117,12 @@ class WksFont():
         for item in exp[1:]:
             if parse_bool(item, 'bold'): object.bold = True
             elif parse_bool(item, 'italic'): object.italic = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'linewidth': object.linewidth = item[1]
             elif item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -256,7 +256,7 @@ class Line():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'name': object.name = item[1]
             elif item[0] == 'start': object.start = WksPosition().from_sexpr(item)
@@ -268,7 +268,7 @@ class Line():
             elif item[0] == 'incry': object.incry = item[1]
             elif item[0] == 'comment': object.comment = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     def to_sexpr(self, indent=2, newline=True):
@@ -527,7 +527,7 @@ class Bitmap():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'name': object.name = item[1]
             elif item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
@@ -539,7 +539,7 @@ class Bitmap():
             elif item[0] == 'comment': object.comment = item[1]
             elif item[0] == 'data': object.data.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -652,7 +652,7 @@ class TbText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'name': object.name = item[1]
             elif item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
@@ -668,7 +668,7 @@ class TbText():
             elif item[0] == 'incrlabel': object.incrlabel = item[1]
             elif item[0] == 'comment': object.comment = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -807,7 +807,7 @@ class Setup():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'textsize': object.textSize = TextSize().from_sexpr(item)
             elif item[0] == 'linewidth': object.lineWidth = item[1]
@@ -817,7 +817,7 @@ class Setup():
             elif item[0] == 'top_margin': object.topMargin = item[1]
             elif item[0] == 'bottom_margin': object.bottomMargin = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -895,7 +895,7 @@ class WorkSheet():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'version': object.version = item[1]
             elif item[0] == 'generator': object.generator = item[1]
@@ -908,7 +908,7 @@ class WorkSheet():
             elif item[0] == 'bitmap': object.drawingObjects.append(Bitmap().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
         return object
 
     @classmethod

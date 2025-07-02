@@ -61,12 +61,12 @@ class GeneralSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'thickness': object.thickness = item[1]
             elif item[0] == 'legacy_teardrops': object.legacy_teardrops = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -387,7 +387,7 @@ class Stackup():
         for item in exp[1:]:
             if parse_bool(item, 'castellated_pads'): object.castellatedPads = True
             elif parse_bool(item, 'edge_plating'): object.edgePlating = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'layer': object.layers.append(StackupLayer().from_sexpr(item))
             elif item[0] == 'copper_finish': object.copperFinish = item[1]
@@ -603,7 +603,7 @@ class PlotSettings():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'layerselection': object.layerSelection = item[1]
             elif item[0] == 'plot_on_all_layers_selection': object.plotOnAllLayersSelection = item[1]
@@ -801,7 +801,7 @@ class SetupData():
 
         object = cls()
         for item in exp[1:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'stackup': object.stackup = Stackup().from_sexpr(item)
             elif item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
@@ -819,7 +819,7 @@ class SetupData():
             elif item[0] == 'capping': object.capping.extend(item[1:])
             elif item[0] == 'filling': object.filling.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -930,7 +930,7 @@ class Segment():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
@@ -940,7 +940,7 @@ class Segment():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -1039,7 +1039,7 @@ class Via():
             elif parse_bool(item, 'free'): object.free = True
             elif parse_bool(item, 'zone_layer_connections'): object.zone_layer_connections = True
             elif not isinstance(item, list) and item in ['micro','blind']: object.type = item
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'size': object.size = item[1]
@@ -1049,7 +1049,7 @@ class Via():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -1139,7 +1139,7 @@ class Arc():
         object = cls()
         for item in exp[1:]:
             if parse_bool(item, 'locked'): object.locked = True
-            elif not isinstance(item, list) or len(item) < 2:
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
@@ -1150,7 +1150,7 @@ class Arc():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
@@ -1226,7 +1226,7 @@ class Target():
         object = cls()
         object.type = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list) or len(item) < 2:
+            if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'size': object.size = item[1]
@@ -1235,7 +1235,7 @@ class Target():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
