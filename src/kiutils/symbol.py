@@ -364,7 +364,7 @@ class Symbol():
 
     exclude_from_sim: Optional[bool] = None
 
-    embedded_fonts: Optional[str] = None
+    embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol."""
 
     @classmethod
