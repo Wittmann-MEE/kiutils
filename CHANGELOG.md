@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.6.1 - 02.07.2025
+### Non-breaking changes
+- Fixed: Type of `embedded_fonts` not correct
+
 ## v1.6.0 - 02.07.2025
 
 ### Non-breaking changes
