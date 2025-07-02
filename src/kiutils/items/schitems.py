@@ -21,8 +21,8 @@ from typing import Optional, List, Dict
 
 from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
 from kiutils.utils.string_utils import dequote
-
 from kiutils.utils.format_utils import format_float
+from kiutils.utils.parsing_utils import parse_bool, format_bool
 
 @dataclass
 class Junction():
@@ -67,11 +67,16 @@ class Junction():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
-            if item[0] == 'diameter': object.color = item[1]
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
+            elif item[0] == 'diameter': object.color = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -127,9 +132,14 @@ class NoConnect():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -190,11 +200,15 @@ class BusEntry():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'size': object.size = Position().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'size': object.size = Position().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -325,12 +339,16 @@ class Connection():
 
         object = cls()
         object.type = exp[0]
-        for item in exp:
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.points.append(Position().from_sexpr(point))
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
+                for point in item[1:]: object.points.append(Position().from_sexpr(point))
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -396,12 +414,16 @@ class PolyLine():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        for item in exp:
-            if item[0] == 'pts':
-                for point in item[1:]:
-                    object.points.append(Position().from_sexpr(point))
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'pts':
+                for point in item[1:]: object.points.append(Position().from_sexpr(point))
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -476,13 +498,14 @@ class Text():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -576,17 +599,18 @@ class TextBox():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if not isinstance(item, list):
-                raise Exception(f"Property '{item}' which is not in key -> value mapping. Expression: {exp}")
-
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'size': object.size = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            if item[0] == 'margins': object.margins = [float(margin) for margin in item[1:]]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'size': object.size = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
+            elif item[0] == 'margins': object.margins = [float(margin) for margin in item[1:]]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -664,10 +688,14 @@ class LocalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
+            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -684,7 +712,7 @@ class LocalLabel():
         endline = '\n' if newline else ''
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fieldsAutoplaced = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
+        fieldsAutoplaced = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
 
         expression =  f'{indents}(label "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fieldsAutoplaced}\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -748,12 +776,16 @@ class GlobalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'property': object.properties.append(Property().from_sexpr(item))
-            if item[0] == 'shape': object.shape = item[1]
-            if item[0] == 'uuid': object.uuid = item[1]
+            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
+            elif item[0] == 'shape': object.shape = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -770,7 +802,7 @@ class GlobalLabel():
         endline = '\n' if newline else ''
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fa = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
+        fa = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
 
         expression =  f'{indents}(global_label "{dequote(self.text)}" (shape {self.shape}) (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fa}\n'
         expression += self.effects.to_sexpr(indent+2)
@@ -833,11 +865,16 @@ class HierarchicalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'shape': object.shape = item[1]
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
+            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'shape': object.shape = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -854,7 +891,7 @@ class HierarchicalLabel():
         endline = '\n' if newline else ''
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fieldsAutoplaced = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
+        fieldsAutoplaced = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
 
         expression =  (f'{indents}(hierarchical_label "{dequote(self.text)}" (shape {self.shape}) '
                        f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fieldsAutoplaced}\n')
@@ -909,8 +946,13 @@ class SymbolProjectPath():
         object = cls()
         object.sheetInstancePath = exp[1]
         for item in exp[2:]:
-            if item[0] == 'reference': object.reference = item[1]
-            if item[0] == 'unit': object.unit = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'reference': object.reference = item[1]
+            elif item[0] == 'unit': object.unit = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -969,7 +1011,12 @@ class SymbolProjectInstance(ProjectInstance):
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
-            if item[0] == 'path': object.paths.append(SymbolProjectPath.from_sexpr(item))
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'path': object.paths.append(SymbolProjectPath.from_sexpr(item))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -1117,23 +1164,26 @@ class SchematicSymbol():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = True
-            if item[0] == 'lib_id': object.libId = item[1]
-            if item[0] == 'lib_name': object.libName = item[1]
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'unit': object.unit = item[1]
-            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            if item[0] == 'in_bom': object.inBom = True if item[1] == 'yes' else False
-            if item[0] == 'on_board': object.onBoard = True if item[1] == 'yes' else False
-            if item[0] == 'dnp': object.dnp = True if item[1] == 'yes' else False
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'property': object.properties.append(Property().from_sexpr(item))
-            if item[0] == 'pin': object.pins.update({item[1]: item[2][1]})
-            if item[0] == 'mirror': object.mirror = item[1]
-            if item[0] == 'instances':
-                for instance in item[1:]:
-                    object.instances.append(SymbolProjectInstance.from_sexpr(instance))
-        
+            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
+            elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
+            elif item[0] == 'dnp': object.dnp = parse_bool(item, 'dnp')
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'lib_id': object.libId = item[1]
+            elif item[0] == 'lib_name': object.libName = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'unit': object.unit = item[1]
+            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
+            elif item[0] == 'pin': object.pins.update({item[1]: item[2][1]})
+            elif item[0] == 'mirror': object.mirror = item[1]
+            elif item[0] == 'instances':
+                for instance in item[1:]: object.instances.append(SymbolProjectInstance.from_sexpr(instance))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -1150,23 +1200,21 @@ class SchematicSymbol():
         endline = '\n' if newline else ''
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fa = f' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
-        inBom = 'yes' if self.inBom else 'no'
-        onBoard = 'yes' if self.onBoard else 'no'
         mirror = f' (mirror {self.mirror})' if self.mirror is not None else ''
         exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
         unit = f' (unit {self.unit})' if self.unit is not None else ''
         lib_name = f' (lib_name "{dequote(self.libName)}")' if self.libName is not None else ''
-        if self.dnp is not None:
-            dnp = ' (dnp yes)' if self.dnp else ' (dnp no)'
-        else:
-            dnp = ''
 
         expression =  (f'{indents}(symbol{lib_name} (lib_id "{dequote(self.libId)}") '
                        f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})'
                        f'{mirror}{unit}{exclude_from_sim}\n')
 
-        expression += f'{indents}  (in_bom {inBom}) (on_board {onBoard}){dnp}{fa}\n'
+        inBom = format_bool("in_bom", self.inBom, compact=False, yesno=True)
+        onBoard = format_bool("on_board", self.onBoard, compact=False, yesno=True)
+        dnp = format_bool("dnp", self.dnp, compact=False, yesno=True) if self.dnp is not None else ''
+        fa = format_bool("fields_autoplaced", self.fieldsAutoplaced)
+        expression += f'{indents} {inBom} {onBoard} {dnp} {fa}\n'
+
         if self.uuid:
             expression += f'{indents}  (uuid "{self.uuid}")\n'
         for prop in self.properties:
@@ -1231,9 +1279,14 @@ class HierarchicalPin():
         object.name = exp[1]
         object.connectionType = exp[2]
         for item in exp[3:]:
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -1299,7 +1352,12 @@ class HierarchicalSheetProjectPath():
         object = cls()
         object.sheetInstancePath = exp[1]
         for item in exp[2:]:
-            if item[0] == 'page': object.page = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'page': object.page = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -1355,7 +1413,12 @@ class HierarchicalSheetProjectInstance(ProjectInstance):
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
-            if item[0] == 'path': object.paths.append(HierarchicalSheetProjectPath.from_sexpr(item))
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'path': object.paths.append(HierarchicalSheetProjectPath.from_sexpr(item))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -1461,29 +1524,31 @@ class HierarchicalSheet():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
-            if item[0] == 'at': object.position = Position().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'size':
-                object.width = item[1]
-                object.height = item[2]
-            if item[0] == 'fill':
+            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'at': object.position = Position().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'size':
+                object.width, object.height = item[1], item[2]
+            elif item[0] == 'fill':
                 object.fill = ColorRGBA().from_sexpr(item[1])
                 object.fill.precision = 4
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'property':
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'property':
                 p = Property().from_sexpr(item)
-                if item[1] == 'Sheet name' or item[1] == 'Sheetname': object.sheetName = p
-                elif item[1] == 'Sheet file' or item[1] == 'Sheetfile': object.fileName = p
+                if item[1] in ['Sheet name', 'Sheetname']: object.sheetName = p
+                elif item[1] in ['Sheet file', 'Sheetfile']: object.fileName = p
                 else: object.properties.append(p)
-            if item[0] == 'pin': object.pins.append(HierarchicalPin().from_sexpr(item))
-            if item[0] == 'instances':
-                for instance in item[1:]:
-                    object.instances.append(HierarchicalSheetProjectInstance.from_sexpr(instance))
-            if item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            if item[0] == 'in_bom': object.in_bom = item[1]
-            if item[0] == 'on_board': object.on_board = item[1]
-            if item[0] == 'dnp': object.dnp = item[1]
+            elif item[0] == 'pin': object.pins.append(HierarchicalPin().from_sexpr(item))
+            elif item[0] == 'instances':
+                for instance in item[1:]: object.instances.append(HierarchicalSheetProjectInstance.from_sexpr(instance))
+            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
+            elif item[0] == 'in_bom': object.in_bom = item[1]
+            elif item[0] == 'on_board': object.on_board = item[1]
+            elif item[0] == 'dnp': object.dnp = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
 
         return object
 
@@ -1504,7 +1569,7 @@ class HierarchicalSheet():
         in_bom = f' (in_bom {self.in_bom})' if self.in_bom is not None else ''
         on_board = f' (on_board {self.on_board})' if self.on_board is not None else ''
         dnp = f' (dnp {self.dnp})' if self.dnp is not None else ''
-        fa = ' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
+        fa = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
 
         expression =  (f'{indents}(sheet '
                        f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) '
@@ -1566,7 +1631,12 @@ class HierarchicalSheetInstance():
         object = cls()
         object.instancePath = exp[1]
         for item in exp[2:]:
-            if item[0] == 'page': object.page = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'page': object.page = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -1632,10 +1702,15 @@ class SymbolInstance():
         object = cls()
         object.path = exp[1]
         for item in exp[2:]:
-            if item[0] == 'reference': object.reference = item[1]
-            if item[0] == 'unit': object.unit = item[1]
-            if item[0] == 'value': object.value = item[1]
-            if item[0] == 'footprint': object.footprint = item[1]
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'reference': object.reference = item[1]
+            elif item[0] == 'unit': object.unit = item[1]
+            elif item[0] == 'value': object.value = item[1]
+            elif item[0] == 'footprint': object.footprint = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent=4, newline=True) -> str:
@@ -1702,13 +1777,16 @@ class Rectangle():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-
-        for item in exp:
-            if item[0] == 'start': object.start = Position().from_sexpr(item)
-            if item[0] == 'end': object.end = Position().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position().from_sexpr(item)
+            elif item[0] == 'end': object.end = Position().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -1781,14 +1859,17 @@ class Arc():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-
-        for item in exp:
-            if item[0] == 'start': object.start = Position().from_sexpr(item)
-            if item[0] == 'mid': object.mid = Position().from_sexpr(item)
-            if item[0] == 'end': object.end = Position().from_sexpr(item)
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'start': object.start = Position().from_sexpr(item)
+            elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
+            elif item[0] == 'end': object.end = Position().from_sexpr(item)
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -1859,13 +1940,16 @@ class Circle():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-
-        for item in exp:
-            if item[0] == 'center': object.center = Position().from_sexpr(item)
-            if item[0] == 'radius': object.radius = item[1]
-            if item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            if item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
+        for item in exp[1:]:
+            if not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'center': object.center = Position().from_sexpr(item)
+            elif item[0] == 'radius': object.radius = item[1]
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -1948,13 +2032,18 @@ class NetclassFlag():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if item[0] == 'length': object.length = item[1]
-            if item[0] == 'shape': object.shape = item[1]
-            if item[0] == 'at': object.position = Position.from_sexpr(item)
-            if item[0] == 'fields_autoplaced' and item[1] == 'yes': object.fieldsAutoplaced = True
-            if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            if item[0] == 'uuid': object.uuid = item[1]
-            if item[0] == 'property': object.properties.append(Property.from_sexpr(item))
+            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            elif not isinstance(item, list) or len(item) < 2:
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'length': object.length = item[1]
+            elif item[0] == 'shape': object.shape = item[1]
+            elif item[0] == 'at': object.position = Position.from_sexpr(item)
+            elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'property': object.properties.append(Property.from_sexpr(item))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}")
+
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -1971,7 +2060,7 @@ class NetclassFlag():
         endline = '\n' if newline else ''
 
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fa = f' (fields_autoplaced yes)' if self.fieldsAutoplaced else ''
+        fa = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
 
         expression =  (f'{indents}(netclass_flag "{dequote(self.text)}" (length {format_float(self.length)}) (shape {self.shape}) '
                        f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fa}\n')
