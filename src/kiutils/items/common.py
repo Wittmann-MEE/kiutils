@@ -20,10 +20,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 from pathlib import Path
+import urllib.parse
 
 from kiutils.utils.string_utils import dequote
 from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import parse_bool, format_bool
+
+def is_url(path: str) -> bool:
+    parsed = urllib.parse.urlparse(path)
+    return parsed.scheme in ('http', 'https', 'ftp')
 
 @dataclass
 class Position():
@@ -883,7 +888,10 @@ class Property():
         object.key = exp[1]
 
         if object.key in ['Datasheet', 'Sim.Library'] and len(exp[2]) > 0 and exp[2] not in ['.', '~']:
-            object.value = str(Path(exp[2]))
+            if is_url(exp[2]):
+                object.value = exp[2].replace('\\', '/')  # Clean up malformed URLs
+            else:
+                object.value = str(Path(exp[2]))
         else:
             object.value = exp[2]
 
@@ -918,9 +926,10 @@ class Property():
         sn = f' ({format_bool("show_name", self.showName, compact=True)})' if self.showName else ''
         dna = f' ({format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)})' if self.do_not_autoplace else ''
 
-        value = self.value
-        if self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0 and self.value not in ['.', '~']:
-            value = str(Path(value))
+        if self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0 and self.value not in ['.', '~'] and not is_url(self.value):
+            value = str(Path(self.value))
+        else:
+            value = self.value
 
         expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}{dna}'
         if self.effects is not None:
