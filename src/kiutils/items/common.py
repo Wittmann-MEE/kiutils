@@ -19,6 +19,7 @@ from abc import ABC, abstractmethod
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
+from pathlib import Path
 
 from kiutils.utils.string_utils import dequote
 from kiutils.utils.format_utils import format_float
@@ -880,7 +881,12 @@ class Property():
 
         object = cls()
         object.key = exp[1]
-        object.value = exp[2]
+
+        if object.key in ['Datasheet', 'Sim.Library'] and len(exp[2]) > 0 and exp[2] not in ['.', '~']:
+            object.value = str(Path(exp[2]))
+        else:
+            object.value = exp[2]
+
         for item in exp[3:]:
             if parse_bool(item, 'show_name'): object.showName = True
             elif parse_bool(item, 'do_not_autoplace'): object.do_not_autoplace = True
@@ -912,12 +918,17 @@ class Property():
         sn = f' ({format_bool("show_name", self.showName, compact=True)})' if self.showName else ''
         dna = f' ({format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)})' if self.do_not_autoplace else ''
 
-        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(self.value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}{dna}'
+        value = self.value
+        if self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0 and self.value not in ['.', '~']:
+            value = str(Path(value))
+
+        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}{dna}'
         if self.effects is not None:
             expression += f'\n{self.effects.to_sexpr(indent+2)}'
             expression += f'{indents}){endline}'
         else:
             expression += f'){endline}'
+
         return expression
 
 @dataclass
