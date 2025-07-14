@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.6.2 - 14.07.2025
+### Breaking  changes
+- Fixed: Symbol Datasheet and Spice paths are now properly handled. Malformed paths will be updated according to the Python Pathlib handling.
+
 ## v1.6.1 - 02.07.2025
 ### Non-breaking changes
 - Fixed: Type of `embedded_fonts` not correct
