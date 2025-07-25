@@ -623,7 +623,7 @@ class Group():
         object.name = exp[1]
         for item in exp[2:]:
             if parse_bool(item, 'locked'): object.locked = True
-            if not isinstance(item, list):
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'id': object.id = item[1]
             elif item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
