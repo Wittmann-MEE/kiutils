@@ -1,13 +1,9 @@
 # KiUtils
 
-[![PyPI version](https://img.shields.io/pypi/v/kiutils)](https://pypi.org/project/kiutils)
-[![PyPI downloads](https://img.shields.io/pypi/dm/kiutils.svg)](https://pypistats.org/packages/kiutils)
-![Python version](https://img.shields.io/pypi/pyversions/kiutils)
-[![License](https://img.shields.io/github/license/mvnmgrx/kiutils)](https://github.com/mvnmgrx/kiutils/blob/master/LICENSE)
-![Last commit](https://img.shields.io/github/last-commit/mvnmgrx/kiutils)
-[![Documentation Status](https://readthedocs.org/projects/kiutils/badge/?version=latest)](https://kiutils.readthedocs.io/en/latest/?badge=latest)
+This project is a fork/continuation of https://github.com/mvnmgrx/kiutils.
+> All credits go to the original author. Please note that some documentation might be outdated and not in sync with this project.
 
-Simple and SCM-friendly KiCad file parser based on Python dataclasses for KiCad 6.0
+Simple and SCM-friendly KiCad file parser based on Python dataclasses for KiCad 9.0
 and up. The following KiCad-related files are currently supported:
 - `.kicad_pcb` - Board layouts
 - `.kicad_sch` - Schematics
@@ -27,24 +23,19 @@ Parsing of the files is based on the S-Expression parser found in this library:
 
 ## Prerequisites
 The following is required to use `kiutils`:
-- Python 3.7 or higher
+- Python 3.8 or higher
 
 ## Installation
-``kiutils`` is available on [PyPI](https://pypi.org/project/kiutils/). Use Python's `pip`
-to install it:
+Use Python's `pip` to install it:
 ```
-pip install kiutils
+pip install git+https://github.com/Wittmann-MEE/kiutils.git
 ```
 
 If ``kiutils`` is already installed, upgrade it to the latest version using:
 ```
-pip install --no-cache-dir --upgrade kiutils
+pip install git+https://github.com/Wittmann-MEE/kiutils.git --upgrade
 ```
 
 ## Documentation
 Visit the [kiutils documentation](https://kiutils.readthedocs.io/) for more information on how to 
 install, use and develop `kiutils`, as well as examples and general module documentation.
-
-## Donate
-If you found this module helpful for your project consider donating via
-[PayPal](https://paypal.me/mrvnmgr). Thanks!
