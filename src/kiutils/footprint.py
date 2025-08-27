@@ -192,7 +192,7 @@ class Model():
 
         for item in exp[2:]:
             if parse_bool(item, 'hide'): object.hide = True
-            if not isinstance(item, list):
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'opacity': object.opacity = item[1]
             elif item[0] == 'offset': object.pos = Coordinate.from_sexpr(item[1])
