@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.6.4 - 27.08.2025
+### Non-breaking changes
+- Fixed: Properly handle `hide` property of a Model inside a Footprint
+
 ## v1.6.3 - 25.07.2025
 ### Non-breaking changes
 - Fixed: Properly handle `locked` property of a Group
