@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 from pathlib import Path
+from enum import Enum
 import urllib.parse
 
 from kiutils.utils.string_utils import dequote
@@ -1228,6 +1229,92 @@ class Image():
         for b64part in self.data:
             expression += f'{indents}    {b64part}\n'
         expression += f'{indents}  )\n'
+        expression += f'{indents}){endline}'
+        return expression
+
+@dataclass
+class EmbeddedFile():
+    """The ``file`` token defines an embedded file
+
+    Documentation:
+        https://docs.kicad.org/doxygen/classEMBEDDED__FILES.html
+    """
+
+    class FileType(Enum):
+        FONT = 'font',
+        MODEL = 'model',
+        WORKSHEET = 'worksheet',
+        DATASHEET = 'datasheet',
+        OTHER = 'other'
+
+    name: str = ''
+    """The ``name`` token defines the name of the file"""
+
+    type: FileType = FileType.OTHER
+    """The ``type`` token defines the type of the file"""
+
+    data: List[str] = field(default_factory=list)
+    """The ``data`` token attribute defines the raw file data encoded with MIME type base64 as a list of strings"""
+
+    checksum: str = ''
+    """The ``checksum`` token attribute defines the checksum of the file"""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> EmbeddedFile:
+        """Convert the given S-Expresstion into an EmbeddedFile object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(file ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not file
+
+        Returns:
+            - Image: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'file':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'name': object.name = item[1]
+            elif item[0] == 'type': object.type = item[1]
+            elif item[0] == 'data': object.data.extend(item[1:])
+            elif item[0] == 'checksum': object.checksum = item[1]
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        expression =  f'{indents}(file\n'
+        expression += f'{indents}(name "{self.name}")\n'
+        expression += f'{indents}(type {self.type})\n'
+
+        expression += f'{indents}(data\n'
+        for b64part in self.data:
+            expression += f'{indents}{b64part}\n'
+        expression += f'{indents})\n'
+
+        expression += f'{indents}(checksum "{self.checksum}")\n'
         expression += f'{indents}){endline}'
         return expression
 

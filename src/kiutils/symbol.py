@@ -17,7 +17,7 @@ from __future__ import annotations
 from os import path
 import re
 
-from kiutils.items.common import Property, Font
+from kiutils.items.common import Property, Font, EmbeddedFile
 from kiutils.items.syitems import *
 from kiutils.utils import sexpr
 from kiutils.utils.sexpr import sexp_prettify as prettify
@@ -25,6 +25,7 @@ from kiutils.utils.string_utils import dequote
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import parse_bool, format_bool
+
 
 @dataclass
 class SymbolAlternativePin():
@@ -367,6 +368,9 @@ class Symbol():
     embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol."""
 
+    embedded_files: list[EmbeddedFile] = field(default_factory=list)
+    """The ``embedded_files`` section is a list of embedded files that symbol is referenced from."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Symbol:
         """Convert the given S-Expression into a Symbol object
@@ -420,6 +424,9 @@ class Symbol():
                                 'If you see this then fix parsing in SyTextBox and remove this exception.')
                 # object.graphicItems.append(SyTextBox().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            elif item[0] == 'embedded_files':
+                for f in item[1:]:
+                    object.embedded_files.append(EmbeddedFile.from_sexpr(f))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
@@ -493,6 +500,11 @@ class Symbol():
             expression += item.to_sexpr(indent+2)
         if self.embedded_fonts is not None:
             expression += f' {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}{endline}'
+        if len(self.embedded_files) > 0:
+            expression += '(embedded_files'
+            for f in self.embedded_files:
+                expression += f' {f.to_sexpr(indent+2)}'
+            expression += ')'
 
         expression += f'{indents}){endline}'
         return expression
