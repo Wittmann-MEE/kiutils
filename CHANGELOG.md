@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.6.5 - 23.09.2025
+### Non-breaking changes
+- Added: Support for `embedded_files` in symbols
+
 ## v1.6.4 - 27.08.2025
 ### Non-breaking changes
 - Fixed: Properly handle `hide` property of a Model inside a Footprint
