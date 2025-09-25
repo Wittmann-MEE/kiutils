@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.6.7 - 25.09.2025
+### Breaking changes
+- Fixed: Remove unecessary quoting of `layer` in design rules
+
 ## v1.6.6 - 25.09.2025
 ### Non-breaking changes
 - Added: Support for `table` in schematic
