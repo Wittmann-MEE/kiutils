@@ -1237,7 +1237,7 @@ class EmbeddedFile():
     """The ``file`` token defines an embedded file
 
     Documentation:
-        https://docs.kicad.org/doxygen/classEMBEDDED__FILES.html
+        https://docs.kicad.org/9.0/en/eeschema/eeschema.html#sch-embedding-files
     """
 
     class FileType(Enum):

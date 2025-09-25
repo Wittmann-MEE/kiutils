@@ -123,6 +123,9 @@ class Schematic():
     embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
 
+    tables: List[Table] = field(default_factory=list)
+    """The ``tables`` token defines a list of tables used in the schematic"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Schematic:
         """Convert the given S-Expresstion into a Schematic object
@@ -179,6 +182,7 @@ class Schematic():
             elif item[0] == 'symbol_instances':
                 for instance in item[1:]: object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            elif item[0] == 'table': object.tables.append(Table().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
@@ -307,6 +311,11 @@ class Schematic():
         if self.graphicalItems:
             expression += '\n'
             for item in self.graphicalItems:
+                expression += item.to_sexpr(indent+2)
+
+        if self.tables:
+            expression += '\n'
+            for item in self.tables:
                 expression += item.to_sexpr(indent+2)
 
         if self.shapes:

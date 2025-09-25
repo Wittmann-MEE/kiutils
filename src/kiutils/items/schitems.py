@@ -570,14 +570,17 @@ class TextBox():
     """The optional ``uuid`` defines the universally unique identifier. Defaults to ``None.``"""
 
     # Available since KiCad v9
-    # TODO Update docs
 
     exclude_from_sim: Optional[str] = None
 
     margins: List[float] = field(default_factory=list)
+    """The ``margins`` token defines the margins of the text box"""
+
+    span: List[int] = field(default_factory=list)
+    """The ``span`` token defines the column and row span of the text box"""
 
     @classmethod
-    def from_sexpr(cls, exp: list) -> TextBox:
+    def from_sexpr(cls, exp: list, table_cell = False) -> TextBox:
         """Convert the given S-Expresstion into a TextBox object
 
         Args:
@@ -593,7 +596,8 @@ class TextBox():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'text_box':
+        target_type = 'table_cell' if table_cell else 'text_box'
+        if exp[0] != target_type:
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -609,12 +613,13 @@ class TextBox():
             elif item[0] == 'uuid': object.uuid = item[1]
             elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
             elif item[0] == 'margins': object.margins = [float(margin) for margin in item[1:]]
+            elif item[0] == 'span': object.span = (int(item[1]), int(item[2]))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
         return object
 
-    def to_sexpr(self, indent=2, newline=True) -> str:
+    def to_sexpr(self, indent=2, newline=True, table_cell = False) -> str:
         """Generate the S-Expression representing this object
 
         Args:
@@ -630,9 +635,13 @@ class TextBox():
         posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
         exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
 
-        expression =  f'{indents}(text_box "{dequote(self.text)}"{exclude_from_sim}\n'
+        target_type = 'table_cell' if table_cell else 'text_box'
+
+        expression =  f'{indents}({target_type} "{dequote(self.text)}"{exclude_from_sim}\n'
         expression += f'{indents} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n'
         expression += f'{indents} (margins {" ".join(map(str, self.margins))}){endline}'
+        if len(self.span) > 0:
+            expression += f'{indents} (span {self.span[0]} {self.span[1]}){endline}'
         expression += self.stroke.to_sexpr(indent+2)
         expression += self.fill.to_sexpr(indent+2)
         expression += self.effects.to_sexpr(indent+2)
@@ -2073,5 +2082,234 @@ class NetclassFlag():
             expression += f'{indents}  (uuid "{self.uuid}")\n'
         for property in self.properties:
             expression += property.to_sexpr(indent+2)
+        expression += f'{indents}){endline}'
+        return expression
+
+@dataclass
+class TableBorder:
+    external: bool = False
+    """The External border controls whether there is a border drawn around the entire table."""
+
+    header: bool = False
+    """The Header border controls whether there is a border drawn around the cells in the top row."""
+
+    stroke: Optional[Stroke] = None
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> TableBorder:
+        """Convert the given S-Expresstion into a TableBorder object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(border ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not border
+
+        Returns:
+            - TableBorder: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'border':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if parse_bool(item, 'external'): object.external = True
+            elif parse_bool(item, 'header'): object.header = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' ' * indent
+        endline = '\n' if newline else ''
+
+        expression = f'{indents}(border\n'
+        expression += format_bool('external', self.external)
+        expression += format_bool('header', self.header)
+        if self.stroke is not None:
+            expression += self.stroke.to_sexpr()
+
+        expression += f'{indents}){endline}'
+        return expression
+
+@dataclass
+class TableSeparators:
+    rows: bool = False
+    """The Row Lines enable horizontal lines between rows."""
+
+    columns: bool = False
+    """The Row Lines enable vertical lines between columns."""
+
+    stroke: Optional[Stroke] = None
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> TableSeparators:
+        """Convert the given S-Expresstion into a TableSeparators object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(separators ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not separator
+
+        Returns:
+            - TableSeparators: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'separators':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if parse_bool(item, 'rows'): object.rows = True
+            elif parse_bool(item, 'cols'): object.columns = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' ' * indent
+        endline = '\n' if newline else ''
+
+        expression = f'{indents}(separators\n'
+        expression += format_bool('rows', self.rows)
+        expression += format_bool('cols', self.columns)
+        if self.stroke is not None:
+            expression += self.stroke.to_sexpr()
+
+        expression += f'{indents}){endline}'
+        return expression
+
+@dataclass
+class Table():
+    """The ``table`` token defines a table
+
+    Documentation:
+        https://docs.kicad.org/9.0/en/eeschema/eeschema.html#tables
+    """
+
+    column_count: int = 0
+    """The ``column_count`` token defines the number of columns in the table"""
+
+    border: Optional[TableBorder] = None
+    """The ``border`` token defines the border of the table"""
+
+    separators: Optional[TableSeparators] = None
+    """The ``separators`` token defines the separators of the table"""
+
+    column_widths: List[float] = field(default_factory=list)
+    """The ``column_widths`` token defines the widths of the columns in the table"""
+
+    row_heights: List[float] = field(default_factory=list)
+    """The ``row_heights`` token defines the heights of the rows in the table"""
+
+    cells: List[TextBox] = field(default_factory=list)
+    """The ``cells`` token defines the cells in the table"""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> Table:
+        """Convert the given S-Expresstion into a Table object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(table ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not table
+
+        Returns:
+            - Table: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'table':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'column_count': object.column_count = int(item[1])
+            elif item[0] == 'border': object.border = TableBorder().from_sexpr(item)
+            elif item[0] == 'separators': object.separators = TableSeparators().from_sexpr(item)
+            elif item[0] == 'column_widths':
+                for width in item[1:]: object.column_widths.append(float(width))
+            elif item[0] == 'row_heights':
+                for height in item[1:]: object.row_heights.append(float(height))
+            elif item[0] == 'cells':
+                for cell in item[1:]: object.cells.append(TextBox.from_sexpr(cell, table_cell=True))
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        expression =  f'{indents}(table\n'
+        expression += f'{indents}(column_count {self.column_count})\n'
+
+        if self.border is not None:
+            expression += self.border.to_sexpr()
+
+        if self.separators is not None:
+            expression += self.separators.to_sexpr()
+
+        cols_widths_str = " ".join([format_float(w) for w in self.column_widths])
+        expression += f'{indents}(column_widths {cols_widths_str})\n'
+
+        rows_heights_str = " ".join([format_float(h) for h in self.row_heights])
+        expression += f'{indents}(row_heights {rows_heights_str})\n'
+
+        if len(self.cells) > 0:
+            expression += f'{indents}(cells\n'
+            for cell in self.cells:
+                expression += cell.to_sexpr(table_cell=True)
+            expression += f'{indents}){endline}'
+
         expression += f'{indents}){endline}'
         return expression
