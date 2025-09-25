@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.6.6 - 25.09.2025
+### Non-breaking changes
+- Added: Support for `table` in schematic
+
 ## v1.6.5 - 23.09.2025
 ### Non-breaking changes
 - Added: Support for `embedded_files` in symbols
