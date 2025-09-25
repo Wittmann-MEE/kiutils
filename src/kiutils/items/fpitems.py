@@ -984,7 +984,8 @@ class FpProperty:
         indents = ' '*indent
         endline = '\n' if newline else ''
 
-        expression = f'{indents}(property "{dequote(self.type)}" "{dequote(self.text)}"\n'
+        prop_str = f'"{dequote(self.type)}"' if self.type != "ki_fp_filters" else dequote(self.type)
+        expression = f'{indents}(property {prop_str} "{dequote(self.text)}"\n'
 
         if self.position is not None:
             pos = self.position
