@@ -7,7 +7,7 @@
 	(severity ignore)
 )
 (rule "HV"
-	(layer "outer")
+	(layer outer)
 	(constraint clearance
 		(min "1.5mm")
 	)

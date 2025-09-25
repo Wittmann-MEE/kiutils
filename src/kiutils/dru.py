@@ -192,7 +192,7 @@ class Rule():
 
         expression = f'{indents}(rule "{dequote(self.name)}"\n'
         if self.layer is not None:
-            expression += f'{indents}  (layer "{dequote(self.layer)}")\n'
+            expression += f'{indents}  (layer {dequote(self.layer)})\n'
         for item in self.constraints:
             expression += f'{indents}{item.to_sexpr(indent+2)}'
         expression += f'{indents}  (condition "{dequote(self.condition)}")'
