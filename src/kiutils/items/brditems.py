@@ -1442,7 +1442,7 @@ class Generated():
         expression += f'{indents}(name "{dequote(self.name)}")\n'
         expression += f'{indents}(layer "{dequote(self.layer)}")\n'
         if self.locked:
-            expression += f' {format_bool('locked', self.locked)}'
+            expression += f' {format_bool("locked", self.locked)}'
 
         if len(self.base_line) > 0:
             expression += f'{indents}(base_line\n'
