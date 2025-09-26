@@ -98,7 +98,7 @@ class GrText():
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -346,7 +346,7 @@ class GrLine():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -447,7 +447,7 @@ class GrRect():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -548,7 +548,7 @@ class GrCircle():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -649,7 +649,7 @@ class GrArc():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -749,7 +749,7 @@ class GrPoly():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -855,7 +855,7 @@ class GrCurve():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'stroke': object.stroke = GrStroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -929,7 +929,7 @@ class GrStroke():
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'type': object.type = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

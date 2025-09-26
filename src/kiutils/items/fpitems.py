@@ -111,7 +111,7 @@ class FpText():
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -212,7 +212,7 @@ class FpLine():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -311,7 +311,7 @@ class FpRect():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -443,7 +443,7 @@ class FpTextBox():
             elif item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
             elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -566,7 +566,7 @@ class FpCircle():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -667,7 +667,7 @@ class FpArc():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -767,7 +767,7 @@ class FpPoly():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -868,7 +868,7 @@ class FpCurve():
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -967,7 +967,7 @@ class FpProperty:
             elif item[0] == 'uuid': object.tstamp = item[1]
             elif item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

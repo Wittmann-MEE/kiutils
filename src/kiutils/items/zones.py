@@ -83,7 +83,7 @@ class KeepoutSettings():
             elif item[0] == 'copperpour': object.copperpour = item[1]
             elif item[0] == 'footprints': object.footprints = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -221,7 +221,7 @@ class FillSettings():
             elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
             elif item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -289,7 +289,7 @@ class ZonePolygon():
             elif item[0] == 'pts':
                 for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -365,7 +365,7 @@ class FilledPolygon():
             elif item[0] == 'pts':
                 for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -440,7 +440,7 @@ class FillSegments():
             elif item[0] == 'pts':
                 for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -607,7 +607,7 @@ class Zone():
             elif item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
             elif item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -701,7 +701,7 @@ class PlacementSettings():
             elif item[0] == 'enabled': object.enabled = item[1]
             elif item[0] == 'sheetname': object.sheet_name = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

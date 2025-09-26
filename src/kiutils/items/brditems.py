@@ -66,7 +66,7 @@ class GeneralSettings():
             elif item[0] == 'thickness': object.thickness = item[1]
             elif item[0] == 'legacy_teardrops': object.legacy_teardrops = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -819,7 +819,7 @@ class SetupData():
             elif item[0] == 'capping': object.capping.extend(item[1:])
             elif item[0] == 'filling': object.filling.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -940,7 +940,7 @@ class Segment():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1049,7 +1049,7 @@ class Via():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1150,7 +1150,7 @@ class Arc():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1235,7 +1235,7 @@ class Target():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1254,3 +1254,239 @@ class Target():
 
         return (f'{indents}(target {self.type} (at {format_float(self.position.X)} {format_float(self.position.Y)}) '
                 f'(size {format_float(self.size)}) (width {format_float(self.width)}) (layer "{self.layer}") (uuid "{self.tstamp}")){endline}')
+
+@dataclass
+class Generated():
+    """The ``generated`` token defines an editable trace tuning object
+
+    Documentation:
+        https://docs.kicad.org/8.0/en/pcbnew/pcbnew.html#length-tuning
+    """
+
+    uuid: str = ""
+    """The ``uuid`` defines the universally unique identifier"""
+
+    type: str = ""
+    """The ``type`` token defines the type of the tuned track """
+
+    name: str = ""
+    """The ``name`` token defines the name of the tuned track"""
+
+    layer: str = "F.Cu"
+    """The ``layer`` token defines the canonical layer the tuned track resides on"""
+
+    locked: Optional[bool] = None
+    """The ``locked`` token defines if the object can be edited"""
+
+    base_line: list[Position] = field(default_factory=list)
+    """The ``base_line`` token defines a primary line that tuned tracks are alligned to"""
+
+    base_line_coupled: list[Position] = field(default_factory=list)
+    """The ``base_line_coupled`` token defines the coupled base line of the tuned tracks"""
+
+    corner_radius: int = 0
+    """The ``corner_radius`` token defines the radius of the corner"""
+
+    end: Position = field(default_factory=lambda: Position())
+    """The ``end`` token defines the end of the tuned track"""
+
+    initial_side: str = ""
+    """The ``initial_side`` token defines the initial side of the tuned track"""
+
+    last_diff_pair_gap: float = 0.0
+    """The ``last_diff_pair_gap`` token holds the value of the last used differential pair gap"""
+
+    last_net_name: str = ""
+    """The ``last_net_name`` token holds the last used net name"""
+
+    last_status: str = ""
+    """The ``last_status`` token holds the last status of the tuned track"""
+
+    last_track_width: float = 0.0
+    """The ``last_track_width`` token holds the last width of the tuned track"""
+
+    last_tuning: str = ""
+    """The ``last_tuning`` token holds the last tuning of the tuned track"""
+
+    max_amplitude: float = 0.0
+    """The ``max_amplitude`` token defines the maximal amplitude of the tuned track"""
+
+    min_amplitude: float = 0.0
+    """The ``min_amplitude`` token defines the minimal amplitude of the tuned track"""
+
+    min_spacing: float = 0.0
+    """The ``min_spacing`` token defines the minimal spacing of the tuned track"""
+
+    origin: Position = field(default_factory=lambda: Position())
+    """The ``origin`` token defines the origin of the tuned track"""
+
+    override_custom_rules: str = ""
+    """The ``override_custom_rules`` token enables to bypass the custom rules"""
+
+    rounded: str = ""
+    """The ``rounded`` token defines if the tuned track is rounded"""
+
+    single_sided: str = ""
+    """The ``single_sided`` token defines if the tuned track is single sided"""
+
+    target_length: float = 0.0
+    """The ``target_length`` token defines the target length of the tuned track"""
+
+    target_length_max: float = 0.0
+    """The ``target_length_max`` token defines the maximal length of the tuned track"""
+
+    target_length_min: float = 0.0
+    """The ``target_length_min`` token defines the minimal length of the tuned track"""
+
+    target_skew: float = 0.0
+    """The ``target_skew`` token defines the target skew of the tuned track"""
+
+    target_skew_max: float = 0.0
+    """The ``target_skew_max`` token defines the maximal target skew of the tuned track"""
+
+    target_skew_min: float = 0.0
+    """The ``target_skew_min`` token defines the minimal target skew of the tuned track"""
+
+    tuning_mode: str = ""
+    """The ``tuningMode`` token defines the mode of tuning the tuned track"""
+
+    members: list[str] = field(default_factory=list)
+    """The ``members`` token defines the members of the tuned track"""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> Generated:
+        """Convert the given S-Expresstion into a Generated object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(generated ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not generator
+
+        Returns:
+            - Generated: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'generated':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if parse_bool(item, 'locked'): object.locked = True
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'uuid': object.uuid = item[1]
+            elif item[0] == 'type': object.type = item[1]
+            elif item[0] == 'name': object.name = item[1]
+            elif item[0] == 'layer': object.layer = item[1]
+            elif item[0] == 'base_line':
+                points_expr = item[1]
+                if points_expr[0] != 'pts':
+                    raise Exception(f"Expected points property pts, got: {points_expr}")
+                for point in points_expr[1:]:
+                    object.base_line.append(Position().from_sexpr(point))
+            elif item[0] == 'base_line_coupled':
+                points_expr = item[1]
+                if points_expr[0] != 'pts':
+                    raise Exception(f"Expected points property pts, got: {points_expr}")
+                for point in points_expr[1:]:
+                    object.base_line_coupled.append(Position().from_sexpr(point))
+            elif item[0] == 'corner_radius_percent': object.corner_radius = item[1]
+            elif item[0] == 'end': object.end = Position().from_sexpr(item[1])
+            elif item[0] == 'initial_side': object.initial_side = item[1]
+            elif item[0] == 'last_diff_pair_gap': object.last_diff_pair_gap = item[1]
+            elif item[0] == 'last_netname': object.last_net_name = item[1]
+            elif item[0] == 'last_status': object.last_status = item[1]
+            elif item[0] == 'last_track_width': object.last_track_width = item[1]
+            elif item[0] == 'last_tuning': object.last_tuning = item[1]
+            elif item[0] == 'max_amplitude': object.max_amplitude = item[1]
+            elif item[0] == 'min_amplitude': object.min_amplitude = item[1]
+            elif item[0] == 'min_spacing': object.min_spacing = item[1]
+            elif item[0] == 'origin': object.origin = Position().from_sexpr(item[1])
+            elif item[0] == 'override_custom_rules': object.override_custom_rules = item[1]
+            elif item[0] == 'rounded': object.rounded = item[1]
+            elif item[0] == 'single_sided': object.single_sided = item[1]
+            elif item[0] == 'target_length': object.target_length = item[1]
+            elif item[0] == 'target_length_max': object.target_length_max = item[1]
+            elif item[0] == 'target_length_min': object.target_length_min = item[1]
+            elif item[0] == 'target_skew': object.target_skew = item[1]
+            elif item[0] == 'target_skew_max': object.target_skew_max = item[1]
+            elif item[0] == 'target_skew_min': object.target_skew_min = item[1]
+            elif item[0] == 'tuning_mode': object.tuning_mode = item[1]
+            elif item[0] == 'members':
+                for member in item[1:]: object.members.append(member)
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        indents = ' '*indent
+        endline = '\n' if newline else ''
+
+        expression = f'{indents}(generated\n'
+        expression += f'{indents}(uuid "{dequote(self.uuid)}")\n'
+        expression += f'{indents}(type {self.type})\n'
+        expression += f'{indents}(name "{dequote(self.name)}")\n'
+        expression += f'{indents}(layer "{dequote(self.layer)}")\n'
+        if self.locked:
+            expression += f' {format_bool("locked", self.locked)}'
+
+        if len(self.base_line) > 0:
+            expression += f'{indents}(base_line\n'
+            expression += f'{indents*2}(pts\n'
+            for point in self.base_line:
+                expression += f' (xy {format_float(point.X)} {format_float(point.Y)})'
+            expression += f'{indents*2})\n' #pts
+            expression += f'{indents}){endline}' #base_line
+
+        if len(self.base_line_coupled) > 0:
+            expression += f'{indents}(base_line_coupled\n'
+            expression += f'{indents*2}(pts\n'
+            for point in self.base_line:
+                expression += f' (xy {format_float(point.X)} {format_float(point.Y)})'
+            expression += f'{indents*2})\n' #pts
+            expression += f'{indents}){endline}' #base_line_coupled
+
+        expression += f'{indents}(corner_radius_percent {self.corner_radius})\n'
+        expression += f'{indents}(end (xy {format_float(self.end.X)} {format_float(self.end.Y)}))\n'
+        expression += f'{indents}(initial_side "{dequote(self.initial_side)}")\n'
+        expression += f'{indents}(last_diff_pair_gap {self.last_diff_pair_gap})\n'
+        expression += f'{indents}(last_netname "{dequote(self.last_net_name)}")\n'
+        expression += f'{indents}(last_status "{dequote(self.last_status)}")\n'
+        expression += f'{indents}(last_track_width {self.last_track_width})\n'
+        expression += f'{indents}(last_tuning "{dequote(self.last_tuning)}")\n'
+        expression += f'{indents}(max_amplitude {self.max_amplitude})\n'
+        expression += f'{indents}(min_amplitude {self.min_amplitude})\n'
+        expression += f'{indents}(min_spacing {self.min_spacing})\n'
+        expression += f'{indents}(origin (xy {format_float(self.origin.X)} {format_float(self.origin.Y)}))\n'
+        expression += f'{indents}(override_custom_rules {self.override_custom_rules})\n'
+        expression += f'{indents}(rounded {self.rounded})\n'
+        expression += f'{indents}(single_sided {self.single_sided})\n'
+        expression += f'{indents}(target_length {self.target_length})\n'
+        expression += f'{indents}(target_length_max {self.target_length_max})\n'
+        expression += f'{indents}(target_length_min {self.target_length_min})\n'
+        expression += f'{indents}(target_skew {self.target_skew})\n'
+        expression += f'{indents}(target_skew_max {self.target_skew_max})\n'
+        expression += f'{indents}(target_skew_min {self.target_skew_min})\n'
+        expression += f'{indents}(tuning_mode "{dequote(self.tuning_mode)}")\n'
+        if len(self.members) > 0:
+            expression += f'{indents}(members'
+            for member in self.members:
+                expression += f' "{member}"'
+            expression += f'){endline}'
+
+        expression += f'{indents}){endline}'
+        return expression

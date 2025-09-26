@@ -122,7 +122,7 @@ class WksFont():
             elif item[0] == 'linewidth': object.linewidth = item[1]
             elif item[0] == 'size': object.size = WksFontSize().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -268,7 +268,7 @@ class Line():
             elif item[0] == 'incry': object.incry = item[1]
             elif item[0] == 'comment': object.comment = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
         return object
 
     def to_sexpr(self, indent=2, newline=True):
@@ -539,7 +539,7 @@ class Bitmap():
             elif item[0] == 'comment': object.comment = item[1]
             elif item[0] == 'data': object.data.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -668,7 +668,7 @@ class TbText():
             elif item[0] == 'incrlabel': object.incrlabel = item[1]
             elif item[0] == 'comment': object.comment = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -817,7 +817,7 @@ class Setup():
             elif item[0] == 'top_margin': object.topMargin = item[1]
             elif item[0] == 'bottom_margin': object.bottomMargin = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -908,7 +908,7 @@ class WorkSheet():
             elif item[0] == 'bitmap': object.drawingObjects.append(Bitmap().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
         return object
 
     @classmethod

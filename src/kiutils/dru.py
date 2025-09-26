@@ -175,7 +175,7 @@ class Rule():
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'severity': object.severity = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

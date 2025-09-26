@@ -424,11 +424,9 @@ class Symbol():
                                 'If you see this then fix parsing in SyTextBox and remove this exception.')
                 # object.graphicItems.append(SyTextBox().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
-            elif item[0] == 'embedded_files':
-                for f in item[1:]:
-                    object.embedded_files.append(EmbeddedFile.from_sexpr(f))
+            elif item[0] == 'embedded_files': object.embedded_files.extend([EmbeddedFile.from_sexpr(f) for f in item[1:]])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -592,7 +590,7 @@ class SymbolLib():
             elif item[0] == 'symbol': object.symbols.append(Symbol().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

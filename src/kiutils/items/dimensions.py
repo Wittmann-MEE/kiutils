@@ -96,7 +96,7 @@ class DimensionFormat():
             elif item[0] == 'precision': object.precision = item[1]
             elif item[0] == 'override_value': object.overrideValue = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -205,7 +205,7 @@ class DimensionStyle():
             elif item[0] == 'extension_offset': object.extensionOffset = item[1]
             elif item[0] == 'arrow_direction': object.arrow_direction = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -316,7 +316,7 @@ class Dimension():
             elif item[0] == 'pts':
                 for point in item[1:]: object.pts.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
