@@ -66,7 +66,7 @@ class GeneralSettings():
             elif item[0] == 'thickness': object.thickness = item[1]
             elif item[0] == 'legacy_teardrops': object.legacy_teardrops = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -819,7 +819,7 @@ class SetupData():
             elif item[0] == 'capping': object.capping.extend(item[1:])
             elif item[0] == 'filling': object.filling.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -940,7 +940,7 @@ class Segment():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1049,7 +1049,7 @@ class Via():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1150,7 +1150,7 @@ class Arc():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1235,7 +1235,7 @@ class Target():
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1419,7 +1419,7 @@ class Generated():
             elif item[0] == 'members':
                 for member in item[1:]: object.members.append(member)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

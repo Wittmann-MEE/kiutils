@@ -188,7 +188,7 @@ class Schematic():
             elif item[0] == 'table': object.tables.append(Table().from_sexpr(item))
             elif item[0] == 'rule_area': object.rule_areas.append(PolyLine().from_sexpr(item[1]))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

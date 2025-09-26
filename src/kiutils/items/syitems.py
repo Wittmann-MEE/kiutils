@@ -85,7 +85,7 @@ class SyArc():
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -173,7 +173,7 @@ class SyCircle():
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -242,7 +242,7 @@ class SyCurve():
             elif item[0] == 'pts':
                 for point in item[1:]: object.points.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -316,7 +316,7 @@ class SyPolyLine():
             elif item[0] == 'pts':
                 for point in item[1:]: object.points.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -400,7 +400,7 @@ class SyRect():
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -470,7 +470,7 @@ class SyText():
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -573,7 +573,7 @@ class SyTextBox():
             elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             elif item[0] == 'uuid': object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:

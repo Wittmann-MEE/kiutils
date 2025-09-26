@@ -199,7 +199,7 @@ class Model():
             elif item[0] == 'scale': object.scale = Coordinate.from_sexpr(item[1])
             elif item[0] == 'rotate': object.rotate = Coordinate.from_sexpr(item[1])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -346,7 +346,7 @@ class PadOptions():
             elif item[0] == 'clearance': object.clearance = item[1]
             elif item[0] == 'anchor': object.anchor = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -571,7 +571,7 @@ class Pad():
             elif item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
             elif item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -949,7 +949,7 @@ class Footprint():
                     "Dimensions are not yet handled! Please report this bug along with the file being parsed.")
             elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

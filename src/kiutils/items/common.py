@@ -261,7 +261,7 @@ class Stroke():
             elif item[0] == 'type':  object.type = item[1]
             elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -351,7 +351,7 @@ class Font():
             elif item[0] == 'line_spacing': object.lineSpacing = item[1]
             elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -504,7 +504,7 @@ class Effects():
             elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             elif item[0] == 'href': object.href = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -630,7 +630,7 @@ class Group():
             elif item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
             elif item[0] == 'members': object.members.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -713,7 +713,7 @@ class PageSettings():
                     raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
                 elif item[0] == 'portrait': object.portrait = True
                 else:
-                    raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                    raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -796,7 +796,7 @@ class TitleBlock():
             elif item[0] == 'company': object.company = item[1]
             elif item[0] == 'comment': object.comments.update({item[1]: item[2]})
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -905,7 +905,7 @@ class Property():
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -978,7 +978,7 @@ class RenderCachePolygon():
             elif item[0] == 'pts':
                 for point in item[1:]: object.pts.append(Position.from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1057,7 +1057,7 @@ class RenderCache():
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'polygon': object.polygons.append(RenderCachePolygon.from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -1126,7 +1126,7 @@ class Fill():
             elif item[0] == 'type': object.type = item[1]
             elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1202,7 +1202,7 @@ class Image():
             elif item[0] == 'layer': object.layer = item[1]
             elif item[0] == 'data': object.data.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -1288,7 +1288,7 @@ class EmbeddedFile():
             elif item[0] == 'data': object.data.extend(item[1:])
             elif item[0] == 'checksum': object.checksum = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 

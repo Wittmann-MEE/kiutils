@@ -164,7 +164,7 @@ class Board():
             elif item[0] == 'embedded_files': object.embedded_files.extend([EmbeddedFile().from_sexpr(f) for f in item[1:]])
             elif item[0] == 'generated': object.generated.append(Generated().from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
