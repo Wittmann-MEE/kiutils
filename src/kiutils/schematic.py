@@ -123,8 +123,11 @@ class Schematic():
     embedded_fonts: Optional[bool] = None
     """The ``embeddedFonts`` indicates that there are fonts embedded into this component"""
 
-    tables: List[Table] = field(default_factory=list)
+    tables: list[Table] = field(default_factory=list)
     """The ``tables`` token defines a list of tables used in the schematic"""
+
+    rule_areas: list[PolyLine] = field(default_factory=list)
+    """The ``rule_areas`` token defines rule areas used in the schematic"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Schematic:
@@ -183,6 +186,7 @@ class Schematic():
                 for instance in item[1:]: object.symbolInstances.append(SymbolInstance().from_sexpr(instance))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             elif item[0] == 'table': object.tables.append(Table().from_sexpr(item))
+            elif item[0] == 'rule_area': object.rule_areas.append(PolyLine().from_sexpr(item[1]))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
@@ -343,6 +347,12 @@ class Schematic():
             expression += '\n'
             for item in self.hierarchicalLabels:
                 expression += item.to_sexpr(indent+2)
+
+        if len(self.rule_areas) > 0:
+            for ra in self.rule_areas:
+                expression += f'{indents}(rule_area{endline}'
+                expression += ra.to_sexpr(indent+2)
+                expression += f'{indents}){endline}'
 
         if self.netclassFlags:
             expression += '\n'

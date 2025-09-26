@@ -390,6 +390,9 @@ class PolyLine():
     stroke: Stroke = field(default_factory=lambda: Stroke())
     """The ``stroke`` defines how the graphical line is drawn"""
 
+    fill: Optional[Fill] = None
+    """The optional ``fill`` token defines how the graphical line should be filled"""
+
     uuid: Optional[str] = None
     """The optional ``uuid`` defines the universally unique identifier. Defaults to ``None.``"""
 
@@ -420,6 +423,7 @@ class PolyLine():
             elif item[0] == 'pts':
                 for point in item[1:]: object.points.append(Position().from_sexpr(point))
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
             elif item[0] == 'uuid': object.uuid = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
@@ -445,8 +449,12 @@ class PolyLine():
 
         expression =  f'{indents}(polyline (pts{points})\n'
         expression += self.stroke.to_sexpr(indent+2)
+        if self.fill is not None:
+            expression += self.fill.to_sexpr(indent+2)
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
+            expression += f'{indents}(uuid "{self.uuid}")\n'
+
         expression += f'{indents}){endline}'
         return expression
 

@@ -1287,7 +1287,7 @@ class Generated():
     corner_radius: int = 0
     """The ``corner_radius`` token defines the radius of the corner"""
 
-    end: Position = field(default_factory=Position)
+    end: Position = field(default_factory=lambda: Position())
     """The ``end`` token defines the end of the tuned track"""
 
     initial_side: str = ""
@@ -1317,7 +1317,7 @@ class Generated():
     min_spacing: float = 0.0
     """The ``min_spacing`` token defines the minimal spacing of the tuned track"""
 
-    origin: Position = field(default_factory=Position)
+    origin: Position = field(default_factory=lambda: Position())
     """The ``origin`` token defines the origin of the tuned track"""
 
     override_custom_rules: str = ""
