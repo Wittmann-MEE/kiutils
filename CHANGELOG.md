@@ -1,5 +1,13 @@
 # kiutils - CHANGELOG
 
+## v1.7.0 - 26.09.2025
+### Breaking changes
+- Fixed: Preserve double backslashes in Datasheet paths
+### Non-breaking changes
+- Added: Support for `generated` in board (tuning)
+- Added: Support for `rule_area` in schematic
+- Cleanup: Shorter exception messages
+
 ## v1.6.7 - 25.09.2025
 ### Breaking changes
 - Fixed: Remove unecessary quoting of `layer` in design rules
