@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Dict
 from os import path
 
-from kiutils.items.common import Group, Image, Net, PageSettings, TitleBlock
+from kiutils.items.common import Group, Image, Net, PageSettings, TitleBlock, EmbeddedFile
 from kiutils.items.zones import Zone
 from kiutils.items.brditems import *
 from kiutils.items.gritems import *
@@ -100,7 +100,13 @@ class Board():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[bool] = None
-    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+    """The ``embeddedFonts`` indicates that there are fonts embedded into this component"""
+
+    embedded_files: list[EmbeddedFile] = field(default_factory=list)
+    """The ``embedded_files`` store data of embedded files"""
+
+    generated: list[Generated] = field(default_factory=list)
+    """The ``generated`` token defines a list of generated (editable tuning) objects used in the layout"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Board:
@@ -155,6 +161,8 @@ class Board():
             elif item[0] == 'zone': object.zones.append(Zone().from_sexpr(item))
             elif item[0] == 'group': object.groups.append(Group().from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
+            elif item[0] == 'embedded_files': object.embedded_files.extend([EmbeddedFile().from_sexpr(f) for f in item[1:]])
+            elif item[0] == 'generated': object.generated.append(Generated().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {exp}")
 
@@ -332,8 +340,17 @@ class Board():
         for group in self.groups:
             expression += group.to_sexpr(indent+2)
 
+        for generated in self.generated:
+            expression += generated.to_sexpr(indent+2)
+
         if self.embedded_fonts is not None:
             expression += f'{indents} {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}\n'
+
+        if len(self.embedded_files) > 0:
+            expression += '(embedded_files'
+            for f in self.embedded_files:
+                expression += f' {f.to_sexpr(indent+2)}'
+            expression += ')'
 
         expression += f'{indents}){endline}'
         return expression

@@ -121,7 +121,7 @@ class Schematic():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[bool] = None
-    """The ``embedded_fonts`` token defines the embedded fonts used in the footprint."""
+    """The ``embeddedFonts`` indicates that there are fonts embedded into this component"""
 
     tables: List[Table] = field(default_factory=list)
     """The ``tables`` token defines a list of tables used in the schematic"""
