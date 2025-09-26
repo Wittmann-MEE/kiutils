@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from enum import Enum
 import urllib.parse
 
@@ -928,7 +928,8 @@ class Property():
         dna = f' ({format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)})' if self.do_not_autoplace else ''
 
         if self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0 and self.value not in ['.', '~'] and not is_url(self.value):
-            value = str(Path(self.value))
+            # KiCad stores them like this, maybe we should just follow even though we do not necessarily agree. Right, KiCad?
+            value = str(PureWindowsPath(self.value)).replace("\\", "\\\\")
         else:
             value = self.value
 
