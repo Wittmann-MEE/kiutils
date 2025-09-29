@@ -20,9 +20,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import Position
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw, format_bool
+from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
 class KeepoutSettings():
@@ -98,11 +99,19 @@ class KeepoutSettings():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        # KiCad seems to add a whitespace to the pad token here
-        return f'{indents}(keepout (tracks {self.tracks}) (vias {self.vias}) (pads {self.pads} ) (copperpour {self.copperpour}) (footprints {self.footprints})){endline}'
+    def _to_sexpr_raw(self):
+        return [
+            'keepout',
+            ['tracks', self.tracks],
+            ['vias', self.vias],
+            ['pads', self.pads],
+            ['copperpour', self.copperpour],
+            ['footprints', self.footprints]
+        ]
+
 
 @dataclass
 class FillSettings():
@@ -236,24 +245,53 @@ class FillSettings():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        yes = f' {format_bool("yes", self.yes, compact=True)}'
-        mode = f' (mode {self.mode})' if self.mode is not None else ''
-        smoothing = f' (smoothing {self.smoothingStyle})' if self.smoothingStyle is not None else ''
-        radius = f' (radius {self.smoothingRadius})' if self.smoothingRadius is not None else ''
-        irm = f' (island_removal_mode {self.islandRemovalMode})' if self.islandRemovalMode is not None else ''
-        iam = f' (island_area_min {self.islandAreaMin})' if self.islandAreaMin is not None else ''
-        ht = f'\n{indents}  (hatch_thickness {self.hatchThickness})' if self.hatchThickness is not None else ''
-        hg = f' (hatch_gap {self.hatchGap})' if self.hatchGap is not None else ''
-        ho = f' (hatch_orientation {self.hatchOrientation})' if self.hatchOrientation is not None else ''
-        hsl = f'\n{indents}  (hatch_smoothing_level {self.hatchSmoothingLevel})' if self.hatchSmoothingLevel is not None else ''
-        hsv = f' (hatch_smoothing_value {self.hatchSmoothingValue})' if self.hatchSmoothingValue is not None else ''
-        hba = f'\n{indents}  (hatch_border_algorithm {self.hatchBorderAlgorithm})' if self.hatchBorderAlgorithm is not None else ''
-        hmha = f' (hatch_min_hole_area {self.hatchMinHoleArea})' if self.hatchMinHoleArea is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['fill ' + format_bool('yes', self.yes, compact=True)]
 
-        return f'{indents}(fill{yes}{mode} (thermal_gap {self.thermalGap}) (thermal_bridge_width {self.thermalBridgeWidth}){smoothing}{radius}{irm}{iam}{ht}{hg}{ho}{hsl}{hsv}{hba}{hmha}){endline}'
+        if self.mode is not None:
+            expr.append(['mode', self.mode])
+
+        expr.append(['thermal_gap', self.thermalGap])
+        expr.append(['thermal_bridge_width', self.thermalBridgeWidth])
+
+        if self.smoothingStyle is not None:
+            expr.append(['smoothing', self.smoothingStyle])
+
+        if self.smoothingRadius is not None:
+            expr.append(['radius', self.smoothingRadius])
+
+        if self.islandRemovalMode is not None:
+            expr.append(['island_removal_mode', self.islandRemovalMode])
+
+        if self.islandAreaMin is not None:
+            expr.append(['island_area_min', self.islandAreaMin])
+
+        if self.hatchThickness is not None:
+            expr.append(['hatch_thickness', self.hatchThickness])
+
+        if self.hatchGap is not None:
+            expr.append(['hatch_gap', self.hatchGap])
+
+        if self.hatchOrientation is not None:
+            expr.append(['hatch_orientation', self.hatchOrientation])
+
+        if self.hatchSmoothingLevel is not None:
+            expr.append(['hatch_smoothing_level', self.hatchSmoothingLevel])
+
+        if self.hatchSmoothingValue is not None:
+            expr.append(['hatch_smoothing_value', self.hatchSmoothingValue])
+
+        if self.hatchBorderAlgorithm is not None:
+            expr.append(['hatch_border_algorithm', self.hatchBorderAlgorithm])
+
+        if self.hatchMinHoleArea is not None:
+            expr.append(['hatch_min_hole_area', self.hatchMinHoleArea])
+
+        return expr
+
 
 @dataclass
 class ZonePolygon():
@@ -302,21 +340,19 @@ class ZonePolygon():
             - newline (bool): Adds a newline to the end of the output. Defaults to True.
 
         Returns:
-            - str: S-Expression of this object. If the polygon has no coordinates, an empty 
+            - str: S-Expression of this object. If the polygon has no coordinates, an empty
                    expression is returned.
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
         if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+            return ''
 
-        expression =  f'{indents}(polygon\n'
-        expression += f'{indents}  (pts\n'
-        for point in self.coordinates:
-            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}  )\n'
-        expression += f'{indents})\n'
-        return expression
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        return ['polygon', ['pts'] + pts]
+
 
 @dataclass
 class FilledPolygon():
@@ -378,23 +414,26 @@ class FilledPolygon():
             - newline (bool): Adds a newline to the end of the output. Defaults to True.
 
         Returns:
-            - str: S-Expression of this object. If the filled polygon has no coordinates, an empty 
+            - str: S-Expression of this object. If the filled polygon has no coordinates, an empty
                    expression is returned.
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
         if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+            return ''
 
-        expression =  f'{indents}(filled_polygon\n'
-        expression += f'{indents}  (layer "{dequote(self.layer)}")\n'
-        expression += f'{indents}  (island)\n' if self.island else ''
-        expression += f'{indents}  (pts\n'
-        for point in self.coordinates:
-            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}  )\n'
-        expression += f'{indents})\n'
-        return expression
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ['filled_polygon', ['layer', escape_and_quote(self.layer)]]
+
+        if self.island:
+            expr.append(['island'])
+
+        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        expr.append(['pts'] + pts)
+
+        return expr
+
 
 # TODO: This is KiCad 4 stuff, has to be tested yet ..
 @dataclass
@@ -453,22 +492,19 @@ class FillSegments():
             - newline (bool): Adds a newline to the end of the output. Defaults to True.
 
         Returns:
-            - str: S-Expression of this object. If the fill segments has no coordinates, an empty 
+            - str: S-Expression of this object. If the fill segments has no coordinates, an empty
               expression is returned.
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
         if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+            return ''
 
-        expression =  f'{indents}(fill_segments\n'
-        expression += f'{indents}  (layer "{dequote(self.layer)}")\n'
-        expression += f'{indents}  (pts\n'
-        for point in self.coordinates:
-            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}  )\n'
-        expression += f'{indents})\n'
-        return expression
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        return ['fill_segments', ['layer', escape_and_quote(self.layer)], ['pts'] + pts]
+
 
 @dataclass
 class Hatch():
@@ -624,48 +660,68 @@ class Zone():
         Returns:
             - str: S-Expression of this object.
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        locked = f' {format_bool("locked", self.locked)}'
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        name = f' (name "{dequote(self.name)}")' if self.name is not None else ''
-        contype = f' {self.connectPads}' if self.connectPads is not None else ''
-        fat = f' (filled_areas_thickness {self.filledAreasThickness})' if self.filledAreasThickness is not None else ''
-        layers, layer_token = '', ''
-        for layer in self.layers:
-            layers += f' "{dequote(layer)}"'
-            
+    def _to_sexpr_raw(self):
         if len(self.layers) == 0:
             raise Exception("Zone: No layers set for this zone")
-        elif len(self.layers) == 1 and self.layers[0] != "F&B.Cu" and self.layers[0] != "*.Cu":
-            layer_token = f' (layer{layers})'
-        else:
-            layer_token = f' (layers{layers})'
 
-        expression =  f'{indents}(zone (net {self.net}) (net_name "{dequote(self.netName)}"){locked}{layer_token}{tstamp}{name} (hatch {self.hatch.style} {self.hatch.pitch})\n'
+        layers_list = [escape_and_quote(layer) for layer in self.layers]
+        if len(self.layers) == 1 and self.layers[0] != "F&B.Cu" and self.layers[0] != "*.Cu":
+            layer_token = 'layer'
+        else:
+            layer_token = 'layers'
+
+        expr = ['zone',
+                ['net', self.net],
+                ['net_name', escape_and_quote(self.netName)],
+                format_bool_raw('locked', self.locked),
+                [layer_token] + layers_list
+                ]
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        if self.name is not None:
+            expr.append(['name', escape_and_quote(self.name)])
+
+        expr.append(['hatch', self.hatch.style, self.hatch.pitch])
+
         if self.priority is not None:
-            expression += f'{indents}  (priority {self.priority})\n'
-        expression += f'{indents}  (connect_pads{contype} (clearance {self.clearance}))\n'
-        expression += f'{indents}  (min_thickness {self.minThickness}){fat}\n'
+            expr.append(['priority', self.priority])
+
+        connect_pads_expr = ['connect_pads']
+        if self.connectPads is not None:
+            connect_pads_expr.append(self.connectPads)
+        connect_pads_expr.append(['clearance', self.clearance])
+        expr.append(connect_pads_expr)
+
+        expr.append(['min_thickness', self.minThickness])
+
+        if self.filledAreasThickness is not None:
+            expr.append(['filled_areas_thickness', self.filledAreasThickness])
+
         if self.keepoutSettings is not None:
-            expression += f'{indents}  {self.keepoutSettings.to_sexpr()}\n'
+            expr.append(self.keepoutSettings._to_sexpr_raw())
+
         if self.placement is not None:
-            expression += f'{indents} {self.placement.to_sexpr()}\n'
+            expr.append(self.placement._to_sexpr_raw())
+
         if self.fillSettings is not None:
-            expression += self.fillSettings.to_sexpr(indent+2, True)
+            expr.append(self.fillSettings._to_sexpr_raw())
 
         for polygon in self.polygons:
-            expression += polygon.to_sexpr(indent+2)
+            expr.append(polygon._to_sexpr_raw())
 
         for polygon in self.filledPolygons:
-            expression += polygon.to_sexpr(indent+2)
+            expr.append(polygon._to_sexpr_raw())
 
-        # TODO: This is KiKad 4 stuff...
         if self.fillSegments is not None:
-            expression += self.fillSegments.to_sexpr()
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(self.fillSegments._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class PlacementSettings():
@@ -716,8 +772,12 @@ class PlacementSettings():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        # KiCad seems to add a whitespace to the pad token here
-        return f'{indents}(placement (enabled {self.enabled}) (sheetname "{self.sheet_name}")){endline}'
+    def _to_sexpr_raw(self):
+        return [
+            'placement',
+            ['enabled', self.enabled],
+            ['sheetname', quote(self.sheet_name)]
+        ]
