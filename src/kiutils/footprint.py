@@ -1086,10 +1086,10 @@ class Footprint():
         Returns:
             - str: S-Expression of this object
         """
-        raw_expr = self._to_sexpr_raw(layerInFirstLine=layerInFirstLine)
+        raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self, layerInFirstLine=False):
+    def _to_sexpr_raw(self):
         expr = ['footprint', escape_and_quote(self.libId)]
 
         expr.append(format_bool_raw('locked', self.locked))
@@ -1104,14 +1104,10 @@ class Footprint():
         if self.generator_version is not None:
             expr.append(['generator_version', self.generator_version])
 
-        if layerInFirstLine:
-            expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])
-
-        if not layerInFirstLine:
-            expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.position is not None:
             pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
