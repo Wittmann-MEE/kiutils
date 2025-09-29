@@ -19,9 +19,8 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from os import path
 
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
+from kiutils.utils.string_utils import *
 
 @dataclass
 class Constraint():
@@ -100,7 +99,7 @@ class Constraint():
 
         return object
 
-    def to_sexpr(self, indent=2, newline=True):
+    def to_sexpr(self, indent=2, newline=True) -> str:
         """Generate the S-Expression representing this object
 
         Args:
@@ -110,16 +109,24 @@ class Constraint():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        min = f' (min "{dequote(self.min)}")' if self.min is not None else ''
-        opt = f' (opt "{dequote(self.opt)}")' if self.opt is not None else ''
-        max = f' (max "{dequote(self.max)}")' if self.max is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['constraint', self.type]
 
-        elements = ' '+' '.join(self.elements) if (len(self.elements) > 0) else ''
+        if self.min is not None:
+            expr.append(['min', escape_and_quote(self.min)])
+        if self.opt is not None:
+            expr.append(['opt', escape_and_quote(self.opt)])
+        if self.max is not None:
+            expr.append(['max', escape_and_quote(self.max)])
 
-        return f'{indents}(constraint {self.type}{min}{opt}{max}{elements}){endline}'
+        if len(self.elements) > 0:
+            expr.extend(self.elements)
+
+        return expr
+
 
 @dataclass
 class Rule():
@@ -179,7 +186,7 @@ class Rule():
 
         return object
 
-    def to_sexpr(self, indent: int = 0):
+    def to_sexpr(self, indent: int = 0) -> str:
         """Generate the S-Expression representing this object
 
         Args:
@@ -188,18 +195,25 @@ class Rule():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(rule "{dequote(self.name)}"\n'
+    def _to_sexpr_raw(self, indent: int = 0):
+        expr = ['rule', escape_and_quote(self.name)]
+
         if self.layer is not None:
-            expression += f'{indents}  (layer {dequote(self.layer)})\n'
+            expr.append(['layer', dequote(self.layer)])
+
         for item in self.constraints:
-            expression += f'{indents}{item.to_sexpr(indent+2)}'
-        expression += f'{indents}  (condition "{dequote(self.condition)}")'
+            expr.append(item._to_sexpr_raw())
+
+        expr.append(['condition', escape_and_quote(self.condition)])
+
         if self.severity is not None:
-            expression += f'\n{indents}  (severity {dequote(self.severity)})'
-        expression += ')\n'
-        return expression
+            expr.append(['severity', dequote(self.severity)])
+
+        return expr
+
 
 @dataclass
 class DesignRules():
@@ -267,7 +281,7 @@ class DesignRules():
             # This dirty fix adds opening and closing brackets `(..)` to the read input to enable
             # the S-Expression parser to work for the DRU-format as well.
             data = f'({infile.read()})'
-            item = cls.from_sexpr(sexpr.parse_sexp(data))
+            item = cls.from_sexpr(parse_sexp(data))
             item.filePath = filepath
             return item
 
@@ -301,7 +315,7 @@ class DesignRules():
             pre_formatted_sexpr = self.to_sexpr()
             outfile.write(prettify(pre_formatted_sexpr))
 
-    def to_sexpr(self, indent=0, newline=False):
+    def to_sexpr(self, indent=0, newline=False) -> str:
         """Generate the S-Expression representing this object
 
         Args:
@@ -311,14 +325,13 @@ class DesignRules():
         Returns:
             str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        # Join the expressions together without extra nesting
+        expr_str = ' '.join(sexp_to_string(item) for item in raw_expr)
+        return expr_str
 
-        expression = f'{indents}(version {self.version})\n'
+    def _to_sexpr_raw(self):
+        expr = ['version', self.version]
+        rules_expr = [rule._to_sexpr_raw() for rule in self.rules]
+        return [expr] + rules_expr
 
-        if len(self.rules):
-            expression += f'{indents}\n'
-            for rule in self.rules:
-                expression += f'{indents}{rule.to_sexpr(indent=indent)}'
-
-        return expression + endline

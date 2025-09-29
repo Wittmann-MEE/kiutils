@@ -16,9 +16,8 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 from os import path
 
-from kiutils.utils.string_utils import dequote
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.string_utils import *
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 
 @dataclass
 class Library():
@@ -90,25 +89,26 @@ class Library():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(lib '
-        expression += f'(name "{dequote(self.name)}")'
-        expression += f'(type "{dequote(self.type)}")'
-        expression += f'(uri "{dequote(self.uri)}")'
-        expression += f'(options "{dequote(self.options)}")'
-        expression += f'(descr "{dequote(self.description)}")'
+    def _to_sexpr_raw(self):
+        expr = ['lib']
+
+        expr.append(['name', escape_and_quote(self.name)])
+        expr.append(['type', escape_and_quote(self.type)])
+        expr.append(['uri', escape_and_quote(self.uri)])
+        expr.append(['options', escape_and_quote(self.options)])
+        expr.append(['descr', escape_and_quote(self.description)])
 
         if not self.active:
-            expression += '(disabled)'
+            expr.append(['disabled'])
 
         if not self.visible:
-            expression += '(hidden)'
+            expr.append(['hidden'])
 
-        expression += f'){endline}'
+        return expr
 
-        return expression
 
 @dataclass
 class LibTable():
@@ -174,7 +174,7 @@ class LibTable():
             raise Exception("Given path is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
-            item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))
+            item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
 
@@ -221,11 +221,13 @@ class LibTable():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}({self.type}\n'
+    def _to_sexpr_raw(self):
+        expr = [self.type]
+
         for lib in self.libs:
-            expression += lib.to_sexpr()
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(lib._to_sexpr_raw())
+
+        return expr
