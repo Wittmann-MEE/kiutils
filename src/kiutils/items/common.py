@@ -23,9 +23,10 @@ from pathlib import Path, PureWindowsPath
 from enum import Enum
 import urllib.parse
 
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.sexpr import sexp_to_string
 
 def is_url(path: str) -> bool:
     parsed = urllib.parse.urlparse(path)
@@ -139,9 +140,11 @@ class Coordinate():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        return f'{indents}(xyz {self.X} {self.Y} {self.Z}){endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        return ['xyz', self.X, self.Y, self.Z]
 
 
 @dataclass
@@ -202,15 +205,17 @@ class ColorRGBA():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
+    def _to_sexpr_raw(self):
         if self.precision is not None:
             alpha = f'{self.A:.{self.precision}f}'
         else:
-            alpha = f'{self.A}'
+            alpha = self.A
 
-        return f'{indents}(color {self.R} {self.G} {self.B} {alpha}){endline}'
+        return ['color', self.R, self.G, self.B, alpha]
+
 
 @dataclass
 class Stroke():
@@ -275,12 +280,19 @@ class Stroke():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        color = f' {self.color.to_sexpr()}' if self.color is not None else ''
-        ttype = f' (type {self.type})' if self.type is not None else ''
-        return f'{indents}(stroke (width {format_float(self.width)}){ttype}{color}){endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
+    def _to_sexpr_raw(self):
+        expr = ['stroke', ['width', format_float(self.width)]]
+
+        if self.type is not None:
+            expr.append(['type', self.type])
+
+        if self.color is not None:
+            expr.append(self.color._to_sexpr_raw())
+
+        return expr
 
 
 @dataclass
@@ -365,20 +377,34 @@ class Font():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        face_name, thickness, linespacing, color = '', '', '', ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        if self.face is not None:           face_name = f'(face "{dequote(self.face)}") '
-        if self.thickness is not None:      thickness = f' (thickness {self.thickness})'
-        if self.lineSpacing is not None:    linespacing = f' (line_spacing {self.lineSpacing})'
-        if self.color is not None:          color = f' {self.color.to_sexpr()}'
+    def _to_sexpr_raw(self):
+        expr = ['font']
 
-        bold = f' {format_bool("bold", self.bold)}'
-        italic = f' {format_bool("italic", self.italic)}'
+        if self.face is not None:
+            expr.append(['face', escape_and_quote(self.face)])
 
-        expression = f'{indents}(font {face_name}(size {self.height} {self.width}){color}{thickness}{bold}{italic}{linespacing}){endline}'
-        return expression
+        expr.append(['size', self.height, self.width])
+
+        if self.color is not None:
+            expr.append(self.color._to_sexpr_raw())
+
+        if self.thickness is not None:
+            expr.append(['thickness', self.thickness])
+
+        if self.bold:
+            expr.append(format_bool_raw('bold', self.bold))
+
+        if self.italic:
+            expr.append(format_bool_raw('italic', self.italic))
+
+        if self.lineSpacing is not None:
+            expr.append(['line_spacing', self.lineSpacing])
+
+        return expr
+
 
 @dataclass
 class Justify():
@@ -436,22 +462,28 @@ class Justify():
         Returns:
             - str: S-Expression of this object or an empty string (depending on given indentation
               and newline settings) if no justification is given. This will cause the text to be
-              horizontally and vertically aligend
+              horizontally and vertically aligned
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        if self.horizontally is None and self.vertically is None and self.mirror == False:
-            return f'{indents}{endline}'
+    def _to_sexpr_raw(self):
+        if self.horizontally is None and self.vertically is None and not self.mirror:
+            return []
 
-        horizontally, vertically, mirror = '', '', ''
+        expr = ['justify']
 
-        if self.horizontally is not None: horizontally = f' {self.horizontally}'
-        if self.vertically is not None: vertically = f' {self.vertically}'
-        if self.mirror: mirror = f' mirror'
+        if self.horizontally is not None:
+            expr.append(self.horizontally)
 
-        expression = f'{indents}(justify{horizontally}{vertically}{mirror}){endline}'
-        return expression
+        if self.vertically is not None:
+            expr.append(self.vertically)
+
+        if self.mirror:
+            expr.append('mirror')
+
+        return expr
+
 
 @dataclass
 class Effects():
@@ -518,15 +550,23 @@ class Effects():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        justify = f' {self.justify.to_sexpr()}' if self.justify.to_sexpr() != '' else ''
-        hide = f' {format_bool("hide", self.hide)}'
-        href = f' (href "{dequote(self.href)}")' if self.href is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['effects']
+        expr.append(self.font._to_sexpr_raw())
 
-        expression =  f'{indents}(effects {self.font.to_sexpr()}{justify}{href}{hide}){endline}'
-        return expression
+        justify_raw = self.justify._to_sexpr_raw()
+        if len(justify_raw) > 0:
+            expr.append(justify_raw)
+
+        if self.href is not None:
+            expr.append(['href', dequote(self.href)])
+
+        expr.append(format_bool_raw("hide", self.hide))
+
+        return expr
 
 
 @dataclass
@@ -575,10 +615,12 @@ class Net():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return f'{indents}(net {self.number} "{dequote(self.name)}"){endline}'
+    def _to_sexpr_raw(self):
+        return ['net', self.number, escape_and_quote(self.name)]
+
 
 @dataclass
 class Group():
@@ -644,18 +686,15 @@ class Group():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(group "{dequote(self.name)}" (uuid "{self.id}"){locked}\n'
-        expression += f'{indents}(members\n'
-        for member in self.members:
-            expression += f' "{member}"'
+    def _to_sexpr_raw(self):
+        expr = ['group', escape_and_quote(self.name), ['uuid', escape_and_quote(self.id)]]
+        expr.append(format_bool_raw("locked", self.locked))
+        expr.append(['members'] + [quote(member) for member in self.members])
+        return expr
 
-        expression += f')\n'
-        expression += f'{indents}){endline}'
-        return expression
 
 @dataclass
 class PageSettings():
@@ -730,17 +769,22 @@ class PageSettings():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        width, height = '', ''
-        portrait = ' portrait' if self.portrait else ''
+    def _to_sexpr_raw(self):
+        expr = ['paper', escape_and_quote(self.paperSize)]
+
         if self.paperSize == 'User':
             if self.width is None or self.height is None:
                 raise Exception("Page size set to 'User' but width or height not specified")
-            width = f' {self.width}'
-            height = f' {self.height}'
-        return f'{indents}(paper "{dequote(self.paperSize)}"{width}{height}{portrait}){endline}'
+            expr.extend([self.width, self.height])
+
+        if self.portrait:
+            expr.append('portrait')
+
+        return expr
+
 
 @dataclass
 class TitleBlock():
@@ -810,26 +854,29 @@ class TitleBlock():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(title_block\n'
+    def _to_sexpr_raw(self):
+        expr = ['title_block']
+
         if self.title is not None:
-            expression += f'{indents}  (title "{dequote(self.title)}")\n'
+            expr.append(['title', escape_and_quote(self.title)])
 
         if self.date is not None:
-            expression += f'{indents}  (date "{dequote(self.date)}")\n'
+            expr.append(['date', escape_and_quote(self.date)])
 
         if self.revision is not None:
-            expression += f'{indents}  (rev "{dequote(self.revision)}")\n'
+            expr.append(['rev', escape_and_quote(self.revision)])
 
         if self.company is not None:
-            expression += f'{indents}  (company "{dequote(self.company)}")\n'
+            expr.append(['company', escape_and_quote(self.company)])
 
         for number, comment in self.comments.items():
-            expression += f'{indents}  (comment {number} "{dequote(comment)}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['comment', number, escape_and_quote(comment)])
+
+        return expr
+
 
 @dataclass
 class Property():
@@ -919,28 +966,37 @@ class Property():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        id = f' (id {self.id})' if self.id is not None else ''
-        sn = f' ({format_bool("show_name", self.showName, compact=True)})' if self.showName else ''
-        dna = f' ({format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)})' if self.do_not_autoplace else ''
+    def _to_sexpr_raw(self):
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
 
-        if self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0 and self.value not in ['.', '~'] and not is_url(self.value):
-            # KiCad stores them like this, maybe we should just follow even though we do not necessarily agree. Right, KiCad?
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+
+        if (self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0
+                and self.value not in ['.','~'] and not is_url(self.value)):
             value = str(PureWindowsPath(self.value)).replace("\\", "\\\\")
         else:
             value = self.value
 
-        expression =  f'{indents}(property "{dequote(self.key)}" "{dequote(value)}"{id} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){sn}{dna}'
-        if self.effects is not None:
-            expression += f'\n{self.effects.to_sexpr(indent+2)}'
-            expression += f'{indents}){endline}'
-        else:
-            expression += f'){endline}'
+        expr = ['property', escape_and_quote(self.key), escape_and_quote(value), pos]
 
-        return expression
+        if self.id is not None:
+            expr.append(['id', self.id])
+
+        if self.showName:
+            expr.append(format_bool_raw('show_name', self.showName))
+
+        if self.do_not_autoplace:
+            expr.append(format_bool_raw('do_not_autoplace', self.do_not_autoplace))
+
+        if self.effects is not None:
+            expr.append(self.effects._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class RenderCachePolygon():
@@ -993,23 +1049,16 @@ class RenderCachePolygon():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(polygon\n'
-        expression += f'{indents}  (pts'
-
+    def _to_sexpr_raw(self):
+        pts_expr = []
         for i, point in enumerate(self.pts):
-            if i % 4 == 0:
-                expression += f'\n'
-            expression += f'{indents}    '
-            expression += f'(xy {format_float(point.X)} {format_float(point.Y)})'
+            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
 
-        # NOTE: This expects the length of the points array to be a multiple of four to get the
-        #       formatting right.
-        expression += f'\n{indents}  )\n'
-        expression += f'{indents}){endline}'
-        return expression
+        return ['polygon', ['pts'] + pts_expr]
+
 
 @dataclass
 class RenderCache():
@@ -1071,14 +1120,17 @@ class RenderCache():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(render_cache "{dequote(self.text)}" {self.id}\n'
+    def _to_sexpr_raw(self):
+        expr = ['render_cache', escape_and_quote(self.text), self.id]
+
         for poly in self.polygons:
-            expression += poly.to_sexpr()
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(poly._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class Fill():
@@ -1141,12 +1193,17 @@ class Fill():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        color = f' {self.color.to_sexpr()}' if self.color is not None else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(fill (type {self.type}){color}){endline}'
-        return expression
+    def _to_sexpr_raw(self):
+        expr = ['fill', ['type', self.type]]
+
+        if self.color is not None:
+            expr.append(self.color._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class Image():
@@ -1217,21 +1274,25 @@ class Image():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        scale = f' (scale {self.scale})' if self.scale is not None else ''
-        layer = f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['image', ['at', format_float(self.position.X), format_float(self.position.Y)]]
 
-        expression =  f'{indents}(image (at {self.position.X} {self.position.Y}){layer}{scale}\n'
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.scale is not None:
+            expr.append(['scale', self.scale])
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid {self.uuid})\n'
-        expression += f'{indents}  (data\n'
-        for b64part in self.data:
-            expression += f'{indents}    {b64part}\n'
-        expression += f'{indents}  )\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        expr.append(['data'] + [quote(b64part) for b64part in self.data])
+
+        return expr
+
 
 @dataclass
 class EmbeddedFile():
@@ -1303,21 +1364,19 @@ class EmbeddedFile():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(file\n'
-        expression += f'{indents}(name "{self.name}")\n'
-        expression += f'{indents}(type {self.type})\n'
+    def _to_sexpr_raw(self):
+        expr = ['file']
 
-        expression += f'{indents}(data\n'
-        for b64part in self.data:
-            expression += f'{indents}{b64part}\n'
-        expression += f'{indents})\n'
+        expr.append(['name', quote(self.name)])
+        expr.append(['type', self.type])
+        expr.append(['data'] + self.data)
+        expr.append(['checksum', quote(self.checksum)])
 
-        expression += f'{indents}(checksum "{self.checksum}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+        return expr
+
 
 @dataclass
 class ProjectInstance(ABC):

@@ -21,9 +21,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import RenderCache, Stroke, Position, Effects
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.sexpr import sexp_to_string
 
 # FIXME: Several classes have a ``stroke`` member. This feature will be introduced in KiCad 7 and
 #        has yet to be tested here.
