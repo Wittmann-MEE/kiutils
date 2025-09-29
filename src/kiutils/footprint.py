@@ -25,12 +25,11 @@ from kiutils.items.zones import Zone
 from kiutils.items.common import Image, Coordinate, Net, Group, Font
 from kiutils.items.fpitems import *
 from kiutils.items.gritems import *
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
-from kiutils.utils.string_utils import dequote, remove_prefix
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string
+from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool, format_bool_raw
 
 @dataclass
 class Attributes():
@@ -122,24 +121,33 @@ class Attributes():
             - str: S-Expression of this object
         """
         if (self.type is None
-            and self.boardOnly == False
-            and self.excludeFromBom == False
-            and self.excludeFromPosFiles == False
-            and self.allowMissingCourtyard == False):
+                and self.boardOnly == False
+                and self.excludeFromBom == False
+                and self.excludeFromPosFiles == False
+                and self.allowMissingCourtyard == False):
             return ''
 
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        type = f' {self.type}' if self.type is not None else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(attr{type}'
-        expression += f' {format_bool("board_only", self.boardOnly, compact=True)}'
-        expression += f' {format_bool("exclude_from_pos_files", self.excludeFromPosFiles, compact=True)}'
-        expression += f' {format_bool("exclude_from_bom", self.excludeFromBom, compact=True)}'
-        expression += f' {format_bool("allow_missing_courtyard", self.allowMissingCourtyard, compact=True)}'
-        expression += f' {format_bool("dnp", self.dnp, compact=True)}' if self.dnp else ''
-        expression += f'){endline}'
-        return expression
+    def _to_sexpr_raw(self):
+        expr = ['attr']
+
+        if self.type is not None:
+            expr.append(self.type)
+        if self.boardOnly:
+            expr.append('board_only')
+        if self.excludeFromPosFiles:
+            expr.append('exclude_from_pos_files')
+        if self.excludeFromBom:
+            expr.append('exclude_from_bom')
+        if self.allowMissingCourtyard:
+            expr.append('allow_missing_courtyard')
+        if self.dnp:
+            expr.append('dnp')
+
+        return expr
+
 
 @dataclass
 class Model():
@@ -213,18 +221,23 @@ class Model():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        hide = f' {format_bool("hide", self.hide)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(model "{dequote(self.path)}"{hide}\n'
+    def _to_sexpr_raw(self):
+        expr = ['model', escape_and_quote(self.path)]
+
+        expr.append(format_bool_raw('hide', self.hide))
+
         if self.opacity is not None:
-            expression += f'{indents}  (opacity {self.opacity})\n'
-        expression += f'{indents}  (offset {self.pos.to_sexpr()})\n'
-        expression += f'{indents}  (scale {self.scale.to_sexpr()})\n'
-        expression += f'{indents}  (rotate {self.rotate.to_sexpr()})\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['opacity', self.opacity])
+
+        expr.append(['offset', self.pos._to_sexpr_raw()])
+        expr.append(['scale', self.scale._to_sexpr_raw()])
+        expr.append(['rotate', self.rotate._to_sexpr_raw()])
+
+        return expr
+
 
 @dataclass
 class DrillDefinition():
@@ -293,15 +306,27 @@ class DrillDefinition():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        diameter = f' {self.diameter}' if self.diameter is not None else ''
-        oval = f' oval' if self.oval else ''
-        width = f' {self.width}' if self.oval and self.width is not None else ''
-        offset = f' (offset {format_float(self.offset.X)} {format_float(self.offset.Y)})' if self.offset is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['drill']
 
-        return f'{indents}(drill{oval}{diameter}{width}{offset}){endline}'
+        if self.oval:
+            expr.append('oval')
+
+        if self.diameter is not None:
+            expr.append(self.diameter)
+
+        if self.oval and self.width is not None:
+            expr.append(self.width)
+
+        if self.offset is not None:
+            offset = ['offset', format_float(self.offset.X), format_float(self.offset.Y)]
+            expr.append(offset)
+
+        return expr
+
 
 @dataclass
 class PadOptions():
@@ -360,10 +385,12 @@ class PadOptions():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return f'{indents}(options (clearance {self.clearance}) (anchor {self.anchor})){endline}'
+    def _to_sexpr_raw(self):
+        return ['options', ['clearance', self.clearance], ['anchor', self.anchor]]
+
 
 @dataclass
 class Pad():
@@ -585,109 +612,106 @@ class Pad():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        champferFound, marginFound, schematicSymbolAssociated = False, False, False
-        c, cr, smm, spm, spmr, cl, zc, tw, tg, tbw, tba = '', '', '', '', '', '', '', '', '', '', ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        layers = ' (layers'
-        for layer in self.layers:
-            layers += f' "{dequote(layer)}"'
-        layers += ')'
+    def _to_sexpr_raw(self):
+        expr = [
+            'pad',
+            escape_and_quote(self.number),
+            self.type,
+            self.shape
+        ]
 
-        locked = f' {format_bool("locked", self.locked)}'
-        drill = f' {self.drill.to_sexpr()}' if self.drill is not None else ''
-        ppty = f' (property {self.property})' if self.property is not None else ''
-        rul = f' (remove_unused_layers {self.removeUnusedLayers})' if self.removeUnusedLayers is not None else ''
-        kel = f' (keep_end_layers {self.keepEndLayers})' if self.keepEndLayers is not None else ''
-        rrr = f' (roundrect_rratio {self.roundrectRatio})' if self.roundrectRatio is not None else ''
-        zlc = f' {format_bool("zone_layer_connections", self.zone_layer_connections)}'
+        expr.append(format_bool_raw('locked', self.locked))
 
-        net = f' {self.net.to_sexpr()}' if self.net is not None else ''
-        pf = f' (pinfunction "{dequote(self.pinFunction)}")' if self.pinFunction is not None else ''
-        pt = f' (pintype "{dequote(self.pinType)}")' if self.pinType is not None else ''
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
 
-        # Check if a schematic symbol is associated with this footprint. This is usually set, if the
-        # footprint is used in a board file.
-        if net != '' or pf != '' or pt != '':
-            schematicSymbolAssociated = True
+        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
+        if self.drill is not None:
+            expr.append(self.drill._to_sexpr_raw())
+
+        if self.property is not None:
+            expr.append(['property', self.property])
+
+        layers = ['layers'] + [escape_and_quote(layer) for layer in self.layers]
+        expr.append(layers)
+
+        if self.removeUnusedLayers is not None:
+            expr.append(['remove_unused_layers', self.removeUnusedLayers])
+
+        if self.keepEndLayers is not None:
+            expr.append(['keep_end_layers', self.keepEndLayers])
+
+        if self.roundrectRatio is not None:
+            expr.append(['roundrect_rratio', self.roundrectRatio])
+
+        expr.append(format_bool_raw('zone_layer_connections', self.zone_layer_connections))
+
+        if self.chamferRatio is not None:
+            expr.append(['chamfer_ratio', self.chamferRatio])
 
         if len(self.chamfer) > 0:
-            champferFound = True
-            c = ' (chamfer'
-            for chamfer in self.chamfer:
-                c += f' {chamfer}'
-            c += ')'
-        if self.chamferRatio is not None:
-            champferFound = True
-            cr = f' (chamfer_ratio {self.chamferRatio})'
-
-        if self.position.angle is not None:
-            position = f' (at {format_float(self.position.X)} {format_float(self.position.Y)} {self.position.angle})'
-        else:
-            position = f' (at {format_float(self.position.X)} {format_float(self.position.Y)})'
-
-        if self.solderMaskMargin is not None:
-            marginFound = True
-            smm = f' (solder_mask_margin {self.solderMaskMargin})'
-
-        if self.solderPasteMargin is not None:
-            marginFound = True
-            spm = f' (solder_paste_margin {self.solderPasteMargin})'
-
-        if self.solderPasteMarginRatio is not None:
-            marginFound = True
-            spmr = f' (solder_paste_margin_ratio {self.solderPasteMarginRatio})'
-
-        if self.clearance is not None:
-            marginFound = True
-            cl = f' (clearance {self.clearance})'
-
-        if self.zoneConnect is not None:
-            marginFound = True
-            zc = f' (zone_connect {self.zoneConnect})'
-
-        if self.thermal_bridge_width is not None:
-            tbw = f' (thermal_bridge_width {self.thermal_bridge_width})'
-
-        if self.thermal_bridge_angle is not None:
-            tba = f' (thermal_bridge_angle {self.thermal_bridge_angle})'
-
-        if self.thermalWidth is not None:
-            marginFound = True
-            tw = f' (thermal_width {self.thermalWidth})'
-
-        if self.thermalGap is not None:
-            marginFound = True
-            tg = f' (thermal_gap {self.thermalGap})'
-
-        expression =  (f'{indents}(pad "{dequote(str(self.number))}" {self.type} {self.shape}{locked}{position} '
-                       f'(size {format_float(self.size.X)} {format_float(self.size.Y)}){drill}{ppty}{layers}{rul}{kel}{rrr}{zlc}')
-        if champferFound:
-            # Only one whitespace here as all temporary strings have at least one leading whitespace
-            expression += f'\n{indents} {cr}{c}'
+            chamfer_expr = ['chamfer'] + self.chamfer
+            expr.append(chamfer_expr)
 
         if self.dieLength is not None:
-            expression += f'\n{indents}  (die_length {self.dieLength})'
+            expr.append(['die_length', self.dieLength])
 
-        if marginFound or schematicSymbolAssociated:
-            # Only one whitespace here as all temporary strings have at least one leading whitespace
-            expression += f'\n{indents} {net}{pf}{pt}{smm}{spm}{spmr}{cl}{zc}{tw}{tbw}{tba}{tg}'
+        if self.net is not None:
+            expr.append(self.net._to_sexpr_raw())
+
+        if self.pinFunction is not None:
+            expr.append(['pinfunction', escape_and_quote(self.pinFunction)])
+
+        if self.pinType is not None:
+            expr.append(['pintype', escape_and_quote(self.pinType)])
+
+        if self.solderMaskMargin is not None:
+            expr.append(['solder_mask_margin', self.solderMaskMargin])
+
+        if self.solderPasteMargin is not None:
+            expr.append(['solder_paste_margin', self.solderPasteMargin])
+
+        if self.solderPasteMarginRatio is not None:
+            expr.append(['solder_paste_margin_ratio', self.solderPasteMarginRatio])
+
+        if self.clearance is not None:
+            expr.append(['clearance', self.clearance])
+
+        if self.zoneConnect is not None:
+            expr.append(['zone_connect', self.zoneConnect])
+
+        if self.thermalWidth is not None:
+            expr.append(['thermal_width', self.thermalWidth])
+
+        if self.thermal_bridge_width is not None:
+            expr.append(['thermal_bridge_width', self.thermal_bridge_width])
+
+        if self.thermal_bridge_angle is not None:
+            expr.append(['thermal_bridge_angle', self.thermal_bridge_angle])
+
+        if self.thermalGap is not None:
+            expr.append(['thermal_gap', self.thermalGap])
 
         if self.customPadOptions is not None:
-            expression += f'\n{indents}  {self.customPadOptions.to_sexpr()}'
+            expr.append(self.customPadOptions._to_sexpr_raw())
 
-        if self.customPadPrimitives is not None:
-            if len(self.customPadPrimitives) > 0:
-                expression += f'\n{indents}  (primitives'
-                for primitive in self.customPadPrimitives:
-                    expression += f'\n{primitive.to_sexpr(newline=False,indent=indent+4)}'
-                expression += f'\n{indents}  )'
+        if self.customPadPrimitives is not None and len(self.customPadPrimitives) > 0:
+            primitives = ['primitives']
+            for primitive in self.customPadPrimitives:
+                primitives.append(primitive._to_sexpr_raw())
+            expr.append(primitives)
 
-        expression += f'{tstamp}){endline}'
-        return expression
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class Footprint():
@@ -872,11 +896,13 @@ class Footprint():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[str] = None
-    """The ``embedded_fonts`` token defines if the embedded fonts are used in the footprint."""
+    """The ``embedded_fonts`` token defines if the embedded fonts are used in the footprint"""
 
     sheet_name: str = ""
+    """The ``sheet_name`` token defines name of the hierarchical sheet in which this footprint instance was placed."""
 
     sheet_file: str = ""
+    """The ``sheet_file`` token defines filename of the schematic sheet file associated with this footprint instance."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Footprint:
@@ -1060,93 +1086,113 @@ class Footprint():
         Returns:
             - str: S-Expression of this object
         """
+        raw_expr = self._to_sexpr_raw(layerInFirstLine=layerInFirstLine)
+        return sexp_to_string(raw_expr)
 
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+    def _to_sexpr_raw(self, layerInFirstLine=False):
+        expr = ['footprint', escape_and_quote(self.libId)]
 
-        locked = f' {format_bool("locked", self.locked)}'
-        placed = f' {format_bool("placed", self.placed)}'
-        version = f' (version {self.version})' if self.version is not None else ''
-        generator = f' (generator "{self.generator}")' if self.generator is not None else ''
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool_raw('placed', self.placed))
 
-        expression =  f'{indents}(footprint "{dequote(self.libId)}"{locked}{placed}{version}{generator}{generator_version}'
+        if self.version is not None:
+            expr.append(['version', self.version])
+
+        if self.generator is not None:
+            expr.append(['generator', self.generator])
+
+        if self.generator_version is not None:
+            expr.append(['generator_version', self.generator_version])
+
         if layerInFirstLine:
-            expression += f' (layer "{dequote(self.layer)}")\n'
-        else:
-            expression += f'\n{indents}  (layer "{dequote(self.layer)}")\n'
+            expr.append(['layer', escape_and_quote(self.layer)])
 
-        expression += f'{indents} (uuid "{self.tstamp}")' if self.tstamp is not None else ''
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        if not layerInFirstLine:
+            expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.position is not None:
-            angle = f' {self.position.angle}' if self.position.angle is not None else ''
-            expression += f'{indents}  (at {format_float(self.position.X)} {format_float(self.position.Y)}{angle})\n'
+            pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+            if self.position.angle is not None:
+                pos.append(self.position.angle)
+            expr.append(pos)
+
         if self.description is not None:
-            expression += f'{indents}  (descr "{dequote(self.description)}")\n'
+            expr.append(['descr', escape_and_quote(self.description)])
+
         if self.tags is not None:
-            expression += f'{indents}  (tags "{dequote(self.tags)}")\n'
+            expr.append(['tags', escape_and_quote(self.tags)])
+
         for item in self.properties.values():
-            expression += item.to_sexpr(indent=indent+2)
+            expr.append(item._to_sexpr_raw())
 
         if self.path is not None:
-            expression += f'{indents}  (path "{dequote(self.path)}")\n'
+            expr.append(['path', escape_and_quote(self.path)])
 
         if self.sheet_name != "":
-            expression += f'{indents}  (sheetname "{self.sheet_name}")\n'
+            expr.append(['sheetname', escape_and_quote(self.sheet_name)])
 
         if self.sheet_file != "":
-            expression += f'{indents}  (sheetfile "{self.sheet_file}")\n'
+            expr.append(['sheetfile', escape_and_quote(self.sheet_file)])
 
-        # Additional parameters used in board
         if self.autoplaceCost90 is not None:
-            expression += f'{indents}  (autoplace_cost90 {self.autoplaceCost90})\n'
+            expr.append(['autoplace_cost90', self.autoplaceCost90])
+
         if self.autoplaceCost180 is not None:
-            expression += f'{indents}  (autoplace_cost180 {self.autoplaceCost180})\n'
+            expr.append(['autoplace_cost180', self.autoplaceCost180])
+
         if self.solderMaskMargin is not None:
-            expression += f'{indents}  (solder_mask_margin {self.solderMaskMargin})\n'
+            expr.append(['solder_mask_margin', self.solderMaskMargin])
+
         if self.solderPasteMargin is not None:
-            expression += f'{indents}  (solder_paste_margin {self.solderPasteMargin})\n'
+            expr.append(['solder_paste_margin', self.solderPasteMargin])
+
         if self.solderPasteRatio is not None:
-            expression += f'{indents}  (solder_paste_ratio {self.solderPasteRatio})\n'
+            expr.append(['solder_paste_ratio', self.solderPasteRatio])
+
         if self.clearance is not None:
-            expression += f'{indents}  (clearance {self.clearance})\n'
+            expr.append(['clearance', self.clearance])
+
         if self.zoneConnect is not None:
-            expression += f'{indents}  (zone_connect {self.zoneConnect})\n'
+            expr.append(['zone_connect', self.zoneConnect])
+
         if self.thermalWidth is not None:
-            expression += f'{indents}  (thermal_width {self.thermalWidth})\n'
+            expr.append(['thermal_width', self.thermalWidth])
+
         if self.thermalGap is not None:
-            expression += f'{indents}  (thermal_gap {self.thermalGap})\n'
+            expr.append(['thermal_gap', self.thermalGap])
 
         if self.attributes is not None:
-            # Note: If the attribute object has only standard values in it, it will return an
-            #       empty string. Therefore, it should create its own newline and indentations only
-            #       when needed.
-            expression += self.attributes.to_sexpr(indent=indent+2, newline=True)
+            raw_attr = self.attributes._to_sexpr_raw()
+            if raw_attr:  # only append if it's not empty
+                expr.append(raw_attr)
+
         if self.privateLayers:
-            expression += f'{indents}  (private_layers'
-            for item in self.privateLayers:
-                expression += f' "{dequote(item)}"'
-            expression += f')\n'
-            
+            private_layers = ['private_layers'] + [escape_and_quote(item) for item in self.privateLayers]
+            expr.append(private_layers)
+
         if self.netTiePadGroups:
-            expression += f'{indents}  (net_tie_pad_groups'
-            for item in self.netTiePadGroups:
-                expression += f' "{dequote(item)}"'
-            expression += f')\n'
+            net_tie = ['net_tie_pad_groups'] + [escape_and_quote(item) for item in self.netTiePadGroups]
+            expr.append(net_tie)
 
         for item in self.graphicItems:
-            expression += item.to_sexpr(indent=indent+2)
+            expr.append(item._to_sexpr_raw())
+
         for item in self.pads:
-            expression += item.to_sexpr(indent=indent+2)
+            expr.append(item._to_sexpr_raw())
+
         for item in self.zones:
-            expression += item.to_sexpr(indent=indent+2)
+            expr.append(item._to_sexpr_raw())
+
         for item in self.groups:
-            expression += item.to_sexpr(indent=indent+2)
+            expr.append(item._to_sexpr_raw())
+
         if self.embedded_fonts is not None:
-            expression += f'{indents}  (embedded_fonts {self.embedded_fonts})\n'
+            expr.append(['embedded_fonts', self.embedded_fonts])
+
         for item in self.models:
-            expression += item.to_sexpr(indent=indent+2)
+            expr.append(item._to_sexpr_raw())
 
-        expression += f'{indents}){endline}'
-        return expression
-
+        return expr

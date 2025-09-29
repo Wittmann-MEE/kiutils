@@ -249,7 +249,10 @@ class FillSettings():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fill ' + format_bool('yes', self.yes, compact=True)]
+        expr = ['fill']
+
+        if self.yes:
+            expr.append('yes')
 
         if self.mode is not None:
             expr.append(['mode', self.mode])
