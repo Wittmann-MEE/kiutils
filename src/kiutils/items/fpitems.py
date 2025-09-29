@@ -23,7 +23,7 @@ from typing import Optional, List
 from kiutils.items.common import RenderCache, Stroke, Position, Effects
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
 from kiutils.utils.sexpr import sexp_to_string
 
 # FIXME: Several classes have a ``stroke`` member. This feature will be introduced in KiCad 7 and
@@ -126,24 +126,46 @@ class FpText():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        hide = f' {format_bool("hide", self.hide)}'
-        unlocked = f' {format_bool("unlocked", self.unlocked)}'
-        unlocked_pos = f' {format_bool("unlocked", self.position.unlocked)}'
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        ko = ' knockout' if self.knockout else ''
+    def _to_sexpr_raw(self):
+        expr = ['fp_text', self.type, escape_and_quote(self.text)]
 
-        expression =  (f'{indents}(fp_text {self.type} "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}'
-                       f'{posA}{unlocked_pos}){unlocked} (layer "{dequote(self.layer)}"{ko}){hide}\n')
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+
+        unlocked_pos = format_bool_raw('unlocked', self.position.unlocked)
+        if unlocked_pos:
+            pos.append(unlocked_pos)
+
+        expr.append(pos)
+
+        unlocked = format_bool_raw('unlocked', self.unlocked)
+        if unlocked:
+            expr.append(unlocked)
+
+        if self.layer is not None:
+            layer_expr = ['layer', escape_and_quote(self.layer)]
+            if self.knockout:
+                layer_expr.append('knockout')
+            expr.append(layer_expr)
+
+        hide = format_bool_raw('hide', self.hide)
+        if hide:
+            expr.append(hide)
+
         if self.tstamp is not None:
-            expression += f'{indents}  (uuid "{self.tstamp}")\n'
-        expression += f'{indents}  {self.effects.to_sexpr(indent+2)}'
+            expr.append(['uuid', quote(self.tstamp)])
+
+        expr.append(self.effects._to_sexpr_raw())
+
         if self.renderCache is not None:
-            expression += self.renderCache.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(self.renderCache._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class FpLine():
@@ -227,19 +249,28 @@ class FpLine():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
-        if self.width is not None:
-            width = f' (width {self.width})'
-        elif self.stroke is not None:
-            width = f' {self.stroke.to_sexpr(indent=0, newline=False)}'
-        else:
-            width = ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return (f'{indents}(fp_line(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}){width}'
-                f'{locked}(layer "{dequote(self.layer)}"){tstamp}){endline}')
+    def _to_sexpr_raw(self):
+        expr = ['fp_line']
+
+        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
+        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+
+        if self.width is not None:
+            expr.append(['width', self.width])
+        elif self.stroke is not None:
+            expr.append(self.stroke._to_sexpr_raw())
+
+        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class FpRect():
@@ -326,22 +357,31 @@ class FpRect():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
-        fill = f' (fill {self.fill})' if self.fill is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['fp_rect']
+
+        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
+        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
 
         if self.width is not None:
-            width = f' (width {self.width})'
+            expr.append(['width', self.width])
         elif self.stroke is not None:
-            width = f' {self.stroke.to_sexpr(indent=0, newline=False)}'
-        else:
-            width = ''
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(fp_rect (start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}')
+        if self.fill is not None:
+            expr.append(['fill', self.fill])
+
+        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class FpTextBox():
@@ -464,6 +504,10 @@ class FpTextBox():
         Returns:
             - str: S-Expression of this object
         """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
         if self.angle is not None and self.angle not in [0.0, 90.0, 180.0, 270.0]:
             if len(self.pts) != 4:
                 raise Exception("None-cardinal angles must have exactly four corner points defined")
@@ -471,30 +515,39 @@ class FpTextBox():
             if self.start is None or self.end is None:
                 raise Exception("No angle or a cardinal angle needs a start and end token defined")
 
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        expr = ['fp_text_box', format_bool_raw('locked', self.locked), escape_and_quote(self.text)]
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        angle = f'(angle {self.angle}) ' if self.angle is not None else ''
-        start = f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) ' if self.start is not None else ''
-        end = f'(end {format_float(self.end.X)} {format_float(self.end.Y)}) ' if self.end is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
-
-        expression = f'{indents}(fp_text_box{locked} "{dequote(self.text)}"\n'
         if len(self.pts) == 4:
-            expression += f'{indents}  (pts\n'
-            expression += (f'{indents}    (xy {format_float(self.pts[0].X)} {format_float(self.pts[0].Y)}) (xy {format_float(self.pts[1].X)} {format_float(self.pts[1].Y)})'
-                           f'(xy {format_float(self.pts[2].X)} {format_float(self.pts[2].Y)}) (xy {format_float(self.pts[3].X)} {format_float(self.pts[3].Y)})\n')
-            expression += f'{indents}  )\n'
-        expression += f'{indents}  {start}{end}{angle}(layer "{dequote(self.layer)}"){tstamp}\n'
+            pts_expr = ['pts']
+            for pt in self.pts:
+                pts_expr.append(['xy', format_float(pt.X), format_float(pt.Y)])
+            expr.append(pts_expr)
+
+        if self.start is not None:
+            expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
+
+        if self.end is not None:
+            expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+
+        if self.angle is not None:
+            expr.append(['angle', self.angle])
+
+        expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
         if self.effects is not None:
-            expression += self.effects.to_sexpr(indent+2)
+            expr.append(self.effects._to_sexpr_raw())
+
         if self.stroke is not None:
-            expression += self.stroke.to_sexpr(indent+2)
+            expr.append(self.stroke._to_sexpr_raw())
+
         if self.renderCache is not None:
-            expression += self.renderCache.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(self.renderCache._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class FpCircle():
@@ -581,22 +634,31 @@ class FpCircle():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
-        fill = f' (fill {self.fill})' if self.fill is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['fp_circle']
+
+        expr.append(['center', format_float(self.center.X), format_float(self.center.Y)])
+        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
 
         if self.width is not None:
-            width = f' (width {self.width})'
+            expr.append(['width', self.width])
         elif self.stroke is not None:
-            width = f' {self.stroke.to_sexpr(indent=0, newline=False)}'
-        else:
-            width = ''
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(fp_circle (center {format_float(self.center.X)} {format_float(self.center.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}')
+        if self.fill is not None:
+            expr.append(['fill', self.fill])
+
+        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class FpArc():
@@ -682,22 +744,29 @@ class FpArc():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
+    def _to_sexpr_raw(self):
+        expr = ['fp_arc']
+
+        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
+        expr.append(['mid', format_float(self.mid.X), format_float(self.mid.Y)])
+        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
 
         if self.width is not None:
-            width = f' (width {self.width})'
+            expr.append(['width', self.width])
         elif self.stroke is not None:
-            width = f' {self.stroke.to_sexpr(indent=0, newline=False)}'
-        else:
-            width = ''
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(fp_arc'
-                f' (start {format_float(self.start.X)} {format_float(self.start.Y)}) (mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{width}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}')
+        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class FpPoly():
@@ -783,27 +852,35 @@ class FpPoly():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
-        fill = f' (fill {self.fill})' if self.fill is not None else ''
+    def _to_sexpr_raw(self):
+        if len(self.coordinates) == 0:
+            return []
+
+        expr = ['fp_poly']
+        pts_expr = ['pts']
+        for point in self.coordinates:
+            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts_expr)
 
         if self.width is not None:
-            width = f' (width {self.width})'
+            expr.append(['width', self.width])
         elif self.stroke is not None:
-            width = f' {self.stroke.to_sexpr(indent=0, newline=False)}'
-        else:
-            width = ''
+            expr.append(self.stroke._to_sexpr_raw())
 
-        expression = f'{indents}(fp_poly (pts\n'
-        for point in self.coordinates:
-            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}  ){width}{fill}{locked} (layer "{dequote(self.layer)}"){tstamp}){endline}'
-        return expression
+        if self.fill is not None:
+            expr.append(['fill', self.fill])
+
+        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class FpCurve():
@@ -884,26 +961,34 @@ class FpCurve():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
+    def _to_sexpr_raw(self):
+        if len(self.coordinates) == 0:
+            return []
+
+        expr = ['fp_curve']
+
+        pts_expr = ['pts']
+        for point in self.coordinates:
+            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+
+        expr.append(pts_expr)
+        expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.width is not None:
-            width = f' (width {self.width})'
+            expr.append(['width', self.width])
         elif self.stroke is not None:
-            width = f' {self.stroke.to_sexpr(indent=0, newline=False)}'
-        else:
-            width = ''
+            expr.append(self.stroke._to_sexpr_raw())
 
-        expression = f'{indents}(fp_curve (pts\n'
-        for point in self.coordinates:
-            expression += f'{indents}  (xy {point.X} {point.Y})\n'
-        expression += f'{indents}) (layer "{dequote(self.layer)}"){width}{locked}{tstamp}){endline}'
-        return expression
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class FpProperty:
@@ -982,36 +1067,40 @@ class FpProperty:
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        prop_str = f'"{dequote(self.type)}"' if self.type != "ki_fp_filters" else dequote(self.type)
-        expression = f'{indents}(property {prop_str} "{dequote(self.text)}"\n'
+    def _to_sexpr_raw(self):
+        prop_type = dequote(self.type)
+        if self.type != "ki_fp_filters":
+            prop_type = quote(prop_type)
+
+        expr = ['property', prop_type, escape_and_quote(self.text)]
 
         if self.position is not None:
             pos = self.position
-            pos_angle = f' {pos.angle}' if pos.angle is not None else ''
-            expression += f'{indents} (at {format_float(pos.X)} {format_float(pos.Y)}{pos_angle}){endline}'
+            expr.append(['at', format_float(pos.X), format_float(pos.Y)] + ([pos.angle] if pos.angle is not None else []))
 
         if self.unlocked is not None:
-            expression += f'{indents} (unlocked yes){endline}'
+            expr.append(['unlocked', self.unlocked])
 
         if self.layer is not None:
-            layer = self.layer
-            ko = ' knockout' if self.ko else ''
-            expression += f'{indents} (layer "{dequote(layer)}"{ko}){endline}'
+            layer_str = escape_and_quote(self.layer)
+            if self.ko:
+                layer_str = f"{layer_str} knockout"
+            expr.append(['layer', layer_str])
 
         if self.hide is not None:
-            expression += f'{indents} (hide yes){endline}'
+            expr.append(['hide', self.hide])
 
         if self.tstamp is not None:
-            expression += f'{indents} (uuid "{dequote(self.tstamp)}"){endline}'
+            expr.append(['uuid', quote(self.tstamp)])
 
         if self.effects is not None:
-            expression += f'{indents} {self.effects.to_sexpr()}'
+            expr.append(self.effects._to_sexpr_raw())
 
         if self.render_cache is not None:
-            expression += f'{indents} {self.render_cache.to_sexpr()}'
+            expr.append(self.render_cache._to_sexpr_raw())
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr
+
