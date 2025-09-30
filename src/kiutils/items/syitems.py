@@ -21,9 +21,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from kiutils.items.common import Position, Stroke, Effects, Fill
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
 class SyArc():
@@ -99,22 +100,32 @@ class SyArc():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        startA = f' {format_float(self.start.angle)}' if self.start.angle is not None else ''
-        midA = f' {format_float(self.mid.angle)}' if self.mid.angle is not None else ''
-        endA = f' {format_float(self.end.angle)}' if self.end.angle is not None else ''
-        private = f' {format_bool("private", self.private, compact=True)}'
+    def _to_sexpr_raw(self):
+        expr = ['arc', format_bool_raw('private', self.private, compact=True)]
 
-        expression =  (f'{indents}(arc{private} '
-                       f'(start {format_float(self.start.X)} {format_float(self.start.Y)}{startA}) '
-                       f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}{midA}) '
-                       f'(end {format_float(self.end.X)} {format_float(self.end.Y)}{endA})\n')
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+        start = ['start', format_float(self.start.X), format_float(self.start.Y)]
+        if self.start.angle is not None:
+            start.append(format_float(self.start.angle))
+        expr.append(start)
+
+        mid = ['mid', format_float(self.mid.X), format_float(self.mid.Y)]
+        if self.mid.angle is not None:
+            mid.append(format_float(self.mid.angle))
+        expr.append(mid)
+
+        end = ['end', format_float(self.end.X), format_float(self.end.Y)]
+        if self.end.angle is not None:
+            end.append(format_float(self.end.angle))
+        expr.append(end)
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SyCircle():
@@ -186,15 +197,19 @@ class SyCircle():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        private = f' {format_bool("private", self.private, compact=True)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(circle{private} (center {format_float(self.center.X)} {format_float(self.center.Y)}) (radius {format_float(self.radius)})\n'
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+    def _to_sexpr_raw(self):
+        expr = ['circle', format_bool_raw('private', self.private, compact=True)]
+
+        expr.append(['center', format_float(self.center.X), format_float(self.center.Y)])
+        expr.append(['radius', format_float(self.radius)])
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SyCurve():
@@ -256,19 +271,22 @@ class SyCurve():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression  =  f'{indents}(curve\n'
-        expression +=  f'{indents}  (pts\n'
+    def _to_sexpr_raw(self):
+        expr = ['curve']
+
+        pts = ['pts']
         for point in self.points:
-            expression +=  f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression +=  f'{indents}  )\n'
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
+            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts)
 
-        return expression
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SyPolyLine():
@@ -330,18 +348,22 @@ class SyPolyLine():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(polyline\n'
-        expression +=  f'{indents}  (pts\n'
+    def _to_sexpr_raw(self):
+        expr = ['polyline']
+
+        pts = ['pts']
         for point in self.points:
-            expression +=  f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}  )\n'
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts)
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SyRect():
@@ -414,16 +436,19 @@ class SyRect():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        private = f' {format_bool("private", self.private, compact=True)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  (f'{indents}(rectangle{private} '
-                       f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n')
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+    def _to_sexpr_raw(self):
+        expr = ['rectangle', format_bool_raw('private', self.private, compact=True)]
+
+        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
+        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SyText():
@@ -484,15 +509,21 @@ class SyText():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['text', escape_and_quote(self.text)]
 
-        expression =  f'{indents}(text "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})\n'
-        expression += f'{indents}  {self.effects.to_sexpr()}'
-        expression += f'{indents}){endline}'
-        return expression
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(self.effects._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SyTextBox():
@@ -586,19 +617,23 @@ class SyTextBox():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        private = f' {format_bool("private", self.private, compact=True)}'
+    def _to_sexpr_raw(self):
+        expr = ['text_box', format_bool_raw('private', self.private, compact=True), escape_and_quote(self.text)]
 
-        expression =  f'{indents}(text_box{private} "{dequote(self.text)}"\n'
-        expression += (f'{indents} '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n')
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += self.effects.to_sexpr(indent+2)
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+        expr.append(self.effects._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid {self.uuid})\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', self.uuid])
+
+        return expr

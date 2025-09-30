@@ -20,12 +20,11 @@ from typing import Optional, List
 from os import path
 
 from kiutils.items.common import Justify
-from kiutils.utils.string_utils import dequote
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.string_utils import *
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
 
 @dataclass
 class WksFontSize():
@@ -73,9 +72,13 @@ class WksFontSize():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        return f'{indents}(size {self.width} {self.height}){endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ['size', format_float(self.width), format_float(self.height)]
+        return expr
+
 
 @dataclass
 class WksFont():
@@ -137,18 +140,30 @@ class WksFont():
             - str: S-Expression of this object. Will return an empty string, if all members of this
                    class are set to ``None``.
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        lw = f' (linewidth {self.linewidth})' if self.linewidth is not None else ''
-        size = f' {self.size.to_sexpr()}' if self.size is not None else ''
-        bold = format_bool('bold', self.bold, compact=True)
-        italic = format_bool('italic', self.italic, compact=True)
+    def _to_sexpr_raw(self):
+        expr = ['font']
 
-        if lw == '' and size == '' and bold == '' and italic == '':
-            return ''
-        else:
-            return f'{indents}(font{lw}{size} {bold} {italic}){endline}'
+        if self.linewidth is not None:
+            expr.append(['linewidth', format_float(self.linewidth)])
+
+        if self.size is not None:
+            expr.append(self.size._to_sexpr_raw())
+
+        if self.bold:
+            expr.extend(format_bool_raw('bold', self.bold, compact=True))
+
+        if self.italic:
+            expr.extend(format_bool_raw('italic', self.italic, compact=True))
+
+        # Return an empty expression if no attributes are present
+        if len(expr) == 1:  # Just ['font']
+            return []
+
+        return expr
+
 
 @dataclass
 class WksPosition():
@@ -281,23 +296,41 @@ class Line():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        start_corner = f' {self.start.corner}' if self.start.corner is not None else ''
-        end_corner = f' {self.end.corner}' if self.end.corner is not None else ''
-        option = f' (option {self.option})' if self.option is not None else ''
-        repeat = f' (repeat {self.repeat})' if self.repeat is not None else ''
-        incrx = f' (incrx {self.incrx})' if self.incrx is not None else ''
-        incry = f' (incry {self.incry})' if self.incry is not None else ''
-        comment = f' (comment "{dequote(self.comment)}")\n' if self.comment is not None else ''
-        lw = f' (linewidth {self.lineWidth})' if self.lineWidth is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'line',
+            ['name', escape_and_quote(self.name)],
+        ]
 
-        expression  = f'{indents}(line (name "{dequote(self.name)}") '
-        expression += f'(start {self.start.X} {self.start.Y}{start_corner}) '
-        expression += f'(end {self.end.X} {self.end.Y}{end_corner})'
-        expression += f'{option}{lw}{repeat}{incrx}{incry}{comment}){endline}'
-        return expression
+        # Add start and end coordinates and corner info
+        start_corner = ['start', format_float(self.start.X), format_float(self.start.Y)]
+        if self.start.corner is not None:
+            start_corner.append(self.start.corner)
+        expr.append(start_corner)
+
+        end_corner = ['end', format_float(self.end.X), format_float(self.end.Y)]
+        if self.end.corner is not None:
+            end_corner.append(self.end.corner)
+        expr.append(end_corner)
+
+        if self.option is not None:
+            expr.append(['option', self.option])
+        if self.lineWidth is not None:
+            expr.append(['linewidth', format_float(self.lineWidth)])
+        if self.repeat is not None:
+            expr.append(['repeat', self.repeat])
+        if self.incrx is not None:
+            expr.append(['incrx', format_float(self.incrx)])
+        if self.incry is not None:
+            expr.append(['incry', format_float(self.incry)])
+        if self.comment is not None:
+            expr.append(['comment', escape_and_quote(self.comment)])
+
+        return expr
+
 
 @dataclass
 class Rect():
@@ -380,23 +413,41 @@ class Rect():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        start_corner = f' {self.start.corner}' if self.start.corner is not None else ''
-        end_corner = f' {self.end.corner}' if self.end.corner is not None else ''
-        option = f' (option {self.option})' if self.option is not None else ''
-        repeat = f' (repeat {self.repeat})' if self.repeat is not None else ''
-        incrx = f' (incrx {self.incrx})' if self.incrx is not None else ''
-        incry = f' (incry {self.incry})' if self.incry is not None else ''
-        comment = f' (comment "{dequote(self.comment)}")\n' if self.comment is not None else ''
-        lw = f' (linewidth {self.lineWidth})' if self.lineWidth is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'rect',
+            ['name', escape_and_quote(self.name)],
+        ]
 
-        expression  = f'{indents}(rect (name "{dequote(self.name)}") '
-        expression += f'(start {format_float(self.start.X)} {format_float(self.start.Y)}{start_corner}) '
-        expression += f'(end {format_float(self.end.X)} {format_float(self.end.Y)}{end_corner})'
-        expression += f'{option}{lw}{repeat}{incrx}{incry}{comment}){endline}'
-        return expression
+        # Add start and end coordinates and corner info
+        start_corner = ['start', format_float(self.start.X), format_float(self.start.Y)]
+        if self.start.corner is not None:
+            start_corner.append(self.start.corner)
+        expr.append(start_corner)
+
+        end_corner = ['end', format_float(self.end.X), format_float(self.end.Y)]
+        if self.end.corner is not None:
+            end_corner.append(self.end.corner)
+        expr.append(end_corner)
+
+        if self.option is not None:
+            expr.append(['option', self.option])
+        if self.lineWidth is not None:
+            expr.append(['linewidth', format_float(self.lineWidth)])
+        if self.repeat is not None:
+            expr.append(['repeat', self.repeat])
+        if self.incrx is not None:
+            expr.append(['incrx', format_float(self.incrx)])
+        if self.incry is not None:
+            expr.append(['incry', format_float(self.incry)])
+        if self.comment is not None:
+            expr.append(['comment', escape_and_quote(self.comment)])
+
+        return expr
+
 
 @dataclass
 class Polygon():
@@ -553,27 +604,40 @@ class Bitmap():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        repeat = f' (repeat {self.repeat})' if self.repeat is not None else ''
-        incrx = f' (incrx {self.incrx})' if self.incrx is not None else ''
-        incry = f' (incry {self.incry})' if self.incry is not None else ''
-        option = f' (option {self.option})' if self.option is not None else ''
-        corner = f' {self.position.corner}' if self.position.corner is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'bitmap',
+            ['name', escape_and_quote(self.name)],
+        ]
 
-        expression  = f'{indents}(bitmap (name "{dequote(self.name)}") '
-        expression += f'(pos {format_float(self.position.X)} {format_float(self.position.Y)}{corner}){option} (scale {self.scale})'
-        expression += f'{repeat}{incrx}{incry}\n'
+        pos = ['pos', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.corner is not None:
+            pos.append(self.position.corner)
+        expr.append(pos)
+
+        if self.option is not None:
+            expr.append(['option', self.option])
+
+        expr.append(['scale', self.scale])
+
+        if self.repeat is not None:
+            expr.append(['repeat', self.repeat])
+        if self.incrx is not None:
+            expr.append(['incrx', self.incrx])
+        if self.incry is not None:
+            expr.append(['incry', self.incry])
         if self.comment is not None:
-            # Here KiCad decides to only use 1 space for some unknown reason ..
-            expression += f' (comment "{dequote(self.comment)}")\n'
-        if len(self.data) > 0:
-            data_str = ' '.join(f'"{d}"' for d in self.data)
-            expression += f'{indents}(data {data_str})\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['comment', escape_and_quote(self.comment)])
 
+        # Add data if it exists
+        if len(self.data) > 0:
+            data_str = ' '.join(quote(d) for d in self.data)
+            expr.append(['data', data_str])
+
+        return expr
 
 @dataclass
 class TbText():
@@ -682,28 +746,44 @@ class TbText():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        corner = f' {self.position.corner}' if self.position.corner is not None else ''
-        repeat = f' (repeat {self.repeat})' if self.repeat is not None else ''
-        incrx = f' (incrx {self.incrx})' if self.incrx is not None else ''
-        incry = f' (incry {self.incry})' if self.incry is not None else ''
-        option = f' (option {self.option})' if self.option is not None else ''
-        rotate = f' (rotate {self.rotate})' if self.rotate is not None else ''
-        justify = f' {self.justify.to_sexpr()}' if self.justify is not None else ''
-        maxlen = f' (maxlen {self.maxlen})' if self.maxlen is not None else ''
-        maxheight = f' (maxheight {self.maxheight})' if self.maxheight is not None else ''
-        incrlabel = f' (incrlabel {self.incrlabel})' if self.incrlabel is not None else ''
-        font = f' {self.font.to_sexpr()}'
+    def _to_sexpr_raw(self):
+        expr = [
+            'tbtext', escape_and_quote(self.text),
+            ['name', escape_and_quote(self.name)],
+        ]
 
-        expression  = f'{indents}(tbtext "{dequote(self.text)}" (name "{dequote(self.name)}") '
-        expression += f'(pos {format_float(self.position.X)} {format_float(self.position.Y)}{corner}){option}{rotate}'
-        expression += f'{font}{justify}{maxlen}{maxheight}{repeat}{incrx}{incry}{incrlabel}'
+        pos = ['pos', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.corner is not None:
+            pos.append(self.position.corner)
+        expr.append(pos)
+
+        if self.option is not None:
+            expr.append(['option', self.option])
+        if self.rotate is not None:
+            expr.append(['rotate', self.rotate])
+        if self.font is not None:
+            expr.append(self.font._to_sexpr_raw())
+        if self.justify is not None:
+            expr.append(self.justify._to_sexpr_raw())
+        if self.maxlen is not None:
+            expr.append(['maxlen', self.maxlen])
+        if self.maxheight is not None:
+            expr.append(['maxheight', self.maxheight])
+        if self.repeat is not None:
+            expr.append(['repeat', self.repeat])
+        if self.incrx is not None:
+            expr.append(['incrx', self.incrx])
+        if self.incry is not None:
+            expr.append(['incry', self.incry])
+        if self.incrlabel is not None:
+            expr.append(['incrlabel', self.incrlabel])
         if self.comment is not None:
-            expression += f' (comment "{dequote(self.comment)}")\n'
-        expression += f'){endline}'
-        return expression
+            expr.append(['comment', escape_and_quote(self.comment)])
+
+        return expr
 
 
 @dataclass
@@ -752,9 +832,11 @@ class TextSize():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        return f'{indents}(textsize {self.width} {self.height}){endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        return ['textsize', format_float(self.width), format_float(self.height)]
 
 @dataclass
 class Setup():
@@ -831,17 +913,22 @@ class Setup():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        # KiCad puts no spaces between tokens here
-        expression =  f'{indents}(setup {self.textSize.to_sexpr()}(linewidth {self.lineWidth})'
-        expression += f'(textlinewidth {self.textLineWidth})\n{indents}'
-        expression += f'(left_margin {self.leftMargin})(right_margin {self.rightMargin})'
-        expression += f'(top_margin {self.topMargin})(bottom_margin {self.bottomMargin})'
-        expression += f'){endline}'
+    def _to_sexpr_raw(self):
+        expr = ['setup']
 
-        return expression
+        expr.append(self.textSize._to_sexpr_raw())
+        expr.append(['linewidth', self.lineWidth])
+        expr.append(['textlinewidth', self.textLineWidth])
+        expr.append(['left_margin', self.leftMargin])
+        expr.append(['right_margin', self.rightMargin])
+        expr.append(['top_margin', self.topMargin])
+        expr.append(['bottom_margin', self.bottomMargin])
+
+        return expr
+
 
 @dataclass
 class WorkSheet():
@@ -931,7 +1018,7 @@ class WorkSheet():
             raise Exception("Given path is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
-            item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))
+            item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
 
@@ -977,16 +1064,22 @@ class WorkSheet():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
-        embedded_fonts = f' {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}' if self.embedded_fonts is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['kicad_wks']
 
-        expression =  f'{indents}(kicad_wks (version {self.version}) (generator "{self.generator}"){generator_version}{embedded_fonts}\n'
-        expression += self.setup.to_sexpr(indent+2)
+        expr.append(['version', self.version])
+        expr.append(['generator', quote(self.generator)])
+        if self.generator_version:
+            expr.append(['generator_version', quote(self.generator_version)])
+
+        if self.embedded_fonts is not None:
+            expr.append(format_bool_raw(self.embedded_fonts, compact=False, yesno=True))
+
+        expr.append(self.setup._to_sexpr_raw())
         for item in self.drawingObjects:
-            expression += item.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
+            expr.append(item._to_sexpr_raw())
 
-        return expression
+        return expr

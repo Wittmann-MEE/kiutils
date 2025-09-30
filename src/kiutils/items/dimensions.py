@@ -22,8 +22,9 @@ from typing import Optional, List
 from kiutils.items.common import Position
 from kiutils.items.gritems import GrText
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.string_utils import dequote
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.string_utils import *
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
 class DimensionFormat():
@@ -110,16 +111,29 @@ class DimensionFormat():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        prefix = f' (prefix "{dequote(self.prefix)}")' if self.prefix is not None else ''
-        suffix = f' (suffix "{dequote(self.suffix)}")' if self.suffix is not None else ''
-        overwrite_val = f' (override_value "{dequote(self.overrideValue)}")' if self.overrideValue is not None else ''
-        suppress_zeroes = f' {format_bool("suppress_zeroes", self.suppressZeroes)}'
+    def _to_sexpr_raw(self):
+        expr = ['format']
 
-        expression =  f'{indents}(format{prefix}{suffix} (units {self.units}) (units_format {self.unitsFormat}) (precision {self.precision}){overwrite_val}{suppress_zeroes}){endline}'
-        return expression
+        if self.prefix is not None:
+            expr.append(['prefix', escape_and_quote(self.prefix)])
+
+        if self.suffix is not None:
+            expr.append(['suffix', escape_and_quote(self.suffix)])
+
+        expr.append(['units', self.units])
+        expr.append(['units_format', self.unitsFormat])
+        expr.append(['precision', self.precision])
+
+        if self.overrideValue is not None:
+            expr.append(['override_value', escape_and_quote(self.overrideValue)])
+
+        expr.append(format_bool_raw('suppress_zeroes', self.suppressZeroes))
+
+        return expr
+
 
 @dataclass
 class DimensionStyle():
@@ -219,17 +233,32 @@ class DimensionStyle():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        extension_height = f' (extension_height {self.extensionHeight})' if self.extensionHeight is not None else ''
-        text_frame = f' (text_frame {self.textFrame})' if self.textFrame is not None else ''
-        extension_offset = f' (extension_offset {self.extensionOffset})' if self.extensionOffset is not None else ''
-        keep_aligned = f' {format_bool("keep_text_aligned", self.keepTextAligned)}'
-        arrow_direction = f' (arrow_direction {self.arrow_direction})' if self.arrow_direction is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['style']
 
-        expression =  f'{indents}(style (thickness {self.thickness}) (arrow_length {self.arrowLength}) (text_position_mode {self.textPositionMode}){arrow_direction}{extension_height}{text_frame}{extension_offset}{keep_aligned}){endline}'
-        return expression
+        expr.append(['thickness', self.thickness])
+        expr.append(['arrow_length', self.arrowLength])
+        expr.append(['text_position_mode', self.textPositionMode])
+
+        if self.arrow_direction is not None:
+            expr.append(['arrow_direction', self.arrow_direction])
+
+        if self.extensionHeight is not None:
+            expr.append(['extension_height', self.extensionHeight])
+
+        if self.textFrame is not None:
+            expr.append(['text_frame', self.textFrame])
+
+        if self.extensionOffset is not None:
+            expr.append(['extension_offset', self.extensionOffset])
+
+        expr.append(format_bool_raw('keep_text_aligned', self.keepTextAligned))
+
+        return expr
+
 
 @dataclass
 class Dimension():
@@ -333,28 +362,43 @@ class Dimension():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        points = ''
-        for point in self.pts:
-            points = f'{points} (xy {format_float(point.X)} {format_float(point.Y)})'
-        if len(points) == 0:
+    def _to_sexpr_raw(self):
+        if not self.pts:
             raise Exception("Number of points must not be zero")
 
-        locked = f' {format_bool("locked", self.locked)}'
-        expression =   f'{indents}(dimension (type {self.type}) (layer "{self.layer}") (uuid "{self.tstamp}"){locked}\n'
-        expression +=  f'{indents}  (pts{points})\n'
+        expr = [
+            'dimension',
+            ['type', self.type],
+            ['layer', quote(self.layer)],
+            ['uuid', quote(self.tstamp)],
+        ]
+
+        expr.append(format_bool_raw('locked', self.locked))
+
+        # Points
+        pts_expr = ['pts']
+        for point in self.pts:
+            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts_expr)
+
         if self.height is not None:
-            expression +=  f'{indents}  (height {self.height})\n'
+            expr.append(['height', self.height])
+
         if self.orientation is not None:
-            expression +=  f'{indents}  (orientation {self.orientation})\n'
+            expr.append(['orientation', self.orientation])
+
         if self.leaderLength is not None:
-            expression +=  f'{indents}  (leader_length {self.leaderLength})\n'
+            expr.append(['leader_length', self.leaderLength])
+
         if self.format is not None:
-            expression += self.format.to_sexpr(indent+2)
-        expression += self.style.to_sexpr(indent+2)
+            expr.append(self.format._to_sexpr_raw())
+
+        expr.append(self.style._to_sexpr_raw())
+
         if self.grText is not None:
-            expression += self.grText.to_sexpr(indent+2)
-        expression +=  f'{indents}){endline}'
-        return expression
+            expr.append(self.grText._to_sexpr_raw())
+
+        return expr

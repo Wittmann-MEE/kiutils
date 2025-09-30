@@ -18,8 +18,31 @@ def parse_bool(item: Union[list, str], key: str) -> bool:
 def format_bool(key: str, value: bool, compact: bool = False, yesno: bool = False) -> str:
     if not isinstance(value, bool):
         raise TypeError(f"Expected a boolean value, got {type(value).__name__}")
+
     if not yesno and not value:
         return ""
-    else:
-        return key if compact else (f"({key} yes)" if not yesno else f"({key} {'yes' if value else 'no'})")
+
+    if compact and value:
+        return key
+
+    if yesno:
+        return f"({key} {'yes' if value else 'no'})"
+
+    return f"({key} yes)"
+
+def format_bool_raw(key: str, value: bool, compact: bool = False, yesno: bool = False) -> list:
+    if not isinstance(value, bool):
+        raise TypeError(f"Expected a boolean value, got {type(value).__name__}")
+
+    if not yesno and not value:
+        return []
+
+    if compact and value:
+        return [key]
+
+    if yesno:
+        return [key, 'yes' if value else 'no']
+
+    return [key, 'yes']
+
 

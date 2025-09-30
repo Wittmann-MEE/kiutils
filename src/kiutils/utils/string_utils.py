@@ -21,6 +21,27 @@ def dequote(input: str) -> str:
     """
     return str(input).replace("\"", "\\\"")
 
+def quote(s: str) -> str:
+    """Wraps a string in double quotes without escaping internal quotes
+
+    Args:
+        - s (str): Input string to wrap
+
+    Returns:
+        - str: String wrapped in double quotes
+    """
+    return f'"{s}"'
+
+def escape_and_quote(s: str) -> str:
+    """Escapes double-quotes in a string using the external `dequote` function and wraps the result in double quotes
+
+    Args:
+        - s (str): Input string to escape and quote
+
+    Returns:
+        - str: Escaped string wrapped in double quotes
+    """
+    return f'"{dequote(s)}"'
 
 def remove_prefix(input: str, prefix: str) -> str:
     """Removes the given prefix from a string (to remove incompatibility of ``str.removeprefix()``

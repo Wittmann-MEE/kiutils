@@ -19,10 +19,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import Position
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
-
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
 class GeneralSettings():
@@ -80,15 +80,16 @@ class GeneralSettings():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(general\n'
-        expression += f'{indents}  (thickness {self.thickness})\n'
+    def _to_sexpr_raw(self):
+        expr = ['general', ['thickness', self.thickness]]
+
         if self.legacy_teardrops is not None:
-            expression += f'{indents}  (legacy_teardrops {self.legacy_teardrops})\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['legacy_teardrops', self.legacy_teardrops])
+
+        return expr
 
 
 @dataclass
@@ -149,12 +150,16 @@ class LayerToken():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        username = f' "{dequote(self.userName)}"' if self.userName is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [self.ordinal, escape_and_quote(self.name), self.type]
 
-        return f'{indents}({self.ordinal} "{dequote(self.name)}" {self.type}{username}){endline}'
+        if self.userName is not None:
+            expr.append(escape_and_quote(self.userName))
+
+        return expr
 
 
 @dataclass
@@ -194,14 +199,22 @@ class StackupSubLayer():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        mat = f' (material "{dequote(self.material)}")' if self.material is not None else ''
-        er = f' (epsilon_r {self.epsilonR})' if self.epsilonR is not None else ''
-        lt = f' (loss_tangent {self.lossTangent})' if self.lossTangent is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['addsublayer', ['thickness', self.thickness]]
 
-        return f'{indents}addsublayer (thickness {self.thickness}){mat}{er}{lt}{endline}'
+        if self.material is not None:
+            expr.append(['material', self.material])
+
+        if self.epsilonR is not None:
+            expr.append(['epsilon_r', self.epsilonR])
+
+        if self.lossTangent is not None:
+            expr.append(['loss_tangent', self.lossTangent])
+
+        return expr
 
 
 @dataclass
@@ -315,21 +328,32 @@ class StackupLayer():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        color = f' (color "{dequote(self.color)}")' if self.color is not None else ''
-        material = f' (material "{dequote(self.material)}")' if self.material is not None else ''
-        thickness = f' (thickness {self.thickness})' if self.thickness is not None else ''
-        epsilon_r = f' (epsilon_r {self.epsilonR})' if self.epsilonR is not None else ''
-        loss_tangent = f' (loss_tangent {self.lossTangent})' if self.lossTangent is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['layer', escape_and_quote(self.name), ['type', escape_and_quote(self.type)]]
 
-        expression = f'{indents}(layer "{dequote(self.name)}" (type "{self.type}"){color}{thickness}'
-        expression +=f'{material}{epsilon_r}{loss_tangent}'
+        if self.color is not None:
+            expr.append(['color', escape_and_quote(self.color)])
+
+        if self.thickness is not None:
+            expr.append(['thickness', self.thickness])
+
+        if self.material is not None:
+            expr.append(['material', escape_and_quote(self.material)])
+
+        if self.epsilonR is not None:
+            expr.append(['epsilon_r', self.epsilonR])
+
+        if self.lossTangent is not None:
+            expr.append(['loss_tangent', self.lossTangent])
+
         for layer in self.subLayers:
-            expression += f'\n{layer.to_sexpr(indent+2)}'
-        expression += f'){endline}'
-        return expression
+            expr.append(layer._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class Stackup():
@@ -408,19 +432,32 @@ class Stackup():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(stackup\n'
+    def _to_sexpr_raw(self):
+        expr = ['stackup']
+
         for layer in self.layers:
-            expression += layer.to_sexpr(indent+2)
-        if self.copperFinish is not None:         expression += f'{indents}  (copper_finish "{dequote(self.copperFinish)}")\n'
-        if self.dielectricContraints is not None: expression += f'{indents}  (dielectric_constraints {self.dielectricContraints})\n'
-        if self.edgeConnector is not None:        expression += f'{indents}  (edge_connector {self.edgeConnector})\n'
-        if self.castellatedPads:                  expression += f'{indents}  {format_bool("castellated_pads", self.castellatedPads)}\n'
-        if self.edgePlating:                      expression += f'{indents}  {format_bool("edge_plating", self.edgePlating)}\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(layer._to_sexpr_raw())
+
+        if self.copperFinish is not None:
+            expr.append(['copper_finish', escape_and_quote(self.copperFinish)])
+
+        if self.dielectricContraints is not None:
+            expr.append(['dielectric_constraints', self.dielectricContraints])
+
+        if self.edgeConnector is not None:
+            expr.append(['edge_connector', self.edgeConnector])
+
+        if self.castellatedPads:
+            expr.append(['castellated_pads', self.castellatedPads])
+
+        if self.edgePlating:
+            expr.append(['edge_plating', self.edgePlating])
+
+        return expr
+
 
 @dataclass
 class PlotSettings():
@@ -663,69 +700,98 @@ class PlotSettings():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(pcbplotparams\n'
-        expression += f'{indents}  (layerselection {self.layerSelection})\n'
+    def _to_sexpr_raw(self):
+        expr = ['pcbplotparams', ['layerselection', self.layerSelection]]
+
         if self.plotOnAllLayersSelection is not None:
-            expression += f'{indents}  (plot_on_all_layers_selection {self.plotOnAllLayersSelection})\n'
-        expression += f'{indents}  (disableapertmacros {self.disableApertMacros})\n'
-        expression += f'{indents}  (usegerberextensions {self.useGerberExtensions})\n'
-        expression += f'{indents}  (usegerberattributes {self.useGerberAttributes})\n'
-        expression += f'{indents}  (usegerberadvancedattributes {self.useGerberAdvancedAttributes})\n'
-        expression += f'{indents}  (creategerberjobfile {self.createGerberJobFile})\n'
+            expr.append(['plot_on_all_layers_selection', self.plotOnAllLayersSelection])
+
+        expr.append(['disableapertmacros', self.disableApertMacros])
+        expr.append(['usegerberextensions', self.useGerberExtensions])
+        expr.append(['usegerberattributes', self.useGerberAttributes])
+        expr.append(['usegerberadvancedattributes', self.useGerberAdvancedAttributes])
+        expr.append(['creategerberjobfile', self.createGerberJobFile])
+
         if self.dashedLineDashRatio is not None:
-            expression += f'{indents}  (dashed_line_dash_ratio {float(self.dashedLineDashRatio):.6f})\n'
+            expr.append(['dashed_line_dash_ratio', (f"{self.dashedLineDashRatio:.6f}")])
+
         if self.dashedLineGapRatio is not None:
-            expression += f'{indents}  (dashed_line_gap_ratio {float(self.dashedLineGapRatio):.6f})\n'
+            expr.append(['dashed_line_gap_ratio', (f"{self.dashedLineGapRatio:.6f}")])
+
         if self.svgUseInch is not None:
-            expression += f'{indents}  (svguseinch {self.svgUseInch})\n'
-        expression += f'{indents}  (svgprecision {self.svgPrecision})\n'
+            expr.append(['svguseinch', self.svgUseInch])
+
+        expr.append(['svgprecision', self.svgPrecision])
+
         if self.excludeEdgeLayer is not None:
-            expression += f'{indents}  (excludeedgelayer {self.excludeEdgeLayer})\n'
-        expression += f'{indents}  (plotframeref {self.plotFameRef})\n'
-        expression += f'{indents}  (viasonmask {self.viasOnMask})\n' if self.viasOnMask == 'yes' else ''
-        expression += f'{indents}  (mode {self.mode})\n'
-        expression += f'{indents}  (useauxorigin no)\n'
-        expression += f'{indents}  (hpglpennumber {self.hpglPenNumber})\n'
-        expression += f'{indents}  (hpglpenspeed {self.hpglPenSpeed})\n'
-        expression += f'{indents}  (hpglpendiameter {float(self.hpglPenDiameter):.6f})\n'
+            expr.append(['excludeedgelayer', self.excludeEdgeLayer])
+
+        expr.append(['plotframeref', self.plotFameRef])
+
+        if self.viasOnMask == 'yes':
+            expr.append(['viasonmask', self.viasOnMask])
+
+        expr.append(['mode', self.mode])
+        expr.append(['useauxorigin', 'no'])
+        expr.append(['hpglpennumber', self.hpglPenNumber])
+        expr.append(['hpglpenspeed', self.hpglPenSpeed])
+        expr.append(['hpglpendiameter', (f"{self.hpglPenDiameter:.6f}")])
+
         if self.pdf_front_fp_property_popups is not None:
-            expression += f'{indents}  (pdf_front_fp_property_popups {self.pdf_front_fp_property_popups})\n'
+            expr.append(['pdf_front_fp_property_popups', self.pdf_front_fp_property_popups])
+
         if self.pdf_back_fp_property_popups is not None:
-            expression += f'{indents}  (pdf_back_fp_property_popups {self.pdf_back_fp_property_popups})\n'
+            expr.append(['pdf_back_fp_property_popups', self.pdf_back_fp_property_popups])
+
         if self.pdf_metadata is not None:
-            expression += f'{indents}  (pdf_metadata {self.pdf_metadata})\n'
+            expr.append(['pdf_metadata', self.pdf_metadata])
+
         if self.pdf_single_document is not None:
-            expression += f'{indents}  (pdf_single_document {self.pdf_single_document})\n'
-        expression += f'{indents}  (dxfpolygonmode {self.dxfPolygonMode})\n'
-        expression += f'{indents}  (dxfimperialunits {self.dxfImperialUnits})\n'
-        expression += f'{indents}  (dxfusepcbnewfont {self.dxfUsePcbnewFont})\n'
-        expression += f'{indents}  (psnegative {self.psNegative})\n'
-        expression += f'{indents}  (psa4output {self.psA4Output})\n'
+            expr.append(['pdf_single_document', self.pdf_single_document])
+
+        expr.append(['dxfpolygonmode', self.dxfPolygonMode])
+        expr.append(['dxfimperialunits', self.dxfImperialUnits])
+        expr.append(['dxfusepcbnewfont', self.dxfUsePcbnewFont])
+        expr.append(['psnegative', self.psNegative])
+        expr.append(['psa4output', self.psA4Output])
+
         if self.plot_black_and_white is not None:
-            expression += f'{indents}  (plot_black_and_white {self.plot_black_and_white})\n'
-        expression += f'{indents}  (sketchpadsonfab {self.sketchPadsOnFab})\n'
+            expr.append(['plot_black_and_white', self.plot_black_and_white])
+
+        expr.append(['sketchpadsonfab', self.sketchPadsOnFab])
+
         if self.plot_pad_numbers is not None:
-            expression += f'{indents}  (plotpadnumbers {self.plot_pad_numbers})\n'
+            expr.append(['plotpadnumbers', self.plot_pad_numbers])
+
         if self.hide_dnp_on_fab is not None:
-            expression += f'{indents}  (hidednponfab {self.hide_dnp_on_fab})\n'
+            expr.append(['hidednponfab', self.hide_dnp_on_fab])
+
         if self.sketch_dnp_on_fab is not None:
-            expression += f'{indents}  (sketchdnponfab {self.sketch_dnp_on_fab})\n'
+            expr.append(['sketchdnponfab', self.sketch_dnp_on_fab])
+
         if self.crossout_dnp_on_fab is not None:
-            expression += f'{indents}  (crossoutdnponfab {self.crossout_dnp_on_fab})\n'
-        expression += f'{indents}  (plotreference {self.plotReference})\n' if self.plotReference == 'yes' else ''
-        expression += f'{indents}  (plotvalue {self.plotValue})\n' if self.plotValue == 'yes' else ''
-        expression += f'{indents}  (plotinvisibletext {self.plotInvisibleText})\n' if self.plotInvisibleText == 'yes' else ''
-        expression += f'{indents}  (subtractmaskfromsilk {self.subtractMaskFromSilk})\n'
-        expression += f'{indents}  (outputformat {self.outputFormat})\n'
-        expression += f'{indents}  (mirror {self.mirror})\n'
-        expression += f'{indents}  (drillshape {self.drillShape})\n'
-        expression += f'{indents}  (scaleselection {self.scaleSelection})\n'
-        expression += f'{indents}  (outputdirectory "{dequote(self.outputDirectory)}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['crossoutdnponfab', self.crossout_dnp_on_fab])
+
+        if self.plotReference == 'yes':
+            expr.append(['plotreference', self.plotReference])
+
+        if self.plotValue == 'yes':
+            expr.append(['plotvalue', self.plotValue])
+
+        if self.plotInvisibleText == 'yes':
+            expr.append(['plotinvisibletext', self.plotInvisibleText])
+
+        expr.append(['subtractmaskfromsilk', self.subtractMaskFromSilk])
+        expr.append(['outputformat', self.outputFormat])
+        expr.append(['mirror', self.mirror])
+        expr.append(['drillshape', self.drillShape])
+        expr.append(['scaleselection', self.scaleSelection])
+        expr.append(['outputdirectory', escape_and_quote(self.outputDirectory)])
+
+        return expr
 
 
 @dataclass
@@ -769,14 +835,18 @@ class SetupData():
     """The optional ``plotSettings`` define how the board was last plotted."""
 
     # Available since KiCad v9
+    # TODO Update docs
 
     allow_soldermask_bridges_in_footprints: Optional[str] = None
 
-    # TODO
     tenting: List[str] = field(default_factory=list)
+
     covering: List[str] = field(default_factory=list)
+
     plugging: List[str] = field(default_factory=list)
+
     capping: List[str] = field(default_factory=list)
+
     filling: List[str] = field(default_factory=list)
 
     @classmethod
@@ -833,48 +903,54 @@ class SetupData():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        indents_nest = indents*2
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(setup\n'
+    def _to_sexpr_raw(self):
+        expr = ['setup']
+
         if self.stackup is not None:
-            expression += self.stackup.to_sexpr(indent+2)
+            expr.append(self.stackup._to_sexpr_raw())
 
-        expression += f'{indents_nest}(pad_to_mask_clearance {format_float(self.packToMaskClearance)})\n'
+        expr.append(['pad_to_mask_clearance', format_float(self.packToMaskClearance)])
 
         if self.solderMaskMinWidth is not None:
-            expression += f'{indents_nest}(solder_mask_min_width {self.solderMaskMinWidth})\n'
-        if self.padToPasteClearance is not None:
-            expression += f'{indents_nest}(pad_to_paste_clearance {self.padToPasteClearance})\n'
-        if self.padToPasteClearanceRatio is not None:
-            expression += f'{indents_nest}(pad_to_paste_clearance_ratio {self.padToPasteClearanceRatio})\n'
-        if self.allow_soldermask_bridges_in_footprints is not None:
-            expression += f'{indents_nest}(allow_soldermask_bridges_in_footprints {self.allow_soldermask_bridges_in_footprints})\n'
-        if len(self.tenting) > 0:
-            tenting_joined = ' '.join(self.tenting)
-            expression += f'{indents_nest}(tenting {tenting_joined})\n'
-        if self.auxAxisOrigin is not None:
-            expression += f'{indents_nest}(aux_axis_origin {format_float(self.auxAxisOrigin.X)} {format_float(self.auxAxisOrigin.Y)})\n'
-        if self.gridOrigin is not None:
-            expression += f'{indents_nest}(grid_origin {format_float(self.gridOrigin.X)} {format_float(self.gridOrigin.Y)})\n'
-        if len(self.covering) > 0:
-            covering_joined = ' '.join(self.covering)
-            expression += f'{indents_nest}(covering {covering_joined})\n'
-        if len(self.plugging) > 0:
-            plugging_joined = ' '.join(self.plugging)
-            expression += f'{indents_nest}(plugging {plugging_joined})\n'
-        if len(self.capping) > 0:
-            capping_joined = ' '.join(self.capping)
-            expression += f'{indents_nest}(capping {capping_joined})\n'
-        if len(self.filling) > 0:
-            filling_joined = ' '.join(self.filling)
-            expression += f'{indents_nest}(filling {filling_joined})\n'
-        if self.plotSettings is not None:
-            expression += self.plotSettings.to_sexpr(indent+2)
+            expr.append(['solder_mask_min_width', self.solderMaskMinWidth])
 
-        expression += f'{indents}){endline}'
-        return expression
+        if self.padToPasteClearance is not None:
+            expr.append(['pad_to_paste_clearance', self.padToPasteClearance])
+
+        if self.padToPasteClearanceRatio is not None:
+            expr.append(['pad_to_paste_clearance_ratio', self.padToPasteClearanceRatio])
+
+        if self.allow_soldermask_bridges_in_footprints is not None:
+            expr.append(['allow_soldermask_bridges_in_footprints', self.allow_soldermask_bridges_in_footprints])
+
+        if len(self.tenting) > 0:
+            expr.append(['tenting'] + self.tenting)
+
+        if self.auxAxisOrigin is not None:
+            expr.append(['aux_axis_origin', format_float(self.auxAxisOrigin.X), format_float(self.auxAxisOrigin.Y)])
+
+        if self.gridOrigin is not None:
+            expr.append(['grid_origin', format_float(self.gridOrigin.X), format_float(self.gridOrigin.Y)])
+
+        if len(self.covering) > 0:
+            expr.append(['covering'] + self.covering)
+
+        if len(self.plugging) > 0:
+            expr.append(['plugging'] + self.plugging)
+
+        if len(self.capping) > 0:
+            expr.append(['capping'] + self.capping)
+
+        if len(self.filling) > 0:
+            expr.append(['filling'] + self.filling)
+
+        if self.plotSettings is not None:
+            expr.append(self.plotSettings._to_sexpr_raw())
+
+        return expr
 
 
 @dataclass
@@ -954,13 +1030,28 @@ class Segment():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return (f'{indents}(segment '
-                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)}) (width {format_float(self.width)})'
-                f'{locked} (layer "{dequote(self.layer)}") (net {self.net}) (uuid "{self.tstamp}")){endline}')
+    def _to_sexpr_raw(self):
+        expr = [
+            'segment',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['width', format_float(self.width)],
+        ]
+
+        if self.locked:
+            expr.append(format_bool_raw("locked", self.locked))
+
+        expr.extend([
+            ['layer', escape_and_quote(self.layer)],
+            ['net', self.net],
+            ['uuid', quote(self.tstamp)],
+        ])
+
+        return expr
+
 
 @dataclass
 class Via():
@@ -1063,24 +1154,50 @@ class Via():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        type = f' {self.type}' if self.type is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
+    def _to_sexpr_raw(self):
+        expr = ['via']
 
-        layers = ''
+        if self.type is not None:
+            expr.append(self.type)
+
+        expr.extend([
+            ['at', format_float(self.position.X), format_float(self.position.Y)],
+            ['size', format_float(self.size)],
+            ['drill', self.drill],
+        ])
+
+        layer_list = ['layers']
+
         for layer in self.layers:
-            layers += f' "{dequote(layer)}"'
-        rum = f' {format_bool("remove_unused_layers", self.removeUnusedLayers)}'
-        kel = f' {format_bool("keep_end_layers", self.keepEndLayers)}'
-        free = f' {format_bool("free", self.free)}'
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        zlc = ' (zone_layer_connections)' if self.zone_layer_connections else ''
+            layer_list.append(escape_and_quote(layer))
 
-        return (f'{indents}(via{type} '
-                f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) (size {format_float(self.size)}) (drill {self.drill}) '
-                f'(layers{layers}){rum}{kel}{locked}{free}{zlc} (net {self.net}){tstamp}){endline}')
+        expr.append(layer_list)
+
+        if self.removeUnusedLayers:
+            expr.append(format_bool_raw("remove_unused_layers", self.removeUnusedLayers))
+
+        if self.keepEndLayers:
+            expr.append(format_bool_raw("keep_end_layers", self.keepEndLayers))
+
+        if self.locked:
+            expr.append(format_bool_raw("locked", self.locked))
+
+        if self.free:
+            expr.append(format_bool_raw("free", self.free))
+
+        if self.zone_layer_connections:
+            expr.append(['zone_layer_connections'])
+
+        expr.append(['net', self.net])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class Arc():
@@ -1164,17 +1281,28 @@ class Arc():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        locked = f' {format_bool("locked", self.locked)}'
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['arc']
 
-        expression = f'{indents}(arc{locked} (start {self.start.X} {self.start.Y}) '
-        expression += f'(mid {self.mid.X} {self.mid.Y}) (end {self.end.X} {self.end.Y}) '
-        expression += f'(width {self.width}) (layer "{dequote(self.layer)}") '
-        expression += f'(net {self.net}){tstamp}){endline}'
-        return expression
+        if self.locked:
+            expr.append(format_bool_raw("locked", self.locked))
+
+        expr.extend([
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['width', format_float(self.width)],
+            ['layer', escape_and_quote(self.layer)],
+            ['net', self.net],
+        ])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
 
 
 @dataclass
@@ -1249,11 +1377,20 @@ class Target():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return (f'{indents}(target {self.type} (at {format_float(self.position.X)} {format_float(self.position.Y)}) '
-                f'(size {format_float(self.size)}) (width {format_float(self.width)}) (layer "{self.layer}") (uuid "{self.tstamp}")){endline}')
+    def _to_sexpr_raw(self):
+        return [
+            'target',
+            self.type,
+            ['at', format_float(self.position.X), format_float(self.position.Y)],
+            ['size', format_float(self.size)],
+            ['width', format_float(self.width)],
+            ['layer', quote(self.layer)],
+            ['uuid', quote(self.tstamp)],
+        ]
+
 
 @dataclass
 class Generated():
@@ -1433,60 +1570,58 @@ class Generated():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(generated\n'
-        expression += f'{indents}(uuid "{dequote(self.uuid)}")\n'
-        expression += f'{indents}(type {self.type})\n'
-        expression += f'{indents}(name "{dequote(self.name)}")\n'
-        expression += f'{indents}(layer "{dequote(self.layer)}")\n'
+    def _to_sexpr_raw(self):
+        expr = [
+            'generated',
+            ['uuid', escape_and_quote(self.uuid)],
+            ['type', self.type],
+            ['name', escape_and_quote(self.name)],
+            ['layer', escape_and_quote(self.layer)],
+        ]
+
         if self.locked:
-            expression += f' {format_bool("locked", self.locked)}'
+            expr.append(format_bool_raw("locked", self.locked))
 
         if len(self.base_line) > 0:
-            expression += f'{indents}(base_line\n'
-            expression += f'{indents*2}(pts\n'
+            base_line_pts = ['pts']
             for point in self.base_line:
-                expression += f' (xy {format_float(point.X)} {format_float(point.Y)})'
-            expression += f'{indents*2})\n' #pts
-            expression += f'{indents}){endline}' #base_line
+                base_line_pts.append(['xy', format_float(point.X), format_float(point.Y)])
+            expr.append(['base_line', base_line_pts])
 
         if len(self.base_line_coupled) > 0:
-            expression += f'{indents}(base_line_coupled\n'
-            expression += f'{indents*2}(pts\n'
-            for point in self.base_line:
-                expression += f' (xy {format_float(point.X)} {format_float(point.Y)})'
-            expression += f'{indents*2})\n' #pts
-            expression += f'{indents}){endline}' #base_line_coupled
+            coupled_pts = ['pts']
+            for point in self.base_line_coupled:
+                coupled_pts.append(['xy', format_float(point.X), format_float(point.Y)])
+            expr.append(['base_line_coupled', coupled_pts])
 
-        expression += f'{indents}(corner_radius_percent {self.corner_radius})\n'
-        expression += f'{indents}(end (xy {format_float(self.end.X)} {format_float(self.end.Y)}))\n'
-        expression += f'{indents}(initial_side "{dequote(self.initial_side)}")\n'
-        expression += f'{indents}(last_diff_pair_gap {self.last_diff_pair_gap})\n'
-        expression += f'{indents}(last_netname "{dequote(self.last_net_name)}")\n'
-        expression += f'{indents}(last_status "{dequote(self.last_status)}")\n'
-        expression += f'{indents}(last_track_width {self.last_track_width})\n'
-        expression += f'{indents}(last_tuning "{dequote(self.last_tuning)}")\n'
-        expression += f'{indents}(max_amplitude {self.max_amplitude})\n'
-        expression += f'{indents}(min_amplitude {self.min_amplitude})\n'
-        expression += f'{indents}(min_spacing {self.min_spacing})\n'
-        expression += f'{indents}(origin (xy {format_float(self.origin.X)} {format_float(self.origin.Y)}))\n'
-        expression += f'{indents}(override_custom_rules {self.override_custom_rules})\n'
-        expression += f'{indents}(rounded {self.rounded})\n'
-        expression += f'{indents}(single_sided {self.single_sided})\n'
-        expression += f'{indents}(target_length {self.target_length})\n'
-        expression += f'{indents}(target_length_max {self.target_length_max})\n'
-        expression += f'{indents}(target_length_min {self.target_length_min})\n'
-        expression += f'{indents}(target_skew {self.target_skew})\n'
-        expression += f'{indents}(target_skew_max {self.target_skew_max})\n'
-        expression += f'{indents}(target_skew_min {self.target_skew_min})\n'
-        expression += f'{indents}(tuning_mode "{dequote(self.tuning_mode)}")\n'
+        expr.append(['corner_radius_percent', self.corner_radius])
+        expr.append(['end', ['xy', format_float(self.end.X), format_float(self.end.Y)]])
+        expr.append(['initial_side', escape_and_quote(self.initial_side)])
+        expr.append(['last_diff_pair_gap', self.last_diff_pair_gap])
+        expr.append(['last_netname', escape_and_quote(self.last_net_name)])
+        expr.append(['last_status', escape_and_quote(self.last_status)])
+        expr.append(['last_track_width', self.last_track_width])
+        expr.append(['last_tuning', escape_and_quote(self.last_tuning)])
+        expr.append(['max_amplitude', self.max_amplitude])
+        expr.append(['min_amplitude', self.min_amplitude])
+        expr.append(['min_spacing', self.min_spacing])
+        expr.append(['origin', ['xy', format_float(self.origin.X), format_float(self.origin.Y)]])
+        expr.append(['override_custom_rules', self.override_custom_rules])
+        expr.append(['rounded', self.rounded])
+        expr.append(['single_sided', self.single_sided])
+        expr.append(['target_length', self.target_length])
+        expr.append(['target_length_max', self.target_length_max])
+        expr.append(['target_length_min', self.target_length_min])
+        expr.append(['target_skew', self.target_skew])
+        expr.append(['target_skew_max', self.target_skew_max])
+        expr.append(['target_skew_min', self.target_skew_min])
+        expr.append(['tuning_mode', escape_and_quote(self.tuning_mode)])
+
         if len(self.members) > 0:
-            expression += f'{indents}(members'
-            for member in self.members:
-                expression += f' "{member}"'
-            expression += f'){endline}'
+            members = ['members'] + [quote(member) for member in self.members]
+            expr.append(members)
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr

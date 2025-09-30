@@ -21,10 +21,10 @@ from os import path
 from kiutils.items.common import Image, PageSettings, TitleBlock
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.misc.config import *
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool, format_bool_raw
+from kiutils.utils.string_utils import *
 
 @dataclass
 class Schematic():
@@ -212,7 +212,7 @@ class Schematic():
             raise Exception(f"Given path ('{filepath}') is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
-            item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))
+            item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
 
@@ -262,129 +262,79 @@ class Schematic():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
-        expression =  f'{indents}(kicad_sch (version {self.version}) (generator "{self.generator}"){generator_version}\n'
+    def _to_sexpr_raw(self):
+        expr = [
+            'kicad_sch',
+            ['version', self.version],
+            ['generator', quote(self.generator)]
+        ]
+
+        if self.generator_version is not None:
+            expr.append(['generator_version', quote(self.generator_version)])
+
         if self.uuid is not None:
-            expression += f' (uuid "{self.uuid}"){endline}'
-        expression += f'{self.paper.to_sexpr(indent+2)}'
+            expr.append(['uuid', quote(self.uuid)])
+
+        expr.append(self.paper._to_sexpr_raw())
+
         if self.titleBlock is not None:
-            expression += f'\n{self.titleBlock.to_sexpr(indent+2)}'
+            expr.append(self.titleBlock._to_sexpr_raw())
 
         if self.libSymbols:
-            expression += f'\n{indents}  (lib_symbols'
-            for item in self.libSymbols:
-                expression += '\n'
-                expression += item.to_sexpr(indent+4)
-            expression += f'{indents}  )\n'
+            expr.append(['lib_symbols'] + [item._to_sexpr_raw() for item in self.libSymbols])
         else:
-            expression += f'{indents}  (lib_symbols)\n'
-
-        if self.texts:
-            expression += '\n'
-            for item in self.texts:
-                expression += item.to_sexpr(indent + 2)
-
-        if self.textBoxes:
-            expression += '\n'
-            for item in self.textBoxes:
-                expression += item.to_sexpr(indent + 2)
-
-        if self.junctions:
-            expression += '\n'
-            for item in self.junctions:
-                expression += item.to_sexpr(indent+2)
-
-        if self.noConnects:
-            expression += '\n'
-            for item in self.noConnects:
-                expression += item.to_sexpr(indent+2)
-
-        if self.busEntries:
-            expression += '\n'
-            for item in self.busEntries:
-                expression += item.to_sexpr(indent+2)
+            expr.append(['lib_symbols'])
 
         if self.busAliases:
-            expression += '\n'
-            for item in self.busAliases:
-                expression += item.to_sexpr(indent+2)
-
+            expr.extend(item._to_sexpr_raw() for item in self.busAliases)
+        if self.texts:
+            expr.extend(item._to_sexpr_raw() for item in self.texts)
+        if self.textBoxes:
+            expr.extend(item._to_sexpr_raw() for item in self.textBoxes)
+        if self.junctions:
+            expr.extend(item._to_sexpr_raw() for item in self.junctions)
+        if self.noConnects:
+            expr.extend(item._to_sexpr_raw() for item in self.noConnects)
+        if self.busEntries:
+            expr.extend(item._to_sexpr_raw() for item in self.busEntries)
         if self.graphicalItems:
-            expression += '\n'
-            for item in self.graphicalItems:
-                expression += item.to_sexpr(indent+2)
-
+            expr.extend(item._to_sexpr_raw() for item in self.graphicalItems)
         if self.tables:
-            expression += '\n'
-            for item in self.tables:
-                expression += item.to_sexpr(indent+2)
-
+            expr.extend(item._to_sexpr_raw() for item in self.tables)
         if self.shapes:
-            expression += '\n'
-            for item in self.shapes:
-                expression += item.to_sexpr(indent+2)
-
+            expr.extend(item._to_sexpr_raw() for item in self.shapes)
         if self.images:
-            expression += '\n'
-            for item in self.images:
-                expression += item.to_sexpr(indent+2)
-
-
+            expr.extend(item._to_sexpr_raw() for item in self.images)
         if self.labels:
-            expression += '\n'
-            for item in self.labels:
-                expression += item.to_sexpr(indent+2)
-
+            expr.extend(item._to_sexpr_raw() for item in self.labels)
         if self.globalLabels:
-            expression += '\n'
-            for item in self.globalLabels:
-                expression += item.to_sexpr(indent+2)
-
+            expr.extend(item._to_sexpr_raw() for item in self.globalLabels)
         if self.hierarchicalLabels:
-            expression += '\n'
-            for item in self.hierarchicalLabels:
-                expression += item.to_sexpr(indent+2)
+            expr.extend(item._to_sexpr_raw() for item in self.hierarchicalLabels)
 
         if len(self.rule_areas) > 0:
             for ra in self.rule_areas:
-                expression += f'{indents}(rule_area{endline}'
-                expression += ra.to_sexpr(indent+2)
-                expression += f'{indents}){endline}'
+                expr.append(['rule_area', ra._to_sexpr_raw()])
 
         if self.netclassFlags:
-            expression += '\n'
-            for item in self.netclassFlags:
-                expression += item.to_sexpr(indent+2)
+            expr.extend(item._to_sexpr_raw() for item in self.netclassFlags)
 
         if self.schematicSymbols:
-            for item in self.schematicSymbols:
-                expression += '\n'
-                expression += item.to_sexpr(indent+2)
+            expr.extend(item._to_sexpr_raw() for item in self.schematicSymbols)
 
         if self.sheets:
-            for item in self.sheets:
-                expression += '\n'
-                expression += item.to_sexpr(indent+2)
+            expr.extend(item._to_sexpr_raw() for item in self.sheets)
 
         if self.sheetInstances:
-            expression += '\n'
-            expression += '  (sheet_instances\n'
-            for item in self.sheetInstances:
-                expression += item.to_sexpr(indent+4)
-            expression += '  )\n'
+            expr.append(['sheet_instances'] + [item._to_sexpr_raw() for item in self.sheetInstances])
 
         if self.symbolInstances:
-            expression += '\n'
-            expression += '  (symbol_instances\n'
-            for item in self.symbolInstances:
-                expression += item.to_sexpr(indent+4)
-            expression += '  )\n'
+            expr.append(['symbol_instances'] + [item._to_sexpr_raw() for item in self.symbolInstances])
 
         if self.embedded_fonts is not None:
-            expression += f'{indents} {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}\n'
+            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr

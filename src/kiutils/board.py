@@ -24,8 +24,7 @@ from kiutils.items.brditems import *
 from kiutils.items.gritems import *
 from kiutils.items.dimensions import Dimension
 from kiutils.utils.string_utils import dequote
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
 from kiutils.utils.parsing_utils import parse_bool, format_bool
@@ -100,7 +99,7 @@ class Board():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[bool] = None
-    """The ``embeddedFonts`` indicates that there are fonts embedded into this component"""
+    """The ``embedded_fonts`` indicates that there are fonts embedded into this component"""
 
     embedded_files: list[EmbeddedFile] = field(default_factory=list)
     """The ``embedded_files`` store data of embedded files"""
@@ -188,7 +187,7 @@ class Board():
             raise Exception("Given path is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
-            item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))
+            item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
 
@@ -270,87 +269,76 @@ class Board():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        addNewLine = False
+    def _to_sexpr_raw(self):
+        expr = [
+            'kicad_pcb',
+            ['version', self.version],
+            ['generator', quote(self.generator)],
+        ]
 
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
-        expression =  f'{indents}(kicad_pcb (version {self.version}) (generator "{self.generator}"){generator_version}\n\n'
-        expression += self.general.to_sexpr(indent+2) + '\n'
-        expression += self.paper.to_sexpr(indent+2)
+        if self.generator_version is not None:
+            expr.append(['generator_version', quote(self.generator_version)])
+
+        expr.append(self.general._to_sexpr_raw())
+        expr.append(self.paper._to_sexpr_raw())
+
         if self.titleBlock is not None:
-            expression += self.titleBlock.to_sexpr(indent+2) + '\n'
-        expression += f'{indents}  (layers\n'
-        for layer in self.layers:
-            expression += layer.to_sexpr(indent+4)
-        expression += f'{indents}  )\n\n'
-        expression += self.setup.to_sexpr(indent+2) + '\n'
-        # Properties, if any
+            expr.append(self.titleBlock._to_sexpr_raw())
+
+        # Layers
+        expr.append(['layers'] + [layer._to_sexpr_raw() for layer in self.layers])
+
+        # Setup
+        expr.append(self.setup._to_sexpr_raw())
+
+        # Properties
         if len(self.properties) > 0:
             for key, value in self.properties.items():
-                expression += f'  (property "{dequote(key)}" "{dequote(value)}")\n'
-            expression += '\n'
+                expr.append(['property', escape_and_quote(key), escape_and_quote(value)])
 
         # Nets
         if len(self.nets) > 0:
-            for net in self.nets:
-                expression += net.to_sexpr(indent=indent+2, newline=True)
-            expression += '\n'
+            expr.extend(net._to_sexpr_raw() for net in self.nets)
 
         # Footprints
-        for footprint in self.footprints:
-            expression += footprint.to_sexpr(indent+2, layerInFirstLine=True) + '\n'
+        expr.extend(footprint._to_sexpr_raw() for footprint in self.footprints)
 
-        # Lines, Texts, Arcs and other graphical items
+        # Graphic items
         if len(self.graphicItems) > 0:
-            addNewLine = True
-            for item in self.graphicItems:
-                if isinstance(item, GrPoly):
-                    expression += item.to_sexpr(indent+2, pts_newline=True)
-                else:
-                    expression += item.to_sexpr(indent+2)
+            expr.extend(item._to_sexpr_raw() for item in self.graphicItems)
 
         # Dimensions
         if len(self.dimensions) > 0:
-            addNewLine = True
-            for dimension in self.dimensions:
-                expression += dimension.to_sexpr(indent+2)
+            expr.extend(dimension._to_sexpr_raw() for dimension in self.dimensions)
 
-        # Target markers:
+        # Target markers
         if len(self.targets) > 0:
-            addNewLine = True
-            for target in self.targets:
-                expression += target.to_sexpr(indent+2)
+            expr.extend(target._to_sexpr_raw() for target in self.targets)
 
-        if addNewLine:
-            expression += '\n'
-
-        # Segments, vias and arcs
+        # Trace items
         if len(self.traceItems) > 0:
-            for item in self.traceItems:
-                expression += item.to_sexpr(indent+2)
-            expression += '\n'
+            expr.extend(item._to_sexpr_raw() for item in self.traceItems)
 
         # Zones
-        for zone in self.zones:
-            expression += zone.to_sexpr(indent+2)
+        expr.extend(zone._to_sexpr_raw() for zone in self.zones)
 
         # Groups
-        for group in self.groups:
-            expression += group.to_sexpr(indent+2)
+        expr.extend(group._to_sexpr_raw() for group in self.groups)
 
-        for generated in self.generated:
-            expression += generated.to_sexpr(indent+2)
+        # Generated items
+        expr.extend(generated._to_sexpr_raw() for generated in self.generated)
 
+        # Embedded fonts
         if self.embedded_fonts is not None:
-            expression += f'{indents} {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}\n'
+            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
 
+        # Embedded files
         if len(self.embedded_files) > 0:
-            expression += '(embedded_files'
-            for f in self.embedded_files:
-                expression += f' {f.to_sexpr(indent+2)}'
-            expression += ')'
+            embedded_files_expr = ['embedded_files'] + [f._to_sexpr_raw() for f in self.embedded_files]
+            expr.append(embedded_files_expr)
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr
+

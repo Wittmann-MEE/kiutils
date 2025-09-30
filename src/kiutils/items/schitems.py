@@ -20,9 +20,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
 from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
 class Junction():
@@ -89,13 +90,20 @@ class Junction():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        uuid = f' (uuid "{self.uuid}")\n' if self.uuid is not None else ''
-        expression =  (f'{indents}(junction '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) (diameter {format_float(self.diameter)}) '
-                       f'{self.color.to_sexpr()}{uuid}{indents}){endline}')
-        return expression
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ['junction']
+
+        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
+        expr.append(['diameter', format_float(self.diameter)])
+        expr.append(self.color._to_sexpr_raw())
+        if self.uuid is not None:
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class NoConnect():
@@ -152,11 +160,18 @@ class NoConnect():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        uuid = f' (uuid "{self.uuid}")' if self.uuid is not None else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return f'{indents}(no_connect (at {format_float(self.position.X)} {format_float(self.position.Y)}){uuid}){endline}'
+    def _to_sexpr_raw(self):
+        expr = ['no_connect']
+
+        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
+        if self.uuid is not None:
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class BusEntry():
@@ -221,15 +236,20 @@ class BusEntry():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(bus_entry (at {format_float(self.position.X)} {format_float(self.position.Y)}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n'
-        expression += self.stroke.to_sexpr(indent+2)
+    def _to_sexpr_raw(self):
+        expr = ['bus_entry']
+
+        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
+        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(self.stroke._to_sexpr_raw())
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class BusAlias():
@@ -289,12 +309,13 @@ class BusAlias():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        members = [f'"{dequote(member)}"' for member in self.members]
-        expression =  f'{indents}(bus_alias "{dequote(self.name)}" (members {" ".join(members)})){endline}'
-        return expression
+    def _to_sexpr_raw(self):
+        members_quoted = [escape_and_quote(member) for member in self.members]
+        return ['bus_alias', escape_and_quote(self.name), ['members'] + members_quoted]
+
 
 @dataclass
 class Connection():
@@ -361,19 +382,24 @@ class Connection():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        points = ''
+    def _to_sexpr_raw(self):
+        expr = [self.type]
+
+        pts_expr = ['pts']
         for point in self.points:
-            points += f' (xy {format_float(point.X)} {format_float(point.Y)})'
+            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts_expr)
 
-        expression =  f'{indents}({self.type} (pts{points})\n'
-        expression += self.stroke.to_sexpr(indent+2)
+        expr.append(self.stroke._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class PolyLine():
@@ -440,23 +466,27 @@ class PolyLine():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        points = ''
+    def _to_sexpr_raw(self):
+        expr = ['polyline']
+
+        pts_expr = ['pts']
         for point in self.points:
-            points += f' (xy {format_float(point.X)} {format_float(point.Y)})'
+            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts_expr)
 
-        expression =  f'{indents}(polyline (pts{points})\n'
-        expression += self.stroke.to_sexpr(indent+2)
+        expr.append(self.stroke._to_sexpr_raw())
+
         if self.fill is not None:
-            expression += self.fill.to_sexpr(indent+2)
+            expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expression += f'{indents}(uuid "{self.uuid}")\n'
+            expr.append(['uuid', quote(self.uuid)])
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr
+
 
 @dataclass
 class Text():
@@ -527,25 +557,26 @@ class Text():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['text', escape_and_quote(self.text)]
 
-        expression =  f'{indents}(text "{dequote(self.text)}"{exclude_from_sim}'
+        if self.exclude_from_sim is not None:
+            expr.append(['exclude_from_sim', self.exclude_from_sim])
 
-        # Strings longer or equal than 50 chars have the position in the next line
-        if len(self.text) >= 50:
-            expression += f'\n{indents}  '
-        else:
-            expression += ' '
-        expression += f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})\n'
-        expression += self.effects.to_sexpr(indent+2)
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(self.effects._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
 
 @dataclass
 class TextBox():
@@ -627,7 +658,7 @@ class TextBox():
 
         return object
 
-    def to_sexpr(self, indent=2, newline=True, table_cell = False) -> str:
+    def to_sexpr(self, indent=2, newline=True, table_cell=False) -> str:
         """Generate the S-Expression representing this object
 
         Args:
@@ -637,26 +668,34 @@ class TextBox():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw(table_cell)
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
-
+    def _to_sexpr_raw(self, table_cell=False):
         target_type = 'table_cell' if table_cell else 'text_box'
+        expr = [target_type, escape_and_quote(self.text)]
 
-        expression =  f'{indents}({target_type} "{dequote(self.text)}"{exclude_from_sim}\n'
-        expression += f'{indents} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (size {format_float(self.size.X)} {format_float(self.size.Y)})\n'
-        expression += f'{indents} (margins {" ".join(map(str, self.margins))}){endline}'
+        if self.exclude_from_sim is not None:
+            expr.append(['exclude_from_sim', self.exclude_from_sim])
+
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(['margins'] + list(map(str, self.margins)))
         if len(self.span) > 0:
-            expression += f'{indents} (span {self.span[0]} {self.span[1]}){endline}'
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
-        expression += self.effects.to_sexpr(indent+2)
+            expr.append(['span', self.span[0], self.span[1]])
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+        expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class LocalLabel():
@@ -681,6 +720,8 @@ class LocalLabel():
     fieldsAutoplaced: bool = False
     """The ``fields_autoplaced`` is a flag that indicates that any PROPERTIES associated
     with the global label have been place automatically"""
+
+    properties: list[Property] = field(default_factory=list)
 
     @classmethod
     def from_sexpr(cls, exp: list) -> LocalLabel:
@@ -711,7 +752,7 @@ class LocalLabel():
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': continue #Ignore this please
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Exp: {exp}")
             
@@ -727,18 +768,27 @@ class LocalLabel():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fieldsAutoplaced = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
+    def _to_sexpr_raw(self):
+        expr = ['label', escape_and_quote(self.text)]
 
-        expression =  f'{indents}(label "{dequote(self.text)}" (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fieldsAutoplaced}\n'
-        expression += self.effects.to_sexpr(indent+2)
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        for prop in self.properties:
+            expr.append(prop._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class GlobalLabel():
@@ -818,20 +868,29 @@ class GlobalLabel():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fa = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
+    def _to_sexpr_raw(self):
+        expr = ['global_label', escape_and_quote(self.text)]
 
-        expression =  f'{indents}(global_label "{dequote(self.text)}" (shape {self.shape}) (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fa}\n'
-        expression += self.effects.to_sexpr(indent+2)
+        expr.append(['shape', self.shape])
+
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        for property in self.properties:
-            expression += property.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        for prop in self.properties:
+            expr.append(prop._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class HierarchicalLabel():
@@ -861,6 +920,8 @@ class HierarchicalLabel():
     fieldsAutoplaced: bool = False
     """The ``fields_autoplaced`` is a flag that indicates that any PROPERTIES associated
     with the global label have been place automatically"""
+
+    properties: list[Property] = field(default_factory=list)
 
     @classmethod
     def from_sexpr(cls, exp: list) -> HierarchicalLabel:
@@ -892,7 +953,7 @@ class HierarchicalLabel():
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             elif item[0] == 'shape': object.shape = item[1]
             elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': continue #Ignore this please
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -908,19 +969,29 @@ class HierarchicalLabel():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fieldsAutoplaced = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
+    def _to_sexpr_raw(self):
+        expr = ['hierarchical_label', escape_and_quote(self.text)]
 
-        expression =  (f'{indents}(hierarchical_label "{dequote(self.text)}" (shape {self.shape}) '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fieldsAutoplaced}\n')
+        expr.append(['shape', self.shape])
+
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += self.effects.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        for prop in self.properties:
+            expr.append(prop._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SymbolProjectPath():
@@ -986,12 +1057,15 @@ class SymbolProjectPath():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        expression =  f'{indents}(path "{dequote(self.sheetInstancePath)}"\n'
-        expression += f'{indents}  (reference "{dequote(self.reference)}") (unit {self.unit})\n'
-        expression += f'{indents}){endline}'
-        return expression
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ['path', escape_and_quote(self.sheetInstancePath)]
+        expr.append(['reference', escape_and_quote(self.reference)])
+        expr.append(['unit', self.unit])
+        return expr
+
 
 @dataclass
 class SymbolProjectInstance(ProjectInstance):
@@ -1050,13 +1124,17 @@ class SymbolProjectInstance(ProjectInstance):
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        expression = f'{indents}(project "{dequote(self.name)}"\n'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ['project', escape_and_quote(self.name)]
+
         for path in self.paths:
-            expression += path.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(path._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class SchematicSymbol():
@@ -1217,38 +1295,54 @@ class SchematicSymbol():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        mirror = f' (mirror {self.mirror})' if self.mirror is not None else ''
-        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
-        unit = f' (unit {self.unit})' if self.unit is not None else ''
-        lib_name = f' (lib_name "{dequote(self.libName)}")' if self.libName is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['symbol']
 
-        expression =  (f'{indents}(symbol{lib_name} (lib_id "{dequote(self.libId)}") '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})'
-                       f'{mirror}{unit}{exclude_from_sim}\n')
+        if self.libName is not None:
+            expr.append(['lib_name', escape_and_quote(self.libName)])
 
-        inBom = format_bool("in_bom", self.inBom, compact=False, yesno=True)
-        onBoard = format_bool("on_board", self.onBoard, compact=False, yesno=True)
-        dnp = format_bool("dnp", self.dnp, compact=False, yesno=True) if self.dnp is not None else ''
-        fa = format_bool("fields_autoplaced", self.fieldsAutoplaced)
-        expression += f'{indents} {inBom} {onBoard} {dnp} {fa}\n'
+        expr.append(['lib_id', escape_and_quote(self.libId)])
+
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        if self.mirror is not None:
+            expr.append(['mirror', self.mirror])
+
+        if self.unit is not None:
+            expr.append(['unit', self.unit])
+
+        if self.exclude_from_sim is not None:
+            expr.append(['exclude_from_sim', self.exclude_from_sim])
+
+        expr.append(format_bool_raw("in_bom", self.inBom, compact=False, yesno=True))
+        expr.append(format_bool_raw("on_board", self.onBoard, compact=False, yesno=True))
+        if self.dnp is not None:
+            expr.append(format_bool_raw("dnp", self.dnp, compact=False, yesno=True))
+        expr.append(format_bool_raw("fields_autoplaced", self.fieldsAutoplaced))
 
         if self.uuid:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
+            expr.append(['uuid', quote(self.uuid)])
+
         for prop in self.properties:
-            expression += prop.to_sexpr(indent+2)
+            expr.append(prop._to_sexpr_raw())
+
         for number, uuid in self.pins.items():
-            expression += f'{indents}  (pin "{dequote(number)}" (uuid "{uuid}"))\n'
+            expr.append(['pin', escape_and_quote(number), ['uuid', quote(uuid)]])
+
         if len(self.instances) != 0:
-            expression += f'{indents}  (instances\n'
+            instances_expr = ['instances']
             for instance in self.instances:
-                expression += instance.to_sexpr(indent+4)
-            expression += f'{indents}  )\n'
-        expression += f'{indents}){endline}'
-        return expression
+                instances_expr.append(instance._to_sexpr_raw())
+            expr.append(instances_expr)
+
+        return expr
+
 
 @dataclass
 class HierarchicalPin():
@@ -1320,17 +1414,22 @@ class HierarchicalPin():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['pin', escape_and_quote(self.name), self.connectionType]
 
-        expression =  f'{indents}(pin "{dequote(self.name)}" {self.connectionType} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA})\n'
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += self.effects.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        expr.append(self.effects._to_sexpr_raw())
+        return expr
 
 
 @dataclass
@@ -1391,9 +1490,12 @@ class HierarchicalSheetProjectPath():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        return f'{indents}(path "{dequote(self.sheetInstancePath)}" (page "{dequote(self.page)}")){endline}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        return ['path', escape_and_quote(self.sheetInstancePath), ['page', escape_and_quote(self.page)]]
+
 
 @dataclass
 class HierarchicalSheetProjectInstance(ProjectInstance):
@@ -1452,13 +1554,17 @@ class HierarchicalSheetProjectInstance(ProjectInstance):
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        expression = f'{indents}(project "{dequote(self.name)}"\n'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ['project', escape_and_quote(self.name)]
+
         for path in self.paths:
-            expression += path.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(path._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class HierarchicalSheet():
@@ -1583,35 +1689,49 @@ class HierarchicalSheet():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        exclude_from_sim = f' (exclude_from_sim {self.exclude_from_sim})' if self.exclude_from_sim is not None else ''
-        in_bom = f' (in_bom {self.in_bom})' if self.in_bom is not None else ''
-        on_board = f' (on_board {self.on_board})' if self.on_board is not None else ''
-        dnp = f' (dnp {self.dnp})' if self.dnp is not None else ''
-        fa = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
+    def _to_sexpr_raw(self):
+        expr = [
+            'sheet',
+            ['at', format_float(self.position.X), format_float(self.position.Y)],
+            ['size', format_float(self.width), format_float(self.height)],
+        ]
 
-        expression =  (f'{indents}(sheet '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}) '
-                       f'(size {format_float(self.width)} {format_float(self.height)}){exclude_from_sim}{in_bom}{on_board}{dnp}{fa}\n')
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += f'{indents}  (fill {self.fill.to_sexpr()})\n'
+        if self.exclude_from_sim is not None:
+            expr.append(['exclude_from_sim', self.exclude_from_sim])
+        if self.in_bom is not None:
+            expr.append(['in_bom', self.in_bom])
+        if self.on_board is not None:
+            expr.append(['on_board', self.on_board])
+        if self.dnp is not None:
+            expr.append(['dnp', self.dnp])
+
+        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(['fill', self.fill._to_sexpr_raw()])
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += self.sheetName.to_sexpr(indent+2)
-        expression += self.fileName.to_sexpr(indent+2)
+            expr.append(['uuid', quote(self.uuid)])
+
+        expr.append(self.sheetName._to_sexpr_raw())
+        expr.append(self.fileName._to_sexpr_raw())
+
         for p in self.properties:
-            expression += p.to_sexpr(indent+2)
+            expr.append(p._to_sexpr_raw())
+
         for pin in self.pins:
-            expression += pin.to_sexpr(indent+2)
+            expr.append(pin._to_sexpr_raw())
+
         if len(self.instances) != 0:
-            expression += f'{indents}  (instances\n'
+            instances_expr = ['instances']
             for instance in self.instances:
-                expression += instance.to_sexpr(indent+4)
-            expression += f'{indents}  )\n'
-        expression += f'{indents}){endline}'
-        return expression
+                instances_expr.append(instance._to_sexpr_raw())
+            expr.append(instances_expr)
+
+        return expr
+
 
 @dataclass
 class HierarchicalSheetInstance():
@@ -1670,10 +1790,12 @@ class HierarchicalSheetInstance():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return f'{indents}(path "{dequote(self.instancePath)}" (page "{dequote(self.page)}")){endline}'
+    def _to_sexpr_raw(self):
+        return ['path', escape_and_quote(self.instancePath), ['page', escape_and_quote(self.page)]]
+
 
 @dataclass
 class SymbolInstance():
@@ -1744,13 +1866,18 @@ class SymbolInstance():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(path "{dequote(self.path)}"\n'
-        expression += f'{indents}  (reference "{dequote(self.reference)}") (unit {self.unit}) (value "{dequote(self.value)}") (footprint "{dequote(self.footprint)}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+    def _to_sexpr_raw(self):
+        return [
+            'path', escape_and_quote(self.path),
+            ['reference', escape_and_quote(self.reference)],
+            ['unit', self.unit],
+            ['value', escape_and_quote(self.value)],
+            ['footprint', escape_and_quote(self.footprint)],
+        ]
+
 
 @dataclass
 class Rectangle():
@@ -1820,16 +1947,24 @@ class Rectangle():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(rectangle (start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n'
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
+    def _to_sexpr_raw(self):
+        expr = [
+            'rectangle',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class Arc():
@@ -1903,17 +2038,25 @@ class Arc():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  (f'{indents}(arc (start {format_float(self.start.X)} {format_float(self.start.Y)}) '
-                       f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})\n')
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
+    def _to_sexpr_raw(self):
+        expr = [
+            'arc',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
 
 @dataclass
 class Circle():
@@ -1983,17 +2126,25 @@ class Circle():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(circle (center {format_float(self.center.X)} {format_float(self.center.Y)}) (radius {format_float(self.radius)})\n'
-        expression += self.stroke.to_sexpr(indent+2)
-        expression += self.fill.to_sexpr(indent+2)
+    def _to_sexpr_raw(self):
+        expr = [
+            'circle',
+            ['center', format_float(self.center.X), format_float(self.center.Y)],
+            ['radius', format_float(self.radius)],
+        ]
+
+        expr.append(self.stroke._to_sexpr_raw())
+        expr.append(self.fill._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        expression += f'{indents}){endline}'
-        return expression
-    
+            expr.append(['uuid', quote(self.uuid)])
+
+        return expr
+
+
 @dataclass
 class NetclassFlag():
     """The ``netclass_flag`` token defines a netclass flag in a schematic.
@@ -2077,21 +2228,32 @@ class NetclassFlag():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        fa = f' {format_bool("fields_autoplaced", self.fieldsAutoplaced)}'
+    def _to_sexpr_raw(self):
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
 
-        expression =  (f'{indents}(netclass_flag "{dequote(self.text)}" (length {format_float(self.length)}) (shape {self.shape}) '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){fa}\n')
-        expression += self.effects.to_sexpr(indent+2)
+        expr = [
+            'netclass_flag', escape_and_quote(self.text),
+            ['length', format_float(self.length)],
+            ['shape', self.shape],
+            pos,
+            format_bool_raw('fields_autoplaced', self.fieldsAutoplaced),
+        ]
+
+        expr.append(self.effects._to_sexpr_raw())
+
         if self.uuid is not None:
-            expression += f'{indents}  (uuid "{self.uuid}")\n'
-        for property in self.properties:
-            expression += property.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(['uuid', quote(self.uuid)])
+
+        for prop in self.properties:
+            expr.append(prop._to_sexpr_raw())
+
+        return expr
+
 
 @dataclass
 class TableBorder:
@@ -2145,17 +2307,20 @@ class TableBorder:
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' ' * indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(border\n'
-        expression += format_bool('external', self.external)
-        expression += format_bool('header', self.header)
+    def _to_sexpr_raw(self):
+        expr = ['border']
+
+        expr.append(format_bool_raw('external', self.external))
+        expr.append(format_bool_raw('header', self.header))
+
         if self.stroke is not None:
-            expression += self.stroke.to_sexpr()
+            expr.append(self.stroke._to_sexpr_raw())
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr
+
 
 @dataclass
 class TableSeparators:
@@ -2209,17 +2374,20 @@ class TableSeparators:
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' ' * indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression = f'{indents}(separators\n'
-        expression += format_bool('rows', self.rows)
-        expression += format_bool('cols', self.columns)
+    def _to_sexpr_raw(self):
+        expr = ['separators']
+
+        expr.append(format_bool_raw('rows', self.rows))
+        expr.append(format_bool_raw('cols', self.columns))
+
         if self.stroke is not None:
-            expression += self.stroke.to_sexpr()
+            expr.append(self.stroke._to_sexpr_raw())
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr
+
 
 @dataclass
 class Table():
@@ -2295,29 +2463,27 @@ class Table():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        expression =  f'{indents}(table\n'
-        expression += f'{indents}(column_count {self.column_count})\n'
+    def _to_sexpr_raw(self):
+        expr = ['table']
+
+        expr.append(['column_count', self.column_count])
 
         if self.border is not None:
-            expression += self.border.to_sexpr()
+            expr.append(self.border._to_sexpr_raw())
 
         if self.separators is not None:
-            expression += self.separators.to_sexpr()
+            expr.append(self.separators._to_sexpr_raw())
 
-        cols_widths_str = " ".join([format_float(w) for w in self.column_widths])
-        expression += f'{indents}(column_widths {cols_widths_str})\n'
+        expr.append(['column_widths'] + [format_float(w) for w in self.column_widths])
+        expr.append(['row_heights'] + [format_float(h) for h in self.row_heights])
 
-        rows_heights_str = " ".join([format_float(h) for h in self.row_heights])
-        expression += f'{indents}(row_heights {rows_heights_str})\n'
-
-        if len(self.cells) > 0:
-            expression += f'{indents}(cells\n'
+        if self.cells:
+            cells_expr = ['cells']
             for cell in self.cells:
-                expression += cell.to_sexpr(table_cell=True)
-            expression += f'{indents}){endline}'
+                cells_expr.append(cell._to_sexpr_raw(table_cell=True))
+            expr.append(cells_expr)
 
-        expression += f'{indents}){endline}'
-        return expression
+        return expr

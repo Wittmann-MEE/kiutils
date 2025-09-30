@@ -42,6 +42,16 @@ def parse_sexp(sexp):
     assert not stack, "Trouble with nesting of brackets"
     return out[0]
 
+def sexp_to_string(expr) -> str:
+    """Convert a nested list-based S-expression into a raw string."""
+    if isinstance(expr, list):
+        if len(expr) < 1:
+            return ''
+        else:
+            return '(' + ' '.join(sexp_to_string(item) for item in expr) + ')'
+
+    return str(expr)
+
 """
 Nearly a line-by-line translation of KiCad's C++ "Prettify" function (commit id: 1ec47a053baf50c3d7b57a0efbbd2d4dfc03fb6e)
 Source: https://gitlab.com/kicad/code/kicad/-/blob/master/common/io/kicad/kicad_io_utils.cpp

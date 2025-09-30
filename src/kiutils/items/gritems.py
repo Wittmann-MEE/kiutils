@@ -21,9 +21,10 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
 class GrText():
@@ -112,21 +113,34 @@ class GrText():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        ko = ' knockout' if self.knockout else ''
-        posA = f' {self.position.angle}' if self.position.angle is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}"{ko})' if self.layer is not None else ''
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
+    def _to_sexpr_raw(self):
+        expr = ['gr_text', escape_and_quote(self.text)]
 
-        expression =  f'{indents}(gr_text "{dequote(self.text)}"{locked} (at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}){layer}{tstamp}\n'
-        expression += f'{indents}  {self.effects.to_sexpr()}'
+        expr.append(format_bool_raw('locked', self.locked))
+
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        layer = ['layer', escape_and_quote(self.layer)] if self.layer is not None else None
+        if layer and self.knockout:
+            layer.append('knockout')
+        if layer:
+            expr.append(layer)
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        expr.append(self.effects._to_sexpr_raw())
+
         if self.renderCache is not None:
-            expression += self.renderCache.to_sexpr(indent+2)
-        expression += f'{indents}){endline}'
-        return expression
+            expr.append(self.renderCache._to_sexpr_raw())
+
+        return expr
 
 @dataclass
 class GrTextBox():
@@ -188,7 +202,8 @@ class GrTextBox():
     def from_sexpr(cls, exp: list) -> GrTextBox:
         raise Exception('We never dealt with this before.'
                         'Most definitely there were changes introduced between Kicad 7 and 9.'
-                        'If you know what you are doing, proceed to verify/fix and remove the exception.')
+                        'If you know what you are doing, proceed to verify/fix and remove the exception,'
+                        'or contact the maintainer.')
 
         # """Convert the given S-Expression into a GrTextBox object
         #
@@ -360,27 +375,35 @@ class GrLine():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        angle = f' (angle {self.angle}' if self.angle is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'gr_line',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
-        width = ''
+        if self.angle is not None: expr.append(['angle', format_float(self.angle)])
         if self.width is not None:
-            width = f' (width {format_float(self.width)})'
-            # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
+            expr.append(['width', format_float(self.width)])
 
         if self.stroke is not None:
-            width = f' {self.stroke.to_sexpr()}'
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(gr_line '
-                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{angle}{width}{locked}{layer}{tstamp}){endline}')
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class GrRect():
@@ -461,27 +484,37 @@ class GrRect():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        fill = f' (fill {self.fill})' if self.fill is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'gr_rect',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
-        width = ''
         if self.width is not None:
-            width = f' (width {format_float(self.width)})'
-            # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
+            expr.append(['width', format_float(self.width)])
 
         if self.stroke is not None:
-            width = f' {self.stroke.to_sexpr()}'
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(gr_rect '
-                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{width}{fill}{locked}{layer}{tstamp}){endline}')
+        if self.fill is not None:
+            expr.append(['fill', self.fill])
+
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class GrCircle():
@@ -562,27 +595,37 @@ class GrCircle():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        fill = f' (fill {self.fill})' if self.fill is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'gr_circle',
+            ['center', format_float(self.center.X), format_float(self.center.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
-        width = ''
         if self.width is not None:
-            width = f' (width {format_float(self.width)})'
-            # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
+            expr.append(['width', format_float(self.width)])
 
         if self.stroke is not None:
-            width = f' {self.stroke.to_sexpr()}'
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(gr_circle '
-                f'(center {format_float(self.center.X)} {format_float(self.center.Y)}) (end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{width}{fill}{locked}{layer}{tstamp}){endline}')
+        if self.fill is not None:
+            expr.append(['fill', self.fill])
+
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class GrArc():
@@ -663,28 +706,35 @@ class GrArc():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
+    def _to_sexpr_raw(self):
+        expr = [
+            'gr_arc',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
-        width = ''
         if self.width is not None:
-            width = f' (width {format_float(self.width)})'
-            # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
+            expr.append(['width', format_float(self.width)])
 
         if self.stroke is not None:
-            width = f' {self.stroke.to_sexpr()}'
+            expr.append(self.stroke._to_sexpr_raw())
 
-        return (f'{indents}(gr_arc '
-                f'(start {format_float(self.start.X)} {format_float(self.start.Y)}) '
-                f'(mid {format_float(self.mid.X)} {format_float(self.mid.Y)}) '
-                f'(end {format_float(self.end.X)} {format_float(self.end.Y)})'
-                f'{width}{locked}{layer}{tstamp}){endline}')
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class GrPoly():
@@ -759,44 +809,49 @@ class GrPoly():
 
         Args:
             - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
-            - newline (bool): Adds a newline to the end of the output. Defaults to True.
-            - pts_newline (bool): Adds a newline for the ``(pts ..)`` token as KiCad treats
-                                  this different in Board files than Footprint files. Defaults to 
-                                  False.
+            - newline (bool): Adds a newline for the ``(pts ..)`` token as KiCad treats
+                              this different in Board files than Footprint files. Defaults to
+                              False.
+            - pts_newline (bool): Adds a newline for the ``(pts ..)`` token. Defaults to False.
 
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
         if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+            return ''
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        fill = f' (fill {self.fill})' if self.fill is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        if pts_newline:
-            expression =  f'{indents}(gr_poly\n'
-            expression += f'{indents}  (pts\n'
-        else:
-            expression =  f'{indents}(gr_poly (pts\n'
+    def _to_sexpr_raw(self):
+        expr = ['gr_poly']
 
-        width = ''
+        pts = ['pts']
+        for point in self.coordinates:
+            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts)
+
         if self.width is not None:
-            width = f' (width {format_float(self.width)})'
-            # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
+            expr.append(['width', format_float(self.width)])
 
         if self.stroke is not None:
-            width = f' {self.stroke.to_sexpr()}'
+            expr.append(self.stroke._to_sexpr_raw())
 
-        for point in self.coordinates:
-            expression += f'{indents}    (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}  ){width}{fill}{locked}{layer}{tstamp}){endline}'
-        return expression
+        if self.fill is not None:
+            expr.append(['fill', self.fill])
+
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class GrCurve():
@@ -870,30 +925,38 @@ class GrCurve():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
         if len(self.coordinates) == 0:
-            return f'{indents}{endline}'
+            return ''
 
-        tstamp = f' (uuid "{self.tstamp}")' if self.tstamp is not None else ''
-        layer =  f' (layer "{dequote(self.layer)}")' if self.layer is not None else ''
-        locked = f' {format_bool("locked", self.locked)}'
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        width = ''
+    def _to_sexpr_raw(self):
+        expr = ['gr_curve']
+
+        pts = ['pts']
+        for point in self.coordinates:
+            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+        expr.append(pts)
+
         if self.width is not None:
-            width = f' (width {format_float(self.width)})'
-            # Little sanity check
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
+            expr.append(['width', format_float(self.width)])
 
         if self.stroke is not None:
-            width = f' {self.stroke.to_sexpr()}'
+            expr.append(self.stroke._to_sexpr_raw())
 
-        expression = f'{indents}(gr_curve (pts\n'
-        for point in self.coordinates:
-            expression += f'{indents}  (xy {format_float(point.X)} {format_float(point.Y)})\n'
-        expression += f'{indents}){width}{locked}{layer}{tstamp}){endline}'
-        return expression
+        expr.append(format_bool_raw('locked', self.locked))
+
+        if self.layer is not None:
+            expr.append(['layer', escape_and_quote(self.layer)])
+
+        if self.tstamp is not None:
+            expr.append(['uuid', quote(self.tstamp)])
+
+        return expr
+
 
 @dataclass
 class GrStroke():
@@ -934,8 +997,7 @@ class GrStroke():
         return object
 
     def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
-        """Generate the S-Expression representing this object. When no coordinates are set
-        in the curve, the resulting S-Expression will be left empty.
+        """Generate the S-Expression representing this object.
 
         Args:
             - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
@@ -944,7 +1006,8 @@ class GrStroke():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return f'{indents}(stroke (width {format_float(self.width)}) (type {self.type})){endline}'
+    def _to_sexpr_raw(self):
+        return ['stroke', ['width', format_float(self.width)], ['type', self.type]]
