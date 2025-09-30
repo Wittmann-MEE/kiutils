@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.8.1 - 30.09.2025
+### Non-breaking changes
+- Fixed: Broken imports introduced in v1.8.0
+
 ## v1.8.0 - 30.09.2025
 ### Non-breaking changes (hopefully)
 - Cleanup: Major refactoring of s-expression handling
