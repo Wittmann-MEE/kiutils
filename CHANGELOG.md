@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.8.0 - 30.09.2025
+### Non-breaking changes (hopefully)
+- Cleanup: Major refactoring of s-expression handling
+
 ## v1.7.0 - 26.09.2025
 ### Breaking changes
 - Fixed: Preserve double backslashes in Datasheet paths
