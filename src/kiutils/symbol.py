@@ -19,12 +19,11 @@ import re
 
 from kiutils.items.common import Property, Font, EmbeddedFile
 from kiutils.items.syitems import *
-from kiutils.utils import sexpr
-from kiutils.utils.sexpr import sexp_prettify as prettify
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
+from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import parse_bool, format_bool, format_bool_raw
 
 
 @dataclass
@@ -77,10 +76,12 @@ class SymbolAlternativePin():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        return f'{indents}(alternate "{dequote(self.pinName)}" {self.electricalType} {self.graphicalStyle}){endline}'
+    def _to_sexpr_raw(self):
+        return ['alternate', escape_and_quote(self.pinName), self.electricalType, self.graphicalStyle]
+
 
 @dataclass
 class SymbolPin():
@@ -176,41 +177,38 @@ class SymbolPin():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        newLineAdded = False
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        hide = f' {format_bool("hide", self.hide)}'
-        posA = f' {format_float(self.position.angle)}' if self.position.angle is not None else ''
-        nameEffects = f' {self.nameEffects.to_sexpr(newline=False)}' if self.nameEffects is not None else ''
-        numberEffects = f' {self.numberEffects.to_sexpr(newline=False)}' if self.numberEffects is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['pin', self.electricalType, self.graphicalStyle]
 
-        expression =  (f'{indents}(pin {self.electricalType} {self.graphicalStyle} '
-                       f'(at {format_float(self.position.X)} {format_float(self.position.Y)}{posA}) (length {format_float(self.length)}){hide}')
-        
-        # Since KiCad v7 nightly: Missing name and number effects print both other tokens into 
-        # the same line.
-        # Constrained in: schematic/since_v7/test_symbolPinOptionalTokens
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
+
+        expr.append(['length', format_float(self.length)])
+
+        if self.hide is not None:
+            expr.append(format_bool_raw('hide', self.hide))
+
+        # Name and number, with conditional line break handling
         if self.nameEffects is None and self.numberEffects is None:
-            expression += f' (name "{dequote(self.name)}") (number "{dequote(self.number)}")'
+            expr.append(['name', escape_and_quote(self.name)])
+            expr.append(['number', escape_and_quote(self.number)])
         else:
-            expression += f'\n{indents}  (name "{dequote(self.name)}"{nameEffects})\n'
-            expression += f'{indents}  (number "{dequote(self.number)}"{numberEffects})\n'
-            newLineAdded = True
+            expr.append(['name', escape_and_quote(self.name), self.nameEffects._to_sexpr_raw()])
+            expr.append(['number', escape_and_quote(self.number), self.numberEffects._to_sexpr_raw()])
 
-        # Alternative pins always generate a line break
         if self.alternatePins:
-            if not newLineAdded:
-                expression += '\n' 
-            newLineAdded = True
-            for alternativePin in self.alternatePins:
-                expression += alternativePin.to_sexpr(indent+2)
+            alternate_pins = ['alternate_pins']
+            for pin in self.alternatePins:
+                alternate_pins.append(pin._to_sexpr_raw())
+            expr.append(alternate_pins)
 
-        if newLineAdded:
-            expression += f'{indents}){endline}'
-        else:
-            expression += f'){endline}'
-        return expression
+        return expr
+
 
 @dataclass
 class Symbol():
@@ -360,10 +358,8 @@ class Symbol():
     units: List[Symbol] = field(default_factory=list)
     """The ``units`` can be one or more child symbol tokens embedded in a parent symbol"""
 
-    # Available since KiCad v9
-    # TODO Update docs
-
     exclude_from_sim: Optional[bool] = None
+    """The ``exclude_from_sim`` token indicates that component should not be taken into account during simulation"""
 
     embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol."""
@@ -473,39 +469,55 @@ class Symbol():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' '*indent
-        endline = '\n' if newline else ''
-        obtext, ibtext = '', ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        inbom = f' {format_bool("in_bom", self.inBom, compact=False, yesno=True)}' if self.inBom is not None else ''
-        onboard = f' {format_bool("on_board", self.onBoard, compact=False, yesno=True)}' if self.onBoard is not None else ''
-        power = f' ({format_bool("power", self.isPower, compact=True)})' if self.isPower else ''
-        exclude_from_sim = f' {format_bool("exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True)}' if self.exclude_from_sim is not None else ''
-        pnhide = f' {format_bool("hide", self.pinNamesHide)}'
-        pnoffset = f' (offset {self.pinNamesOffset})' if self.pinNamesOffset is not None else ''
-        pinnames = f' (pin_names{pnoffset}{pnhide})' if self.pinNames else ''
-        pinnumbers = f' (pin_numbers (hide yes))' if self.hidePinNumbers else ''
-        extends = f' (extends "{dequote(self.extends)}")' if self.extends is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['symbol', escape_and_quote(self.libId)]
 
-        expression =  f'{indents}(symbol "{dequote(self.libId)}"{extends}{power}{pinnumbers}{pinnames}{exclude_from_sim}{inbom}{onboard}\n'
+        if self.extends is not None:
+            expr.append(['extends', escape_and_quote(self.extends)])
+
+        if self.isPower:
+            expr.append(['power'])
+
+        if self.hidePinNumbers:
+            expr.append(['pin_numbers', ['hide', 'yes']])
+
+        if self.pinNames:
+            pin_names = ['pin_names']
+            if self.pinNamesOffset is not None:
+                pin_names.append(['offset', self.pinNamesOffset])
+            if self.pinNamesHide:
+                pin_names.append(format_bool_raw('hide', self.pinNamesHide))
+            expr.append(pin_names)
+
+        if self.exclude_from_sim is not None:
+            expr.append(format_bool_raw('exclude_from_sim', self.exclude_from_sim, compact=False, yesno=True))
+        if self.inBom is not None:
+            expr.append(format_bool_raw('in_bom', self.inBom, compact=False, yesno=True))
+        if self.onBoard is not None:
+            expr.append(format_bool_raw('on_board', self.onBoard, compact=False, yesno=True))
+
         for item in self.properties:
-            expression += item.to_sexpr(indent+2)
+            expr.append(item._to_sexpr_raw())
         for item in self.graphicItems:
-            expression += item.to_sexpr(indent+2)
+            expr.append(item._to_sexpr_raw())
         for item in self.pins:
-            expression += item.to_sexpr(indent+2)
+            expr.append(item._to_sexpr_raw())
         for item in self.units:
-            expression += item.to_sexpr(indent+2)
-        if self.embedded_fonts is not None:
-            expression += f' {format_bool("embedded_fonts", self.embedded_fonts, compact=False, yesno=True)}{endline}'
-        if len(self.embedded_files) > 0:
-            expression += '(embedded_files'
-            for f in self.embedded_files:
-                expression += f' {f.to_sexpr(indent+2)}'
-            expression += ')'
+            expr.append(item._to_sexpr_raw())
 
-        expression += f'{indents}){endline}'
-        return expression
+        if self.embedded_fonts is not None:
+            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
+
+        if len(self.embedded_files) > 0:
+            embedded_files = ['embedded_files']
+            for f in self.embedded_files:
+                embedded_files.append(f._to_sexpr_raw())
+            expr.append(embedded_files)
+
+        return expr
 
 @dataclass
 class SymbolLib():
@@ -534,6 +546,7 @@ class SymbolLib():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[str] = None
+    """The ``embedded_fonts`` token defines if the embedded fonts are used in the symbol library."""
 
     @classmethod
     def from_file(cls, filepath: str, encoding: Optional[str] = None) -> SymbolLib:
@@ -625,18 +638,26 @@ class SymbolLib():
         Returns:
             - str: S-Expression of this object
         """
-        indents = ' ' * indent
-        endline = '\n' if newline else ''
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
 
-        version = f' (version {self.version})' if self.version is not None else ''
-        generator = f' (generator "{self.generator}")' if self.generator is not None else ''
-        generator_version = f' (generator_version "{self.generator_version}")' if self.generator_version is not None else ''
+    def _to_sexpr_raw(self):
+        expr = ['kicad_symbol_lib']
 
-        expression =  f'{indents}(kicad_symbol_lib{version}{generator}{generator_version}\n'
+        if self.version is not None:
+            expr.append(['version', self.version])
+
+        if self.generator is not None:
+            expr.append(['generator', escape_and_quote(self.generator)])
+
+        if self.generator_version is not None:
+            expr.append(['generator_version', escape_and_quote(self.generator_version)])
+
+        # Add symbols to the raw expression
         for item in self.symbols:
-            expression += f'{indents}{item.to_sexpr(indent+2)}'
-        if self.embedded_fonts is not None:
-            expression += f' (embedded_fonts {self.embedded_fonts}){endline}'
+            expr.append(item._to_sexpr_raw())
 
-        expression += f'{indents}){endline}'
-        return expression
+        if self.embedded_fonts is not None:
+            expr.append(['embedded_fonts', self.embedded_fonts])
+
+        return expr

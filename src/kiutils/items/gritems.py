@@ -123,14 +123,12 @@ class GrText():
 
         pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
         if self.position.angle is not None:
-            pos.append(self.position.angle)
-
+            pos.append(format_float(self.position.angle))
         expr.append(pos)
 
         layer = ['layer', escape_and_quote(self.layer)] if self.layer is not None else None
         if layer and self.knockout:
             layer.append('knockout')
-
         if layer:
             expr.append(layer)
 
@@ -387,7 +385,7 @@ class GrLine():
             ['end', format_float(self.end.X), format_float(self.end.Y)],
         ]
 
-        if self.angle is not None: expr.append(['angle', self.angle])
+        if self.angle is not None: expr.append(['angle', format_float(self.angle)])
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
@@ -831,7 +829,6 @@ class GrPoly():
         pts = ['pts']
         for point in self.coordinates:
             pts.append(['xy', format_float(point.X), format_float(point.Y)])
-
         expr.append(pts)
 
         if self.width is not None:
@@ -940,7 +937,6 @@ class GrCurve():
         pts = ['pts']
         for point in self.coordinates:
             pts.append(['xy', format_float(point.X), format_float(point.Y)])
-
         expr.append(pts)
 
         if self.width is not None:

@@ -386,16 +386,16 @@ class Font():
         if self.face is not None:
             expr.append(['face', escape_and_quote(self.face)])
 
-        expr.append(['size', self.height, self.width])
-
-        if self.color is not None:
-            expr.append(self.color._to_sexpr_raw())
+        expr.append(['size', format_float(self.height), format_float(self.width)])
 
         if self.thickness is not None:
             expr.append(['thickness', self.thickness])
 
         if self.bold:
             expr.append(format_bool_raw('bold', self.bold))
+
+        if self.color is not None:
+            expr.append(self.color._to_sexpr_raw())
 
         if self.italic:
             expr.append(format_bool_raw('italic', self.italic))
@@ -554,8 +554,10 @@ class Effects():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['effects']
-        expr.append(self.font._to_sexpr_raw())
+        expr = [
+            'effects',
+            self.font._to_sexpr_raw(),
+        ]
 
         justify_raw = self.justify._to_sexpr_raw()
         if len(justify_raw) > 0:
@@ -690,9 +692,13 @@ class Group():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['group', escape_and_quote(self.name), ['uuid', escape_and_quote(self.id)]]
-        expr.append(format_bool_raw("locked", self.locked))
-        expr.append(['members'] + [quote(member) for member in self.members])
+        expr = [
+            'group',
+            escape_and_quote(self.name),
+            ['uuid', escape_and_quote(self.id)],
+            format_bool_raw("locked", self.locked),
+            ['members'] + [quote(member) for member in self.members],
+        ]
         return expr
 
 
@@ -970,18 +976,18 @@ class Property():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
-
-        if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
-
         if (self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0
                 and self.value not in ['.','~'] and not is_url(self.value)):
             value = str(PureWindowsPath(self.value)).replace("\\", "\\\\")
         else:
             value = self.value
 
-        expr = ['property', escape_and_quote(self.key), escape_and_quote(value), pos]
+        expr = ['property', escape_and_quote(self.key), escape_and_quote(value)]
+
+        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        if self.position.angle is not None:
+            pos.append(format_float(self.position.angle))
+        expr.append(pos)
 
         if self.id is not None:
             expr.append(['id', self.id])

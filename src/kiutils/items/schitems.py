@@ -721,6 +721,8 @@ class LocalLabel():
     """The ``fields_autoplaced`` is a flag that indicates that any PROPERTIES associated
     with the global label have been place automatically"""
 
+    properties: list[Property] = field(default_factory=list)
+
     @classmethod
     def from_sexpr(cls, exp: list) -> LocalLabel:
         """Convert the given S-Expresstion into a LocalLabel object
@@ -750,7 +752,7 @@ class LocalLabel():
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': continue #Ignore this please
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Exp: {exp}")
             
@@ -781,6 +783,9 @@ class LocalLabel():
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
+
+        for prop in self.properties:
+            expr.append(prop._to_sexpr_raw())
 
         return expr
 
@@ -916,6 +921,8 @@ class HierarchicalLabel():
     """The ``fields_autoplaced`` is a flag that indicates that any PROPERTIES associated
     with the global label have been place automatically"""
 
+    properties: list[Property] = field(default_factory=list)
+
     @classmethod
     def from_sexpr(cls, exp: list) -> HierarchicalLabel:
         """Convert the given S-Expresstion into a HierarchicalLabel object
@@ -946,7 +953,7 @@ class HierarchicalLabel():
             elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
             elif item[0] == 'shape': object.shape = item[1]
             elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': continue #Ignore this please
+            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -976,11 +983,12 @@ class HierarchicalLabel():
         expr.append(pos)
 
         expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
-
+        expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
 
-        expr.append(self.effects._to_sexpr_raw())
+        for prop in self.properties:
+            expr.append(prop._to_sexpr_raw())
 
         return expr
 
@@ -1685,10 +1693,11 @@ class HierarchicalSheet():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['sheet']
-
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
-        expr.append(['size', format_float(self.width), format_float(self.height)])
+        expr = [
+            'sheet',
+            ['at', format_float(self.position.X), format_float(self.position.Y)],
+            ['size', format_float(self.width), format_float(self.height)],
+        ]
 
         if self.exclude_from_sim is not None:
             expr.append(['exclude_from_sim', self.exclude_from_sim])
@@ -1861,14 +1870,13 @@ class SymbolInstance():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['path', escape_and_quote(self.path)]
-
-        expr.append(['reference', escape_and_quote(self.reference)])
-        expr.append(['unit', self.unit])
-        expr.append(['value', escape_and_quote(self.value)])
-        expr.append(['footprint', escape_and_quote(self.footprint)])
-
-        return expr
+        return [
+            'path', escape_and_quote(self.path),
+            ['reference', escape_and_quote(self.reference)],
+            ['unit', self.unit],
+            ['value', escape_and_quote(self.value)],
+            ['footprint', escape_and_quote(self.footprint)],
+        ]
 
 
 @dataclass
@@ -1943,9 +1951,11 @@ class Rectangle():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['rectangle',
-                ['start', format_float(self.start.X), format_float(self.start.Y)],
-                ['end', format_float(self.end.X), format_float(self.end.Y)]]
+        expr = [
+            'rectangle',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
@@ -2032,10 +2042,12 @@ class Arc():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['arc',
-                ['start', format_float(self.start.X), format_float(self.start.Y)],
-                ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
-                ['end', format_float(self.end.X), format_float(self.end.Y)]]
+        expr = [
+            'arc',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
@@ -2118,9 +2130,11 @@ class Circle():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['circle',
-                ['center', format_float(self.center.X), format_float(self.center.Y)],
-                ['radius', format_float(self.radius)]]
+        expr = [
+            'circle',
+            ['center', format_float(self.center.X), format_float(self.center.Y)],
+            ['radius', format_float(self.radius)],
+        ]
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
@@ -2222,11 +2236,13 @@ class NetclassFlag():
         if self.position.angle is not None:
             pos.append(format_float(self.position.angle))
 
-        expr = ['netclass_flag', escape_and_quote(self.text),
-                ['length', format_float(self.length)],
-                ['shape', self.shape],
-                pos,
-                format_bool_raw('fields_autoplaced', self.fieldsAutoplaced)]
+        expr = [
+            'netclass_flag', escape_and_quote(self.text),
+            ['length', format_float(self.length)],
+            ['shape', self.shape],
+            pos,
+            format_bool_raw('fields_autoplaced', self.fieldsAutoplaced),
+        ]
 
         expr.append(self.effects._to_sexpr_raw())
 

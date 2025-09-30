@@ -99,7 +99,7 @@ class Board():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[bool] = None
-    """The ``embeddedFonts`` indicates that there are fonts embedded into this component"""
+    """The ``embedded_fonts`` indicates that there are fonts embedded into this component"""
 
     embedded_files: list[EmbeddedFile] = field(default_factory=list)
     """The ``embedded_files`` store data of embedded files"""
@@ -276,15 +276,15 @@ class Board():
         expr = [
             'kicad_pcb',
             ['version', self.version],
-            ['generator', quote(self.generator)]]
+            ['generator', quote(self.generator)],
+        ]
 
-        # Add generator_version if it exists
         if self.generator_version is not None:
             expr.append(['generator_version', quote(self.generator_version)])
 
-        # Add the general, paper, and title block
         expr.append(self.general._to_sexpr_raw())
         expr.append(self.paper._to_sexpr_raw())
+
         if self.titleBlock is not None:
             expr.append(self.titleBlock._to_sexpr_raw())
 
@@ -296,10 +296,8 @@ class Board():
 
         # Properties
         if len(self.properties) > 0:
-            expr.append([
-                ['property', escape_and_quote(key), escape_and_quote(value)]
-                for key, value in self.properties.items()
-            ])
+            for key, value in self.properties.items():
+                expr.append(['property', escape_and_quote(key), escape_and_quote(value)])
 
         # Nets
         if len(self.nets) > 0:

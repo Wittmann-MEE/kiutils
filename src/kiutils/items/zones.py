@@ -109,7 +109,7 @@ class KeepoutSettings():
             ['vias', self.vias],
             ['pads', self.pads],
             ['copperpour', self.copperpour],
-            ['footprints', self.footprints]
+            ['footprints', self.footprints],
         ]
 
 
@@ -430,7 +430,7 @@ class FilledPolygon():
         expr = ['filled_polygon', ['layer', escape_and_quote(self.layer)]]
 
         if self.island:
-            expr.append(['island'])
+            expr.append(format_bool_raw('island', self.island, compact=True))
 
         pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
         expr.append(['pts'] + pts)
@@ -506,7 +506,11 @@ class FillSegments():
 
     def _to_sexpr_raw(self):
         pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
-        return ['fill_segments', ['layer', escape_and_quote(self.layer)], ['pts'] + pts]
+        return [
+            'fill_segments',
+            ['layer', escape_and_quote(self.layer)],
+            ['pts'] + pts,
+        ]
 
 
 @dataclass
@@ -676,12 +680,13 @@ class Zone():
         else:
             layer_token = 'layers'
 
-        expr = ['zone',
-                ['net', self.net],
-                ['net_name', escape_and_quote(self.netName)],
-                format_bool_raw('locked', self.locked),
-                [layer_token] + layers_list
-                ]
+        expr = [
+            'zone',
+            ['net', self.net],
+            ['net_name', escape_and_quote(self.netName)],
+            format_bool_raw('locked', self.locked),
+            [layer_token] + layers_list,
+        ]
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])
@@ -782,5 +787,5 @@ class PlacementSettings():
         return [
             'placement',
             ['enabled', self.enabled],
-            ['sheetname', quote(self.sheet_name)]
+            ['sheetname', quote(self.sheet_name)],
         ]

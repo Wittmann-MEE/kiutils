@@ -1047,7 +1047,7 @@ class Segment():
         expr.extend([
             ['layer', escape_and_quote(self.layer)],
             ['net', self.net],
-            ['uuid', quote(self.tstamp)]
+            ['uuid', quote(self.tstamp)],
         ])
 
         return expr
@@ -1166,7 +1166,7 @@ class Via():
         expr.extend([
             ['at', format_float(self.position.X), format_float(self.position.Y)],
             ['size', format_float(self.size)],
-            ['drill', self.drill]
+            ['drill', self.drill],
         ])
 
         layer_list = ['layers']
@@ -1296,7 +1296,7 @@ class Arc():
             ['end', format_float(self.end.X), format_float(self.end.Y)],
             ['width', format_float(self.width)],
             ['layer', escape_and_quote(self.layer)],
-            ['net', self.net]
+            ['net', self.net],
         ])
 
         if self.tstamp is not None:
@@ -1388,7 +1388,7 @@ class Target():
             ['size', format_float(self.size)],
             ['width', format_float(self.width)],
             ['layer', quote(self.layer)],
-            ['uuid', quote(self.tstamp)]
+            ['uuid', quote(self.tstamp)],
         ]
 
 
@@ -1574,12 +1574,13 @@ class Generated():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['generated']
-
-        expr.append(['uuid', escape_and_quote(self.uuid)])
-        expr.append(['type', self.type])
-        expr.append(['name', escape_and_quote(self.name)])
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr = [
+            'generated',
+            ['uuid', escape_and_quote(self.uuid)],
+            ['type', self.type],
+            ['name', escape_and_quote(self.name)],
+            ['layer', escape_and_quote(self.layer)],
+        ]
 
         if self.locked:
             expr.append(format_bool_raw("locked", self.locked))

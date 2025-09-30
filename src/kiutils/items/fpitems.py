@@ -135,16 +135,12 @@ class FpText():
         pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
         if self.position.angle is not None:
             pos.append(format_float(self.position.angle))
-
-        unlocked_pos = format_bool_raw('unlocked', self.position.unlocked)
-        if unlocked_pos:
-            pos.append(unlocked_pos)
-
+        if self.position.unlocked:
+            pos.append(format_bool_raw('unlocked', self.position.unlocked))
         expr.append(pos)
 
-        unlocked = format_bool_raw('unlocked', self.unlocked)
-        if unlocked:
-            expr.append(unlocked)
+        if self.unlocked:
+            expr.append(format_bool_raw('unlocked', self.unlocked))
 
         if self.layer is not None:
             layer_expr = ['layer', escape_and_quote(self.layer)]
@@ -152,9 +148,8 @@ class FpText():
                 layer_expr.append('knockout')
             expr.append(layer_expr)
 
-        hide = format_bool_raw('hide', self.hide)
-        if hide:
-            expr.append(hide)
+        if self.hide:
+            expr.append(format_bool_raw('hide', self.hide))
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])
@@ -253,10 +248,11 @@ class FpLine():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fp_line']
-
-        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
-        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+        expr = [
+            'fp_line',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
         if self.width is not None:
             expr.append(['width', self.width])
@@ -361,10 +357,11 @@ class FpRect():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fp_rect']
-
-        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
-        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+        expr = [
+            'fp_rect',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
         if self.width is not None:
             expr.append(['width', self.width])
@@ -638,10 +635,11 @@ class FpCircle():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fp_circle']
-
-        expr.append(['center', format_float(self.center.X), format_float(self.center.Y)])
-        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+        expr = [
+            'fp_circle',
+            ['center', format_float(self.center.X), format_float(self.center.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
         if self.width is not None:
             expr.append(['width', self.width])
@@ -748,11 +746,12 @@ class FpArc():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fp_arc']
-
-        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
-        expr.append(['mid', format_float(self.mid.X), format_float(self.mid.Y)])
-        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+        expr = [
+            'fp_arc',
+            ['start', format_float(self.start.X), format_float(self.start.Y)],
+            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
+            ['end', format_float(self.end.X), format_float(self.end.Y)],
+        ]
 
         if self.width is not None:
             expr.append(['width', self.width])
@@ -973,8 +972,8 @@ class FpCurve():
         pts_expr = ['pts']
         for point in self.coordinates:
             pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
-
         expr.append(pts_expr)
+
         expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.width is not None:
@@ -1078,17 +1077,19 @@ class FpProperty:
         expr = ['property', prop_type, escape_and_quote(self.text)]
 
         if self.position is not None:
-            pos = self.position
-            expr.append(['at', format_float(pos.X), format_float(pos.Y)] + ([pos.angle] if pos.angle is not None else []))
+            pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+            if self.position.angle is not None:
+                pos.append(format_float(self.position.angle))
+            expr.append(pos)
 
         if self.unlocked is not None:
             expr.append(['unlocked', self.unlocked])
 
         if self.layer is not None:
-            layer_str = escape_and_quote(self.layer)
+            layer_expr = ['layer', escape_and_quote(self.layer)]
             if self.ko:
-                layer_str = f"{layer_str} knockout"
-            expr.append(['layer', layer_str])
+                layer_expr.append("knockout")
+            expr.append(layer_expr)
 
         if self.hide is not None:
             expr.append(['hide', self.hide])
