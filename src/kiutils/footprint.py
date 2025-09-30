@@ -25,7 +25,7 @@ from kiutils.items.zones import Zone
 from kiutils.items.common import Image, Coordinate, Net, Group, Font
 from kiutils.items.fpitems import *
 from kiutils.items.gritems import *
-from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string
+from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
@@ -1001,7 +1001,7 @@ class Footprint():
         with open(filepath, 'r', encoding=encoding) as infile:
             rawFootprint = infile.read()
 
-            fpData = sexpr.parse_sexp(rawFootprint)
+            fpData = parse_sexp(rawFootprint)
             return cls.from_sexpr(fpData)
 
     @classmethod

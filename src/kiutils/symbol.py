@@ -568,7 +568,7 @@ class SymbolLib():
             raise Exception("Given path is not a file!")
 
         with open(filepath, 'r', encoding=encoding) as infile:
-            item = cls.from_sexpr(sexpr.parse_sexp(infile.read()))
+            item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
 

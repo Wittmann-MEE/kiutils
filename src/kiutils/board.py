@@ -23,7 +23,7 @@ from kiutils.items.zones import Zone
 from kiutils.items.brditems import *
 from kiutils.items.gritems import *
 from kiutils.items.dimensions import Dimension
-from kiutils.utils.string_utils import dequote
+from kiutils.utils.string_utils import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
