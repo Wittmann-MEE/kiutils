@@ -1099,10 +1099,10 @@ class Footprint():
             expr.append(['version', self.version])
 
         if self.generator is not None:
-            expr.append(['generator', self.generator])
+            expr.append(['generator', quote(self.generator)])
 
         if self.generator_version is not None:
-            expr.append(['generator_version', self.generator_version])
+            expr.append(['generator_version', quote(self.generator_version)])
 
         expr.append(['layer', escape_and_quote(self.layer)])
 
