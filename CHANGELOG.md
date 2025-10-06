@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.8.2 - 06.10.2025
+### Non-breaking changes
+- Fixed: Add back missing quotes around `generator` and `generator_version` in footprint
+
 ## v1.8.1 - 30.09.2025
 ### Non-breaking changes
 - Fixed: Broken imports introduced in v1.8.0
