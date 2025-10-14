@@ -1237,9 +1237,9 @@ class SchematicSymbol():
     Available since KiCad v7."""
 
     # Available since KiCad v9
-    # TODO Update docs
 
-    exclude_from_sim: Optional[str] = None
+    exclude_from_sim: Optional[bool] = None
+    """The ``exclude_from_sim`` token indicates that component should not be taken into account during simulation"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> SchematicSymbol:
@@ -1263,17 +1263,17 @@ class SchematicSymbol():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
             elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
             elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
             elif item[0] == 'dnp': object.dnp = parse_bool(item, 'dnp')
+            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'lib_id': object.libId = item[1]
             elif item[0] == 'lib_name': object.libName = item[1]
             elif item[0] == 'uuid': object.uuid = item[1]
             elif item[0] == 'unit': object.unit = item[1]
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
             elif item[0] == 'pin': object.pins.update({item[1]: item[2][1]})
@@ -1318,7 +1318,7 @@ class SchematicSymbol():
             expr.append(['unit', self.unit])
 
         if self.exclude_from_sim is not None:
-            expr.append(['exclude_from_sim', self.exclude_from_sim])
+            expr.append(format_bool_raw("exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True))
 
         expr.append(format_bool_raw("in_bom", self.inBom, compact=False, yesno=True))
         expr.append(format_bool_raw("on_board", self.onBoard, compact=False, yesno=True))
