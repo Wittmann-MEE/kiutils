@@ -1,5 +1,10 @@
 # kiutils - CHANGELOG
 
+## v1.8.3 - 16.10.2025
+### Non-breaking changes
+- Fixed: Storing of `do_not_autoplace` field in Property
+- Changed: type of `exclude_from_sim` in Schematic Symbol from string to bool
+
 ## v1.8.2 - 06.10.2025
 ### Non-breaking changes
 - Fixed: Add back missing quotes around `generator` and `generator_version` in footprint
