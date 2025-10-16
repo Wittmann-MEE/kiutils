@@ -14,6 +14,8 @@ def parse_bool(item: Union[list, str], key: str) -> bool:
     elif isinstance(item, list) and len(item) == 2:
         return item[0] == key and item[1].lower() == "yes"
 
+    return False
+
 
 def format_bool(key: str, value: bool, compact: bool = False, yesno: bool = False) -> str:
     if not isinstance(value, bool):

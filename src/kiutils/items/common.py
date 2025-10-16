@@ -916,7 +916,8 @@ class Property():
 
     Available since KiCad v7"""
 
-    do_not_autoplace: bool = False
+    do_not_autoplace: Optional[bool] = None
+    """The optional ``do_not_autoplace`` token defines if this field in the schematic is automatically placed"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Property:
@@ -950,8 +951,8 @@ class Property():
             object.value = exp[2]
 
         for item in exp[3:]:
-            if parse_bool(item, 'show_name'): object.showName = True
-            elif parse_bool(item, 'do_not_autoplace'): object.do_not_autoplace = True
+            if item[0] == 'show_name': object.showName = parse_bool(item, 'show_name')
+            elif item[0] == 'do_not_autoplace': object.do_not_autoplace = parse_bool(item, 'do_not_autoplace')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'id': object.id = item[1]
@@ -996,7 +997,7 @@ class Property():
             expr.append(format_bool_raw('show_name', self.showName))
 
         if self.do_not_autoplace:
-            expr.append(format_bool_raw('do_not_autoplace', self.do_not_autoplace))
+            expr.append(format_bool_raw('do_not_autoplace', self.do_not_autoplace, compact=True))
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())
