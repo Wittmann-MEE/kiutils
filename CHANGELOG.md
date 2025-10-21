@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.8.4 - 21.10.2025
+### Non-breaking changes
+- Cleanup: Refactored and added comments in `FpProperty`
+
 ## v1.8.3 - 16.10.2025
 ### Non-breaking changes
 - Fixed: Storing of `do_not_autoplace` field in Property
