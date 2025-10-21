@@ -974,12 +974,12 @@ class FpCurve():
             pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
         expr.append(pts_expr)
 
-        expr.append(['layer', escape_and_quote(self.layer)])
-
         if self.width is not None:
             expr.append(['width', self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
+
+        expr.append(['layer', escape_and_quote(self.layer)])
 
         expr.append(format_bool_raw('locked', self.locked))
 
@@ -995,25 +995,35 @@ class FpProperty:
         Helper class for dealing with properties of a footprint.
     """
 
-    type: str = ""
+    key: str = ""
+    """The ``key`` string defines the name of the property and must be unique"""
 
-    text: str = ""
+    value: str = ""
+    """The ``value`` string defines the value of the property"""
 
-    hide: Optional[str] = None
+    hide: Optional[bool] = None
+    """The optional ``hide`` token defines if the property is hidden"""
 
-    unlocked: Optional[str] = None
+    unlocked: Optional[bool] = None
+    """The optional ``unlocked`` token defines if the property can be edited"""
 
     position: Optional[Position] = None
+    """The optional ``position`` token defines the X and Y coordinates as well as the rotation angle of the property."""
 
     layer: Optional[str] = None
+    """The ``layer`` token defines the canonical layer the text resides on"""
 
     ko: Optional[bool] = None
+    """The optional ``ko`` token defines if the property can be edited"""
 
     effects: Optional[Effects] = None
+    """The optional ``effects`` section defines how the text is displayed"""
 
-    tstamp: Optional[str] = None
+    uuid: Optional[str] = None
+    """The optional ``uuid`` defines the universally unique identifier"""
 
     render_cache: Optional[RenderCache] = None
+    """The ``render_cache`` token defines a cache for none-standard fonts."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> FpProperty:
@@ -1036,20 +1046,20 @@ class FpProperty:
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.type = exp[1]
-        object.text = exp[2]
+        object.key = exp[1]
+        object.value = exp[2]
         for item in exp[3:]:
-            if not isinstance(item, list):
+            if item[0] == 'hide': object.hide = parse_bool(item, 'hide')
+            elif item[0] == 'unlocked': object.unlocked = parse_bool(item, 'unlocked')
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'hide': object.hide = item[1]
-            elif item[0] == 'unlocked': object.unlocked = item[1]
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'layer':
                 object.layer = item[1]
-                if len(item) > 2 and item[2] == "knockout":
+                if len(item) == 3 and item[2] == "knockout":
                     object.ko = True
             elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            elif item[0] == 'uuid': object.tstamp = item[1]
+            elif item[0] == 'uuid': object.uuid = item[1]
             elif item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -1070,11 +1080,11 @@ class FpProperty:
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        prop_type = dequote(self.type)
-        if self.type != "ki_fp_filters":
+        prop_type = dequote(self.key)
+        if self.key != "ki_fp_filters":
             prop_type = quote(prop_type)
 
-        expr = ['property', prop_type, escape_and_quote(self.text)]
+        expr = ['property', prop_type, escape_and_quote(self.value)]
 
         if self.position is not None:
             pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
@@ -1082,8 +1092,8 @@ class FpProperty:
                 pos.append(format_float(self.position.angle))
             expr.append(pos)
 
-        if self.unlocked is not None:
-            expr.append(['unlocked', self.unlocked])
+        if self.unlocked:
+            expr.append(format_bool_raw('unlocked', self.unlocked))
 
         if self.layer is not None:
             layer_expr = ['layer', escape_and_quote(self.layer)]
@@ -1091,11 +1101,11 @@ class FpProperty:
                 layer_expr.append("knockout")
             expr.append(layer_expr)
 
-        if self.hide is not None:
-            expr.append(['hide', self.hide])
+        if self.hide:
+            expr.append(format_bool_raw('hide', self.hide))
 
-        if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+        if self.uuid is not None:
+            expr.append(['uuid', quote(self.uuid)])
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())

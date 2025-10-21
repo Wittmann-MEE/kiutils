@@ -33,5 +33,5 @@ if __name__ == "__main__":
         verbosity = 3,
         report_title = 'KiUtils Unittest Report',
         report_name = 'KiUtils_Testreport',
-        open_in_browser = True
+        open_in_browser = False
     ))
