@@ -23,7 +23,7 @@ from typing import Optional, List
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
@@ -86,7 +86,7 @@ class GrText():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -119,7 +119,7 @@ class GrText():
     def _to_sexpr_raw(self):
         expr = ['gr_text', escape_and_quote(self.text)]
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
         if self.position.angle is not None:
@@ -350,7 +350,7 @@ class GrLine():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -394,7 +394,7 @@ class GrLine():
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])
@@ -458,7 +458,7 @@ class GrRect():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -505,7 +505,7 @@ class GrRect():
         if self.fill is not None:
             expr.append(['fill', self.fill])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])
@@ -569,7 +569,7 @@ class GrCircle():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'center': object.center = Position.from_sexpr(item)
@@ -616,7 +616,7 @@ class GrCircle():
         if self.fill is not None:
             expr.append(['fill', self.fill])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])
@@ -680,7 +680,7 @@ class GrArc():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -725,7 +725,7 @@ class GrArc():
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])
@@ -787,7 +787,7 @@ class GrPoly():
         object = cls()
 
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
@@ -842,7 +842,7 @@ class GrPoly():
         if self.fill is not None:
             expr.append(['fill', self.fill])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])
@@ -899,7 +899,7 @@ class GrCurve():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
@@ -947,7 +947,7 @@ class GrCurve():
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])

@@ -27,7 +27,7 @@ from kiutils.utils.string_utils import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import *
 
 @dataclass
 class Board():
@@ -333,7 +333,7 @@ class Board():
 
         # Embedded fonts
         if self.embedded_fonts is not None:
-            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
+            expr.append(format_bool('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
 
         # Embedded files
         if len(self.embedded_files) > 0:

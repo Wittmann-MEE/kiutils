@@ -25,7 +25,7 @@ import urllib.parse
 
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 def is_url(path: str) -> bool:
@@ -75,13 +75,12 @@ class Position():
         object = cls()
         object.X = float(exp[1])
         object.Y = float(exp[2])
-        if len(exp) >= 4:
-            # More than four components means X, Y, and either angle or unlocked are present
-            if exp[3] != 'unlocked':
+        if len(exp) > 3:
+            # More than three components means X, Y, and either angle or unlocked are present
+            if is_bool_key(exp[3], 'unlocked'):
+                object.unlocked = parse_bool(exp[3], 'unlocked')
+            else:
                 object.angle = exp[3]
-
-        for item in exp:
-            if parse_bool(item, 'unlocked'): object.unlocked = True
 
         return object
 
@@ -352,8 +351,8 @@ class Font():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'bold'): object.bold = True
-            elif parse_bool(item, 'italic'): object.italic = True
+            if is_bool_key(item, 'bold'): object.bold = parse_bool(item, 'bold')
+            elif is_bool_key(item, 'italic'): object.italic = parse_bool(item, 'italic')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'face': object.face = item[1]
@@ -392,13 +391,13 @@ class Font():
             expr.append(['thickness', self.thickness])
 
         if self.bold:
-            expr.append(format_bool_raw('bold', self.bold))
+            expr.append(format_bool('bold', self.bold))
 
         if self.color is not None:
             expr.append(self.color._to_sexpr_raw())
 
         if self.italic:
-            expr.append(format_bool_raw('italic', self.italic))
+            expr.append(format_bool('italic', self.italic))
 
         if self.lineSpacing is not None:
             expr.append(['line_spacing', self.lineSpacing])
@@ -529,7 +528,7 @@ class Effects():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'hide'): object.hide = True
+            if is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'font': object.font = Font().from_sexpr(item)
@@ -566,7 +565,7 @@ class Effects():
         if self.href is not None:
             expr.append(['href', dequote(self.href)])
 
-        expr.append(format_bool_raw("hide", self.hide))
+        expr.append(format_bool("hide", self.hide))
 
         return expr
 
@@ -667,7 +666,7 @@ class Group():
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'id': object.id = item[1]
@@ -696,7 +695,7 @@ class Group():
             'group',
             escape_and_quote(self.name),
             ['uuid', escape_and_quote(self.id)],
-            format_bool_raw("locked", self.locked),
+            format_bool("locked", self.locked),
             ['members'] + [quote(member) for member in self.members],
         ]
         return expr
@@ -951,8 +950,8 @@ class Property():
             object.value = exp[2]
 
         for item in exp[3:]:
-            if item[0] == 'show_name': object.showName = parse_bool(item, 'show_name')
-            elif item[0] == 'do_not_autoplace': object.do_not_autoplace = parse_bool(item, 'do_not_autoplace')
+            if is_bool_key(item, 'show_name'): object.showName = parse_bool(item, 'show_name')
+            elif is_bool_key(item, 'do_not_autoplace'): object.do_not_autoplace = parse_bool(item, 'do_not_autoplace')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'id': object.id = item[1]
@@ -994,10 +993,10 @@ class Property():
             expr.append(['id', self.id])
 
         if self.showName:
-            expr.append(format_bool_raw('show_name', self.showName))
+            expr.append(format_bool('show_name', self.showName))
 
         if self.do_not_autoplace:
-            expr.append(format_bool_raw('do_not_autoplace', self.do_not_autoplace, compact=True))
+            expr.append(format_bool('do_not_autoplace', self.do_not_autoplace, compact=True))
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())

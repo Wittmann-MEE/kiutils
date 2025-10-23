@@ -23,7 +23,7 @@ from typing import List, Optional
 from kiutils.items.common import Position, Stroke, Effects, Fill
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
@@ -77,7 +77,7 @@ class SyArc():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'private'): object.private = True
+            if is_bool_key(item, 'private'): object.private = parse_bool(item, 'private')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
@@ -104,7 +104,7 @@ class SyArc():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['arc', format_bool_raw('private', self.private, compact=True)]
+        expr = ['arc', format_bool('private', self.private, compact=True)]
 
         start = ['start', format_float(self.start.X), format_float(self.start.Y)]
         if self.start.angle is not None:
@@ -176,7 +176,7 @@ class SyCircle():
         object = cls()
 
         for item in exp[1:]:
-            if parse_bool(item, 'private'): object.private = True
+            if is_bool_key(item, 'private'): object.private = parse_bool(item, 'private')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'center': object.center = Position().from_sexpr(item)
@@ -201,7 +201,7 @@ class SyCircle():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['circle', format_bool_raw('private', self.private, compact=True)]
+        expr = ['circle', format_bool('private', self.private, compact=True)]
 
         expr.append(['center', format_float(self.center.X), format_float(self.center.Y)])
         expr.append(['radius', format_float(self.radius)])
@@ -414,8 +414,8 @@ class SyRect():
         object = cls()
 
         for item in exp[1:]:
-            if parse_bool(item, 'private'): object.private = True
-            if not isinstance(item, list):
+            if is_bool_key(item, 'private'): object.private = parse_bool(item, 'private')
+            elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
@@ -440,7 +440,7 @@ class SyRect():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['rectangle', format_bool_raw('private', self.private, compact=True)]
+        expr = ['rectangle', format_bool('private', self.private, compact=True)]
 
         expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
         expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
@@ -621,7 +621,7 @@ class SyTextBox():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['text_box', format_bool_raw('private', self.private, compact=True), escape_and_quote(self.text)]
+        expr = ['text_box', format_bool('private', self.private, compact=True), escape_and_quote(self.text)]
 
         pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
         if self.position.angle is not None:

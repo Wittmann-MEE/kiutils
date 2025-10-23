@@ -23,7 +23,7 @@ from kiutils.items.common import Position
 from kiutils.items.gritems import GrText
 from kiutils.utils.format_utils import format_float
 from kiutils.utils.string_utils import *
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
@@ -87,7 +87,7 @@ class DimensionFormat():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'suppress_zeroes'): object.suppressZeroes = True
+            if is_bool_key(item, 'suppress_zeroes'): object.suppressZeroes = parse_bool(item, 'suppress_zeroes')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'prefix': object.prefix = item[1]
@@ -130,7 +130,7 @@ class DimensionFormat():
         if self.overrideValue is not None:
             expr.append(['override_value', escape_and_quote(self.overrideValue)])
 
-        expr.append(format_bool_raw('suppress_zeroes', self.suppressZeroes))
+        expr.append(format_bool('suppress_zeroes', self.suppressZeroes))
 
         return expr
 
@@ -208,7 +208,7 @@ class DimensionStyle():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'keep_text_aligned'): object.keepTextAligned = True
+            if is_bool_key(item, 'keep_text_aligned'): object.keepTextAligned = parse_bool(item, 'keep_text_aligned')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'thickness': object.thickness = item[1]
@@ -255,7 +255,7 @@ class DimensionStyle():
         if self.extensionOffset is not None:
             expr.append(['extension_offset', self.extensionOffset])
 
-        expr.append(format_bool_raw('keep_text_aligned', self.keepTextAligned))
+        expr.append(format_bool('keep_text_aligned', self.keepTextAligned))
 
         return expr
 
@@ -328,7 +328,7 @@ class Dimension():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'locked' and item[1] == 'yes': object.locked = True
@@ -376,7 +376,7 @@ class Dimension():
             ['uuid', quote(self.tstamp)],
         ]
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         # Points
         pts_expr = ['pts']

@@ -21,7 +21,7 @@ from typing import Optional, List
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
@@ -409,8 +409,8 @@ class Stackup():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'castellated_pads'): object.castellatedPads = True
-            elif parse_bool(item, 'edge_plating'): object.edgePlating = True
+            if is_bool_key(item, 'castellated_pads'): object.castellatedPads = parse_bool(item, 'castellated_pads')
+            elif is_bool_key(item, 'edge_plating'): object.edgePlating = parse_bool(item, 'edge_plating')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'layer': object.layers.append(StackupLayer().from_sexpr(item))
@@ -1005,7 +1005,7 @@ class Segment():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
@@ -1042,7 +1042,7 @@ class Segment():
         ]
 
         if self.locked:
-            expr.append(format_bool_raw("locked", self.locked))
+            expr.append(format_bool("locked", self.locked))
 
         expr.extend([
             ['layer', escape_and_quote(self.layer)],
@@ -1098,9 +1098,9 @@ class Via():
     """The ``tstamp`` token defines the unique identifier of the via"""
 
     # Available since KiCad v9
-    # TODO Update docs
 
     zone_layer_connections: bool = False
+    """The ``zone_layer_connections`` token indicates which cooper layers are connected"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Via:
@@ -1124,12 +1124,12 @@ class Via():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
-            elif parse_bool(item, 'remove_unused_layers'): object.removeUnusedLayers = True
-            elif parse_bool(item, 'keepEndLayers'): object.keepEndLayers = True
-            elif parse_bool(item, 'free'): object.free = True
-            elif parse_bool(item, 'zone_layer_connections'): object.zone_layer_connections = True
-            elif not isinstance(item, list) and item in ['micro','blind']: object.type = item
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            elif is_bool_key(item, 'remove_unused_layers'): object.removeUnusedLayers = parse_bool(item, 'remove_unused_layers')
+            elif is_bool_key(item, 'keepEndLayers'): object.keepEndLayers = parse_bool(item, 'keepEndLayers')
+            elif is_bool_key(item, 'free'): object.free = parse_bool(item, 'free')
+            elif is_bool_key(item, 'zone_layer_connections'): object.zone_layer_connections = parse_bool(item, 'zone_layer_connections')
+            elif not isinstance(item, list) and item in ['micro', 'blind']: object.type = item
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -1177,16 +1177,16 @@ class Via():
         expr.append(layer_list)
 
         if self.removeUnusedLayers:
-            expr.append(format_bool_raw("remove_unused_layers", self.removeUnusedLayers))
+            expr.append(format_bool("remove_unused_layers", self.removeUnusedLayers))
 
         if self.keepEndLayers:
-            expr.append(format_bool_raw("keep_end_layers", self.keepEndLayers))
+            expr.append(format_bool("keep_end_layers", self.keepEndLayers))
 
         if self.locked:
-            expr.append(format_bool_raw("locked", self.locked))
+            expr.append(format_bool("locked", self.locked))
 
         if self.free:
-            expr.append(format_bool_raw("free", self.free))
+            expr.append(format_bool("free", self.free))
 
         if self.zone_layer_connections:
             expr.append(['zone_layer_connections'])
@@ -1255,7 +1255,7 @@ class Arc():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position().from_sexpr(item)
@@ -1288,7 +1288,7 @@ class Arc():
         expr = ['arc']
 
         if self.locked:
-            expr.append(format_bool_raw("locked", self.locked))
+            expr.append(format_bool("locked", self.locked))
 
         expr.extend([
             ['start', format_float(self.start.X), format_float(self.start.Y)],
@@ -1512,7 +1512,7 @@ class Generated():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'uuid': object.uuid = item[1]
@@ -1583,7 +1583,7 @@ class Generated():
         ]
 
         if self.locked:
-            expr.append(format_bool_raw("locked", self.locked))
+            expr.append(format_bool("locked", self.locked))
 
         if len(self.base_line) > 0:
             base_line_pts = ['pts']

@@ -23,7 +23,7 @@ from typing import Optional, List
 from kiutils.items.common import RenderCache, Stroke, Position, Effects
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 # FIXME: Several classes have a ``stroke`` member. This feature will be introduced in KiCad 7 and
@@ -72,7 +72,8 @@ class FpText():
 
     # Available since KiCad v9
 
-    unlocked: bool = False
+    unlocked: Optional[bool] = None
+    """The optional ``unlocked`` token defines if the object can be edited"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> FpText:
@@ -98,8 +99,8 @@ class FpText():
         object.type = exp[1]
         object.text = exp[2]
         for item in exp[3:]:
-            if parse_bool(item, 'unlocked'): object.unlocked = True
-            elif parse_bool(item, 'hide'): object.hide = True
+            if is_bool_key(item, 'unlocked'): object.unlocked = parse_bool(item, 'unlocked')
+            elif is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -136,11 +137,11 @@ class FpText():
         if self.position.angle is not None:
             pos.append(format_float(self.position.angle))
         if self.position.unlocked:
-            pos.append(format_bool_raw('unlocked', self.position.unlocked))
+            pos.append(format_bool('unlocked', self.position.unlocked))
         expr.append(pos)
 
         if self.unlocked:
-            expr.append(format_bool_raw('unlocked', self.unlocked))
+            expr.append(format_bool('unlocked', self.unlocked))
 
         if self.layer is not None:
             layer_expr = ['layer', escape_and_quote(self.layer)]
@@ -149,7 +150,7 @@ class FpText():
             expr.append(layer_expr)
 
         if self.hide:
-            expr.append(format_bool_raw('hide', self.hide))
+            expr.append(format_bool('hide', self.hide))
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])
@@ -215,7 +216,7 @@ class FpLine():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -259,7 +260,7 @@ class FpLine():
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
         expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
@@ -323,7 +324,7 @@ class FpRect():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -371,7 +372,7 @@ class FpRect():
         if self.fill is not None:
             expr.append(['fill', self.fill])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
         expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
@@ -512,7 +513,7 @@ class FpTextBox():
             if self.start is None or self.end is None:
                 raise Exception("No angle or a cardinal angle needs a start and end token defined")
 
-        expr = ['fp_text_box', format_bool_raw('locked', self.locked), escape_and_quote(self.text)]
+        expr = ['fp_text_box', format_bool('locked', self.locked), escape_and_quote(self.text)]
 
         if len(self.pts) == 4:
             pts_expr = ['pts']
@@ -601,7 +602,7 @@ class FpCircle():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'center': object.center = Position.from_sexpr(item)
@@ -649,7 +650,7 @@ class FpCircle():
         if self.fill is not None:
             expr.append(['fill', self.fill])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
         expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
@@ -712,7 +713,7 @@ class FpArc():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'start': object.start = Position.from_sexpr(item)
@@ -758,7 +759,7 @@ class FpArc():
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
         expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
@@ -819,7 +820,7 @@ class FpPoly():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
@@ -872,7 +873,7 @@ class FpPoly():
         if self.fill is not None:
             expr.append(['fill', self.fill])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
         expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
@@ -929,7 +930,7 @@ class FpCurve():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
@@ -981,7 +982,7 @@ class FpCurve():
 
         expr.append(['layer', escape_and_quote(self.layer)])
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])
@@ -1049,8 +1050,8 @@ class FpProperty:
         object.key = exp[1]
         object.value = exp[2]
         for item in exp[3:]:
-            if item[0] == 'hide': object.hide = parse_bool(item, 'hide')
-            elif item[0] == 'unlocked': object.unlocked = parse_bool(item, 'unlocked')
+            if is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
+            elif is_bool_key(item, 'unlocked'): object.unlocked = parse_bool(item, 'unlocked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -1093,7 +1094,7 @@ class FpProperty:
             expr.append(pos)
 
         if self.unlocked:
-            expr.append(format_bool_raw('unlocked', self.unlocked))
+            expr.append(format_bool('unlocked', self.unlocked))
 
         if self.layer is not None:
             layer_expr = ['layer', escape_and_quote(self.layer)]
@@ -1102,7 +1103,7 @@ class FpProperty:
             expr.append(layer_expr)
 
         if self.hide:
-            expr.append(format_bool_raw('hide', self.hide))
+            expr.append(format_bool('hide', self.hide))
 
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])

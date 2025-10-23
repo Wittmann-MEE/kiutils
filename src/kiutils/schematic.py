@@ -23,7 +23,7 @@ from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.misc.config import *
-from kiutils.utils.parsing_utils import parse_bool, format_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.string_utils import *
 
 @dataclass
@@ -335,6 +335,6 @@ class Schematic():
             expr.append(['symbol_instances'] + [item._to_sexpr_raw() for item in self.symbolInstances])
 
         if self.embedded_fonts is not None:
-            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
+            expr.append(format_bool('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
 
         return expr

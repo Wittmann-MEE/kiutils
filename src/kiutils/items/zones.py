@@ -22,7 +22,7 @@ from typing import Optional, List
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw, format_bool
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
@@ -212,7 +212,7 @@ class FillSettings():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'yes'): object.yes = True
+            if is_bool_key(item, 'yes'): object.yes = parse_bool(item, 'yes')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'mode': object.mode = item[1]
@@ -397,7 +397,7 @@ class FilledPolygon():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'island'): object.island = True
+            if is_bool_key(item, 'island'): object.island = parse_bool(item, 'island')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'layer': object.layer = item[1]
@@ -430,7 +430,7 @@ class FilledPolygon():
         expr = ['filled_polygon', ['layer', escape_and_quote(self.layer)]]
 
         if self.island:
-            expr.append(format_bool_raw('island', self.island, compact=True))
+            expr.append(format_bool('island', self.island, compact=True))
 
         pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
         expr.append(['pts'] + pts)
@@ -622,7 +622,7 @@ class Zone():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'net': object.net = item[1]
@@ -684,7 +684,7 @@ class Zone():
             'zone',
             ['net', self.net],
             ['net_name', escape_and_quote(self.netName)],
-            format_bool_raw('locked', self.locked),
+            format_bool('locked', self.locked),
             [layer_token] + layers_list,
         ]
 

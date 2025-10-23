@@ -22,7 +22,7 @@ from typing import Optional, List, Dict
 from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
 @dataclass
@@ -746,7 +746,7 @@ class LocalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, 'fields_autoplaced'): object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -779,7 +779,7 @@ class LocalLabel():
             pos.append(format_float(self.position.angle))
         expr.append(pos)
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
@@ -845,7 +845,7 @@ class GlobalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, 'fields_autoplaced'): object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -881,7 +881,7 @@ class GlobalLabel():
             pos.append(format_float(self.position.angle))
         expr.append(pos)
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
@@ -946,7 +946,7 @@ class HierarchicalLabel():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, 'fields_autoplaced'): object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -982,7 +982,7 @@ class HierarchicalLabel():
             pos.append(format_float(self.position.angle))
         expr.append(pos)
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
@@ -1263,11 +1263,11 @@ class SchematicSymbol():
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
-            elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
-            elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
-            elif item[0] == 'dnp': object.dnp = parse_bool(item, 'dnp')
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
+            if is_bool_key(item, 'fields_autoplaced'): object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
+            elif is_bool_key(item, 'in_bom'): object.inBom = parse_bool(item, 'in_bom')
+            elif is_bool_key(item, 'on_board'): object.onBoard = parse_bool(item, 'on_board')
+            elif is_bool_key(item, 'dnp'): object.dnp = parse_bool(item, 'dnp')
+            elif is_bool_key(item, 'exclude_from_sim'): object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'lib_id': object.libId = item[1]
@@ -1318,13 +1318,13 @@ class SchematicSymbol():
             expr.append(['unit', self.unit])
 
         if self.exclude_from_sim is not None:
-            expr.append(format_bool_raw("exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True))
+            expr.append(format_bool("exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True))
 
-        expr.append(format_bool_raw("in_bom", self.inBom, compact=False, yesno=True))
-        expr.append(format_bool_raw("on_board", self.onBoard, compact=False, yesno=True))
+        expr.append(format_bool("in_bom", self.inBom, compact=False, yesno=True))
+        expr.append(format_bool("on_board", self.onBoard, compact=False, yesno=True))
         if self.dnp is not None:
-            expr.append(format_bool_raw("dnp", self.dnp, compact=False, yesno=True))
-        expr.append(format_bool_raw("fields_autoplaced", self.fieldsAutoplaced))
+            expr.append(format_bool("dnp", self.dnp, compact=False, yesno=True))
+        expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))
 
         if self.uuid:
             expr.append(['uuid', quote(self.uuid)])
@@ -1619,15 +1619,18 @@ class HierarchicalSheet():
     Available since KiCad v7."""
 
     # Available since KiCad v9
-    # TODO Update docs
 
-    exclude_from_sim: Optional[str] = None
+    exclude_from_sim: Optional[bool] = None
+    """The optional ``exclude_from_sim`` token defines if all components in this sheet are excluded from simulation"""
 
-    in_bom: Optional[str] = None
+    in_bom: Optional[bool] = None
+    """The optional ``in_bom`` token defines if all components in this sheet are included in BOM"""
 
-    on_board: Optional[str] = None
+    on_board: Optional[bool] = None
+    """The optional ``on_board`` token defines if all components in this sheet are included on PCB"""
 
-    dnp: Optional[str] = None
+    dnp: Optional[bool] = None
+    """The optional ``dnp`` token defines if all components in this sheet are DNP"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> HierarchicalSheet:
@@ -1651,7 +1654,11 @@ class HierarchicalSheet():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, 'fields_autoplaced'): object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
+            elif is_bool_key(item, 'exclude_from_sim'): object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
+            elif is_bool_key(item, 'in_bom'): object.in_bom = parse_bool(item, 'in_bom')
+            elif is_bool_key(item, 'on_board'): object.on_board = parse_bool(item, 'on_board')
+            elif is_bool_key(item, 'dnp'): object.dnp = parse_bool(item, 'dnp')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -1670,10 +1677,6 @@ class HierarchicalSheet():
             elif item[0] == 'pin': object.pins.append(HierarchicalPin().from_sexpr(item))
             elif item[0] == 'instances':
                 for instance in item[1:]: object.instances.append(HierarchicalSheetProjectInstance.from_sexpr(instance))
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            elif item[0] == 'in_bom': object.in_bom = item[1]
-            elif item[0] == 'on_board': object.on_board = item[1]
-            elif item[0] == 'dnp': object.dnp = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -1700,15 +1703,15 @@ class HierarchicalSheet():
         ]
 
         if self.exclude_from_sim is not None:
-            expr.append(['exclude_from_sim', self.exclude_from_sim])
+            expr.append(format_bool('exclude_from_sim', self.exclude_from_sim, compact=False, yesno=True))
         if self.in_bom is not None:
-            expr.append(['in_bom', self.in_bom])
+            expr.append(format_bool('in_bom', self.in_bom, compact=False, yesno=True))
         if self.on_board is not None:
-            expr.append(['on_board', self.on_board])
+            expr.append(format_bool('on_board', self.on_board, compact=False, yesno=True))
         if self.dnp is not None:
-            expr.append(['dnp', self.dnp])
+            expr.append(format_bool('dnp', self.dnp, compact=False, yesno=True))
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(['fill', self.fill._to_sexpr_raw()])
@@ -2204,7 +2207,7 @@ class NetclassFlag():
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, 'fields_autoplaced'): object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'length': object.length = item[1]
@@ -2241,7 +2244,7 @@ class NetclassFlag():
             ['length', format_float(self.length)],
             ['shape', self.shape],
             pos,
-            format_bool_raw('fields_autoplaced', self.fieldsAutoplaced),
+            format_bool('fields_autoplaced', self.fieldsAutoplaced),
         ]
 
         expr.append(self.effects._to_sexpr_raw())
@@ -2287,8 +2290,8 @@ class TableBorder:
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'external'): object.external = True
-            elif parse_bool(item, 'header'): object.header = True
+            if is_bool_key(item, 'external'): object.external = parse_bool(item, 'external')
+            elif is_bool_key(item, 'header'): object.header = parse_bool(item, 'header')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
@@ -2313,8 +2316,8 @@ class TableBorder:
     def _to_sexpr_raw(self):
         expr = ['border']
 
-        expr.append(format_bool_raw('external', self.external))
-        expr.append(format_bool_raw('header', self.header))
+        expr.append(format_bool('external', self.external))
+        expr.append(format_bool('header', self.header))
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -2354,8 +2357,8 @@ class TableSeparators:
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'rows'): object.rows = True
-            elif parse_bool(item, 'cols'): object.columns = True
+            if is_bool_key(item, 'rows'): object.rows = parse_bool(item, 'rows')
+            elif is_bool_key(item, 'cols'): object.columns = parse_bool(item, 'cols')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
@@ -2380,8 +2383,8 @@ class TableSeparators:
     def _to_sexpr_raw(self):
         expr = ['separators']
 
-        expr.append(format_bool_raw('rows', self.rows))
-        expr.append(format_bool_raw('cols', self.columns))
+        expr.append(format_bool('rows', self.rows))
+        expr.append(format_bool('cols', self.columns))
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())

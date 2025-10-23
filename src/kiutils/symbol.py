@@ -23,7 +23,7 @@ from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse
 from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 
 
 @dataclass
@@ -150,7 +150,7 @@ class SymbolPin():
         object.electricalType = exp[1]
         object.graphicalStyle = exp[2]
         for item in exp[3:]:
-            if parse_bool(item, 'hide'): object.hide = True
+            if is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -191,7 +191,7 @@ class SymbolPin():
         expr.append(['length', format_float(self.length)])
 
         if self.hide is not None:
-            expr.append(format_bool_raw('hide', self.hide))
+            expr.append(format_bool('hide', self.hide))
 
         # Name and number, with conditional line break handling
         if self.nameEffects is None and self.numberEffects is None:
@@ -390,20 +390,21 @@ class Symbol():
         object = cls()
         object.libId = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'power'): object.isPower = True
+            if is_bool_key(item, 'power'): object.isPower = parse_bool(item, 'power')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'extends': object.extends = item[1]
             elif item[0] == 'exclude_from_sim': object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
             elif item[0] == 'pin_numbers':
                 for prop in item[1:]:
-                    if parse_bool(prop, 'hide'): object.hidePinNumbers = True
+                    if is_bool_key(prop, 'hide'): object.hidePinNumbers = parse_bool(prop, 'hide')
             elif item[0] == 'pin_names':
                 object.pinNames = True  # This feels wrong to set here, what if it will be hidden? But ok...
                 for prop in item[1:]:
-                    if parse_bool(prop, 'hide'): object.pinNamesHide = True
+                    if is_bool_key(prop, 'hide'): object.pinNamesHide = parse_bool(prop, 'hide')
                     elif prop[0] == 'offset': object.pinNamesOffset = prop[1]
-            elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
+            elif item[0] == 'in_bom':
+                object.inBom = parse_bool(item, 'in_bom')
             elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
             elif item[0] == 'symbol': object.units.append(Symbol().from_sexpr(item))
             elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
@@ -489,15 +490,15 @@ class Symbol():
             if self.pinNamesOffset is not None:
                 pin_names.append(['offset', self.pinNamesOffset])
             if self.pinNamesHide:
-                pin_names.append(format_bool_raw('hide', self.pinNamesHide))
+                pin_names.append(format_bool('hide', self.pinNamesHide))
             expr.append(pin_names)
 
         if self.exclude_from_sim is not None:
-            expr.append(format_bool_raw('exclude_from_sim', self.exclude_from_sim, compact=False, yesno=True))
+            expr.append(format_bool('exclude_from_sim', self.exclude_from_sim, compact=False, yesno=True))
         if self.inBom is not None:
-            expr.append(format_bool_raw('in_bom', self.inBom, compact=False, yesno=True))
+            expr.append(format_bool('in_bom', self.inBom, compact=False, yesno=True))
         if self.onBoard is not None:
-            expr.append(format_bool_raw('on_board', self.onBoard, compact=False, yesno=True))
+            expr.append(format_bool('on_board', self.onBoard, compact=False, yesno=True))
 
         for item in self.properties:
             expr.append(item._to_sexpr_raw())
@@ -509,7 +510,7 @@ class Symbol():
             expr.append(item._to_sexpr_raw())
 
         if self.embedded_fonts is not None:
-            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
+            expr.append(format_bool('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
 
         if len(self.embedded_files) > 0:
             embedded_files = ['embedded_files']

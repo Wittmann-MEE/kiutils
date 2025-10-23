@@ -24,7 +24,7 @@ from kiutils.utils.string_utils import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 
 @dataclass
 class WksFontSize():
@@ -118,8 +118,8 @@ class WksFont():
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'bold'): object.bold = True
-            elif parse_bool(item, 'italic'): object.italic = True
+            if is_bool_key(item, 'bold'): object.bold = parse_bool(item, 'bold')
+            elif is_bool_key(item, 'italic'): object.italic = parse_bool(item, 'italic')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'linewidth': object.linewidth = item[1]
@@ -153,10 +153,10 @@ class WksFont():
             expr.append(self.size._to_sexpr_raw())
 
         if self.bold:
-            expr.extend(format_bool_raw('bold', self.bold, compact=True))
+            expr.extend(format_bool('bold', self.bold, compact=True))
 
         if self.italic:
-            expr.extend(format_bool_raw('italic', self.italic, compact=True))
+            expr.extend(format_bool('italic', self.italic, compact=True))
 
         # Return an empty expression if no attributes are present
         if len(expr) == 1:  # Just ['font']
@@ -959,6 +959,7 @@ class WorkSheet():
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
     embedded_fonts: Optional[bool] = None
+    """The ``embedded_fonts`` indicates that there are fonts embedded into this component"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> WorkSheet:
@@ -1076,7 +1077,7 @@ class WorkSheet():
             expr.append(['generator_version', quote(self.generator_version)])
 
         if self.embedded_fonts is not None:
-            expr.append(format_bool_raw(self.embedded_fonts, compact=False, yesno=True))
+            expr.append(format_bool(self.embedded_fonts, compact=False, yesno=True))
 
         expr.append(self.setup._to_sexpr_raw())
         for item in self.drawingObjects:

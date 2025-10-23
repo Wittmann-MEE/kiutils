@@ -29,7 +29,7 @@ from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse
 from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
 from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 
 @dataclass
 class Attributes():
@@ -62,9 +62,9 @@ class Attributes():
     Available since KiCad 7"""
 
     # Available since KiCad v9
-    # TODO Update docs
 
     dnp: Optional[bool] = None
+    """The optional ``dnp`` token indicates that the footprint will not be populated"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Attributes:
@@ -87,18 +87,15 @@ class Attributes():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        if len(exp) > 1:
-            # Attributes token may be set with no other items (empty attributes)
-            # Test case for this: test_fp_empty_attr.kicad_mod
-            if exp[1] == 'through_hole' or exp[1] == 'smd':
-                object.type = exp[1]
-
         for item in exp[1:]:
-            if parse_bool(item, 'board_only'): object.boardOnly = True
-            elif parse_bool(item, 'exclude_from_pos_files'): object.excludeFromPosFiles = True
-            elif parse_bool(item, 'exclude_from_bom'): object.excludeFromBom = True
-            elif parse_bool(item, 'allow_missing_courtyard'): object.allowMissingCourtyard = True
-            elif parse_bool(item, 'dnp'): object.dnp = True
+            if is_bool_key(item, 'board_only'): object.boardOnly = parse_bool(item, 'board_only')
+            elif is_bool_key(item, 'exclude_from_pos_files'): object.excludeFromPosFiles = parse_bool(item, 'exclude_from_pos_files')
+            elif is_bool_key(item, 'exclude_from_bom'): object.excludeFromBom = parse_bool(item, 'exclude_from_bom')
+            elif is_bool_key(item, 'allow_missing_courtyard'): object.allowMissingCourtyard = parse_bool(item, 'allow_missing_courtyard')
+            elif is_bool_key(item, 'dnp'): object.dnp = parse_bool(item, 'dnp')
+            elif item in ['through_hole', 'smd']: object.type = item
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -199,7 +196,7 @@ class Model():
         object.path = exp[1]
 
         for item in exp[2:]:
-            if parse_bool(item, 'hide'): object.hide = True
+            if is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'opacity': object.opacity = item[1]
@@ -227,7 +224,7 @@ class Model():
     def _to_sexpr_raw(self):
         expr = ['model', escape_and_quote(self.path)]
 
-        expr.append(format_bool_raw('hide', self.hide))
+        expr.append(format_bool('hide', self.hide))
 
         if self.opacity is not None:
             expr.append(['opacity', self.opacity])
@@ -554,8 +551,8 @@ class Pad():
         object.shape = exp[3]
 
         for item in exp[4:]:
-            if parse_bool(item, 'locked'): object.locked = True
-            elif parse_bool(item, 'zone_layer_connections'): object.zone_layer_connections = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            elif is_bool_key(item, 'zone_layer_connections'): object.zone_layer_connections = parse_bool(item, 'zone_layer_connections')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -623,7 +620,7 @@ class Pad():
             self.shape
         ]
 
-        expr.append(format_bool_raw('locked', self.locked))
+        expr.append(format_bool('locked', self.locked))
 
         pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
         if self.position.angle is not None:
@@ -650,7 +647,7 @@ class Pad():
         if self.roundrectRatio is not None:
             expr.append(['roundrect_rratio', self.roundrectRatio])
 
-        expr.append(format_bool_raw('zone_layer_connections', self.zone_layer_connections))
+        expr.append(format_bool('zone_layer_connections', self.zone_layer_connections))
 
         if self.chamferRatio is not None:
             expr.append(['chamfer_ratio', self.chamferRatio])
@@ -927,8 +924,8 @@ class Footprint():
         object = cls()
         object.libId = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'locked'): object.locked = True
-            elif parse_bool(item, 'placed'): object.placed = True
+            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            elif is_bool_key(item, 'placed'): object.placed = parse_bool(item, 'placed')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'version': object.version = item[1]
@@ -1092,8 +1089,8 @@ class Footprint():
     def _to_sexpr_raw(self):
         expr = ['footprint', escape_and_quote(self.libId)]
 
-        expr.append(format_bool_raw('locked', self.locked))
-        expr.append(format_bool_raw('placed', self.placed))
+        expr.append(format_bool('locked', self.locked))
+        expr.append(format_bool('placed', self.placed))
 
         if self.version is not None:
             expr.append(['version', self.version])
