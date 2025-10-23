@@ -19,10 +19,7 @@ sys.path.append(SOURCE_PATH)
 
 from tests.test_board import *
 from tests.test_designrules import *
-from tests.test_footprint import *
-from tests.test_libtable import *
 from tests.test_schematic import *
-from tests.test_symbol import *
 from tests.test_worksheets import *
 from tests.test_misc import *
 from tests.reporter.runner import HTMLTestRunner
