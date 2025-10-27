@@ -278,7 +278,7 @@ class Line():
             elif item[0] == 'end': object.end = WksPosition().from_sexpr(item)
             elif item[0] == 'option': object.option = item[1]
             elif item[0] == 'linewidth': object.lineWidth = item[1]
-            elif item[0] == 'repeat': object.repeat = item[1]
+            elif item[0] == 'repeat': object.repeat = int(item[1])
             elif item[0] == 'incrx': object.incrx = item[1]
             elif item[0] == 'incry': object.incry = item[1]
             elif item[0] == 'comment': object.comment = item[1]
@@ -397,7 +397,7 @@ class Rect():
             if item[0] == 'end': object.end = WksPosition().from_sexpr(item)
             if item[0] == 'option': object.option = item[1]
             if item[0] == 'linewidth': object.lineWidth = item[1]
-            if item[0] == 'repeat': object.repeat = item[1]
+            if item[0] == 'repeat': object.repeat = int(item[1])
             if item[0] == 'incrx': object.incrx = item[1]
             if item[0] == 'incry': object.incry = item[1]
             if item[0] == 'comment': object.comment = item[1]
@@ -584,7 +584,7 @@ class Bitmap():
             elif item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
             elif item[0] == 'option': object.option = item[1]
             elif item[0] == 'scale': object.scale = item[1]
-            elif item[0] == 'repeat': object.repeat = item[1]
+            elif item[0] == 'repeat': object.repeat = int(item[1])
             elif item[0] == 'incrx': object.incrx = item[1]
             elif item[0] == 'incry': object.incry = item[1]
             elif item[0] == 'comment': object.comment = item[1]
@@ -621,14 +621,14 @@ class Bitmap():
         if self.option is not None:
             expr.append(['option', self.option])
 
-        expr.append(['scale', self.scale])
+        expr.append(['scale', format_float(self.scale)])
 
         if self.repeat is not None:
             expr.append(['repeat', self.repeat])
         if self.incrx is not None:
-            expr.append(['incrx', self.incrx])
+            expr.append(['incrx', format_float(self.incrx)])
         if self.incry is not None:
-            expr.append(['incry', self.incry])
+            expr.append(['incry', format_float(self.incry)])
         if self.comment is not None:
             expr.append(['comment', escape_and_quote(self.comment)])
 
@@ -726,10 +726,10 @@ class TbText():
             elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             elif item[0] == 'maxlen': object.maxlen = item[1]
             elif item[0] == 'maxheight': object.maxheight = item[1]
-            elif item[0] == 'repeat': object.repeat = item[1]
+            elif item[0] == 'repeat': object.repeat = int(item[1])
             elif item[0] == 'incrx': object.incrx = item[1]
             elif item[0] == 'incry': object.incry = item[1]
-            elif item[0] == 'incrlabel': object.incrlabel = item[1]
+            elif item[0] == 'incrlabel': object.incrlabel = int(item[1])
             elif item[0] == 'comment': object.comment = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -763,21 +763,21 @@ class TbText():
         if self.option is not None:
             expr.append(['option', self.option])
         if self.rotate is not None:
-            expr.append(['rotate', self.rotate])
+            expr.append(['rotate', format_float(self.rotate)])
         if self.font is not None:
             expr.append(self.font._to_sexpr_raw())
         if self.justify is not None:
             expr.append(self.justify._to_sexpr_raw())
         if self.maxlen is not None:
-            expr.append(['maxlen', self.maxlen])
+            expr.append(['maxlen', format_float(self.maxlen)])
         if self.maxheight is not None:
-            expr.append(['maxheight', self.maxheight])
+            expr.append(['maxheight', format_float(self.maxheight)])
         if self.repeat is not None:
             expr.append(['repeat', self.repeat])
         if self.incrx is not None:
-            expr.append(['incrx', self.incrx])
+            expr.append(['incrx', format_float(self.incrx)])
         if self.incry is not None:
-            expr.append(['incry', self.incry])
+            expr.append(['incry', format_float(self.incry)])
         if self.incrlabel is not None:
             expr.append(['incrlabel', self.incrlabel])
         if self.comment is not None:

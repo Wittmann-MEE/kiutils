@@ -263,7 +263,7 @@ class FpLine():
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(['width', format_float(self.width)])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
@@ -372,7 +372,7 @@ class FpRect():
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(['width', format_float(self.width)])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
@@ -535,7 +535,7 @@ class FpTextBox():
             expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
 
         if self.angle is not None:
-            expr.append(['angle', self.angle])
+            expr.append(['angle', format_float(self.angle)])
 
         expr.append(['layer', escape_and_quote(self.layer)])
 
@@ -650,7 +650,7 @@ class FpCircle():
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(['width', format_float(self.width)])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
@@ -762,7 +762,7 @@ class FpArc():
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(['width', format_float(self.width)])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
@@ -873,7 +873,7 @@ class FpPoly():
         expr.append(pts_expr)
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(['width', format_float(self.width)])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
@@ -983,7 +983,7 @@ class FpCurve():
         expr.append(pts_expr)
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(['width', format_float(self.width)])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 

@@ -92,9 +92,9 @@ class DimensionFormat():
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'prefix': object.prefix = item[1]
             elif item[0] == 'suffix': object.suffix = item[1]
-            elif item[0] == 'units': object.units = item[1]
-            elif item[0] == 'units_format': object.unitsFormat = item[1]
-            elif item[0] == 'precision': object.precision = item[1]
+            elif item[0] == 'units': object.units = int(item[1])
+            elif item[0] == 'units_format': object.unitsFormat = int(item[1])
+            elif item[0] == 'precision': object.precision = int(item[1])
             elif item[0] == 'override_value': object.overrideValue = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")

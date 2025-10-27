@@ -84,7 +84,7 @@ class GeneralSettings():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['general', ['thickness', self.thickness]]
+        expr = ['general', ['thickness', format_float(self.thickness)]]
 
         if self.legacy_teardrops is not None:
             expr.append(['legacy_teardrops', self.legacy_teardrops])
@@ -338,7 +338,7 @@ class StackupLayer():
             expr.append(['color', escape_and_quote(self.color)])
 
         if self.thickness is not None:
-            expr.append(['thickness', self.thickness])
+            expr.append(['thickness', format_float(self.thickness)])
 
         if self.material is not None:
             expr.append(['material', escape_and_quote(self.material)])
@@ -692,7 +692,7 @@ class PlotSettings():
             elif item[0] == 'plotinvisibletext' : object.plotInvisibleText = parse_bool(item, 'plotinvisibletext')
             elif item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = parse_bool(item, 'sketchpadsonfab')
             elif item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = parse_bool(item, 'subtractmaskfromsilk')
-            elif item[0] == 'outputformat' : object.outputFormat = item[1]
+            elif item[0] == 'outputformat' : object.outputFormat = int(item[1])
             elif item[0] == 'mirror' : object.mirror = parse_bool(item, 'mirror')
             elif item[0] == 'drillshape' : object.drillShape = int(item[1])
             elif item[0] == 'scaleselection' : object.scaleSelection = int(item[1])
@@ -746,7 +746,7 @@ class PlotSettings():
         if self.svgUseInch is not None:
             expr.append(['svguseinch', self.svgUseInch])
 
-        expr.append(['svgprecision', self.svgPrecision])
+        expr.append(['svgprecision', format_float(self.svgPrecision)])
 
         if self.excludeEdgeLayer is not None:
             expr.append(['excludeedgelayer', self.excludeEdgeLayer])
@@ -966,13 +966,13 @@ class SetupData():
         expr.append(['pad_to_mask_clearance', format_float(self.packToMaskClearance)])
 
         if self.solderMaskMinWidth is not None:
-            expr.append(['solder_mask_min_width', self.solderMaskMinWidth])
+            expr.append(['solder_mask_min_width', format_float(self.solderMaskMinWidth)])
 
         if self.padToPasteClearance is not None:
-            expr.append(['pad_to_paste_clearance', self.padToPasteClearance])
+            expr.append(['pad_to_paste_clearance', format_float(self.padToPasteClearance)])
 
         if self.padToPasteClearanceRatio is not None:
-            expr.append(['pad_to_paste_clearance_ratio', self.padToPasteClearanceRatio])
+            expr.append(['pad_to_paste_clearance_ratio', format_float(self.padToPasteClearanceRatio)])
 
         if self.allow_soldermask_bridges_in_footprints is not None:
             expr.append(format_bool('allow_soldermask_bridges_in_footprints', self.allow_soldermask_bridges_in_footprints, yesno=True))
@@ -1357,7 +1357,7 @@ class Arc():
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'net': object.net = int(item[1])
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
@@ -1394,7 +1394,7 @@ class Arc():
             expr.extend([
                 ['width', format_float(self.width)],
                 ['layer', escape_and_quote(self.layer)],
-                ['net', int(self.net)],
+                ['net', self.net],
             ])
 
         if self.tstamp is not None:
@@ -1629,7 +1629,7 @@ class Generated():
                     raise Exception(f"Expected points property pts, got: {points_expr}")
                 for point in points_expr[1:]:
                     object.base_line_coupled.append(Position().from_sexpr(point))
-            elif item[0] == 'corner_radius_percent': object.corner_radius = item[1]
+            elif item[0] == 'corner_radius_percent': object.corner_radius = int(item[1])
             elif item[0] == 'end': object.end = Position().from_sexpr(item[1])
             elif item[0] == 'initial_side': object.initial_side = item[1]
             elif item[0] == 'last_diff_pair_gap': object.last_diff_pair_gap = item[1]

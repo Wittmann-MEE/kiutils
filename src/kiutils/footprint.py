@@ -235,7 +235,7 @@ class Model():
         expr.append(format_bool('hide', self.hide))
 
         if self.opacity is not None:
-            expr.append(['opacity', self.opacity])
+            expr.append(['opacity', format_float(self.opacity)])
 
         expr.append(['offset', self.pos._to_sexpr_raw()])
         expr.append(['scale', self.scale._to_sexpr_raw()])
@@ -667,7 +667,7 @@ class Pad():
             expr.append(chamfer_expr)
 
         if self.dieLength is not None:
-            expr.append(['die_length', self.dieLength])
+            expr.append(['die_length', format_float(self.dieLength)])
 
         if self.net is not None:
             expr.append(self.net._to_sexpr_raw())
@@ -907,7 +907,7 @@ class Footprint():
     generator_version: Optional[str] = None
     """The ``generator_version`` token attribute defines the version of the program used to write the file"""
 
-    embedded_fonts: Optional[str] = None
+    embedded_fonts: Optional[bool] = None
     """The ``embedded_fonts`` token defines if the embedded fonts are used in the footprint"""
 
     sheet_name: str = ""
@@ -986,7 +986,7 @@ class Footprint():
             elif item[0] == 'private_layers': object.privateLayers.extend(item[1:])
             elif item[0] == 'net_tie_pad_groups': object.netTiePadGroups.extend(item[1:])
             elif item[0] == 'dimension': object.graphicItems.append(Dimension.from_sexpr(item))
-            elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
             elif item[0] == 'embedded_files': object.embedded_files.extend([EmbeddedFile().from_sexpr(f) for f in item[1:]])
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -1200,7 +1200,7 @@ class Footprint():
             expr.append(item._to_sexpr_raw())
 
         if self.embedded_fonts is not None:
-            expr.append(['embedded_fonts', self.embedded_fonts])
+            expr.append(format_bool('embedded_fonts', self.embedded_fonts, yesno=True))
 
         # Embedded files
         if len(self.embedded_files) > 0:

@@ -388,7 +388,7 @@ class Font():
         expr.append(['size', format_float(self.height), format_float(self.width)])
 
         if self.thickness is not None:
-            expr.append(['thickness', self.thickness])
+            expr.append(['thickness', format_float(self.thickness)])
 
         if self.bold:
             expr.append(format_bool('bold', self.bold))
@@ -400,7 +400,7 @@ class Font():
             expr.append(format_bool('italic', self.italic))
 
         if self.lineSpacing is not None:
-            expr.append(['line_spacing', self.lineSpacing])
+            expr.append(['line_spacing', format_float(self.lineSpacing)])
 
         return expr
 
@@ -779,7 +779,7 @@ class PageSettings():
         if self.paperSize == 'User':
             if self.width is None or self.height is None:
                 raise Exception("Page size set to 'User' but width or height not specified")
-            expr.extend([self.width, self.height])
+            expr.extend([format_float(self.width), format_float(self.height)])
 
         if self.portrait:
             expr.append('portrait')
@@ -1103,7 +1103,7 @@ class RenderCache():
 
         object = cls()
         object.text = exp[1]
-        object.id = exp[2]
+        object.id = int(exp[2])
         for item in exp[3:]:
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
@@ -1286,7 +1286,7 @@ class Image():
             expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.scale is not None:
-            expr.append(['scale', self.scale])
+            expr.append(['scale', format_float(self.scale)])
 
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])

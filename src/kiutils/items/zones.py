@@ -223,14 +223,14 @@ class FillSettings():
             elif item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
             elif item[0] == 'smoothing': object.smoothingStyle = item[1]
             elif item[0] == 'radius': object.smoothingRadius = item[1]
-            elif item[0] == 'island_removal_mode': object.islandRemovalMode = item[1]
+            elif item[0] == 'island_removal_mode': object.islandRemovalMode = int(item[1])
             elif item[0] == 'island_area_min': object.islandAreaMin = item[1]
             elif item[0] == 'hatch_thickness': object.hatchThickness = item[1]
             elif item[0] == 'hatch_gap': object.hatchGap = item[1]
             elif item[0] == 'hatch_orientation': object.hatchOrientation = item[1]
-            elif item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = item[1]
+            elif item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = int(item[1])
             elif item[0] == 'hatch_smoothing_value': object.hatchSmoothingValue = item[1]
-            elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
+            elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = int(item[1])
             elif item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -260,26 +260,26 @@ class FillSettings():
         if self.mode is not None:
             expr.append(['mode', self.mode])
 
-        expr.append(['thermal_gap', self.thermalGap])
-        expr.append(['thermal_bridge_width', self.thermalBridgeWidth])
+        expr.append(['thermal_gap', format_float(self.thermalGap)])
+        expr.append(['thermal_bridge_width', format_float(self.thermalBridgeWidth)])
 
         if self.smoothingStyle is not None:
             expr.append(['smoothing', self.smoothingStyle])
 
         if self.smoothingRadius is not None:
-            expr.append(['radius', self.smoothingRadius])
+            expr.append(['radius', format_float(self.smoothingRadius)])
 
         if self.islandRemovalMode is not None:
             expr.append(['island_removal_mode', self.islandRemovalMode])
 
         if self.islandAreaMin is not None:
-            expr.append(['island_area_min', self.islandAreaMin])
+            expr.append(['island_area_min', format_float(self.islandAreaMin)])
 
         if self.hatchThickness is not None:
-            expr.append(['hatch_thickness', self.hatchThickness])
+            expr.append(['hatch_thickness', format_float(self.hatchThickness)])
 
         if self.hatchGap is not None:
-            expr.append(['hatch_gap', self.hatchGap])
+            expr.append(['hatch_gap', format_float(self.hatchGap)])
 
         if self.hatchOrientation is not None:
             expr.append(['hatch_orientation', self.hatchOrientation])
@@ -288,13 +288,13 @@ class FillSettings():
             expr.append(['hatch_smoothing_level', self.hatchSmoothingLevel])
 
         if self.hatchSmoothingValue is not None:
-            expr.append(['hatch_smoothing_value', self.hatchSmoothingValue])
+            expr.append(['hatch_smoothing_value', format_float(self.hatchSmoothingValue)])
 
         if self.hatchBorderAlgorithm is not None:
             expr.append(['hatch_border_algorithm', self.hatchBorderAlgorithm])
 
         if self.hatchMinHoleArea is not None:
-            expr.append(['hatch_min_hole_area', self.hatchMinHoleArea])
+            expr.append(['hatch_min_hole_area', format_float(self.hatchMinHoleArea)])
 
         return expr
 
@@ -659,7 +659,7 @@ class Zone():
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'name': object.name = item[1]
             elif item[0] == 'hatch': object.hatch = Hatch(style=item[1], pitch=item[2])
-            elif item[0] == 'priority': object.priority = item[1]
+            elif item[0] == 'priority': object.priority = int(item[1])
             elif item[0] == 'connect_pads':
                 if len(item) == 2:
                     object.clearance = item[1][1]
@@ -734,7 +734,7 @@ class Zone():
         connect_pads_expr.append(['clearance', format_float(self.clearance)])
         expr.append(connect_pads_expr)
 
-        expr.append(['min_thickness', self.minThickness])
+        expr.append(['min_thickness', float(self.minThickness)])
 
         if self.filledAreasThickness is not None:
             expr.append(['filled_areas_thickness', self.filledAreasThickness])
