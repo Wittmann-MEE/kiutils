@@ -751,13 +751,11 @@ class PageSettings():
 
             object.width = exp[2]
             object.height = exp[3]
-        else:
-            for item in exp[2:]:
-                if not isinstance(item, list):
-                    raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-                elif item[0] == 'portrait': object.portrait = True
-                else:
-                    raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+
+        for item in exp[2:]:
+            if item == 'portrait': object.portrait = True
+            else:
+                raise ValueError(f"Unrecognized property key: {item}. Full expression: {exp}")
 
         return object
 

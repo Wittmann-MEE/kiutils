@@ -59,6 +59,18 @@ class Tests_Board_Demos(unittest.TestCase):
     #     board = Board().from_file(self.testData.pathToTestFile)
     #     self.assertTrue(to_file_and_compare(board, self.testData))
 
+    def test_KitDevColdfireXilinx_5213(self):
+        """Tests the behavior when creating and exporting KitDevColdfireXilinx_5213 demo board"""
+        self.testData.pathToTestFile = Path(BOARD_DEMO) / 'KitDevColdfireXilinx_5213'
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
+
+    def test_StickHub(self):
+        """Tests the behavior when creating and exporting StickHub demo board"""
+        self.testData.pathToTestFile = Path(BOARD_DEMO) / 'StickHub'
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
+
 class Tests_Board(unittest.TestCase):
     """Test cases for Boards"""
 

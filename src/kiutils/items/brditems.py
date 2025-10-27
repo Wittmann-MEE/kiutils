@@ -477,22 +477,22 @@ class PlotSettings():
     
     Available and required since KiCad v7"""
 
-    disableApertMacros: str = "no"
-    """The ``disableApertMacros`` token defines if aperture macros are to be used in gerber plots"""
+    disableApertMacros: Optional[bool] = None
+    """The optional ``disableApertMacros`` token defines if aperture macros are to be used in gerber plots"""
 
-    useGerberExtensions: str = "no"
-    """The ``useGerberExtensions`` token  defines if the Protel layer file name extensions are to
+    useGerberExtensions: Optional[bool] = None
+    """The optional ``useGerberExtensions`` token defines if the Protel layer file name extensions are to
     be used in gerber plots"""
 
-    useGerberAttributes: str = "no"
-    """The ``useGerberAttributes`` token defines if the X2 extensions are used in gerber plots"""
+    useGerberAttributes: Optional[bool] = None
+    """The optional ``useGerberAttributes`` token defines if the X2 extensions are used in gerber plots"""
 
-    useGerberAdvancedAttributes: str = "no"
-    """The ``useGerberAdvancedAttributes`` token defines if the netlist information should be
+    useGerberAdvancedAttributes: Optional[bool] = None
+    """The optional ``useGerberAdvancedAttributes`` token defines if the netlist information should be
     included in gerber plots"""
 
-    createGerberJobFile: str = "no"
-    """The ``createGerberJobFile`` token defines if a job file should be created when plotting 
+    createGerberJobFile: Optional[bool] = None
+    """The optional ``createGerberJobFile`` token defines if a job file should be created when plotting 
     gerber files"""
 
     # FIXME: Where is the docu of this token?
@@ -520,18 +520,18 @@ class PlotSettings():
     
     Required until KiCad v6, removed since KiCad v7"""
 
-    plotFameRef: str = "no"
-    """The ``plotFameRef`` token defines if the border and title block should be plotted"""
+    plotFameRef: Optional[bool] = None
+    """The optional ``plotFameRef`` token defines if the border and title block should be plotted"""
 
-    viasOnMask: str = "no"
-    """The ``viasOnMask`` token defines if the vias are to be tented"""
+    viasOnMask: Optional[bool] = None
+    """The optional ``viasOnMask`` token defines if the vias are to be tented"""
 
     mode: int = 1
     """The ``mode`` token defines the plot mode. An attribute of 1 plots in the normal
     mode and an attribute of 2 plots in the outline (sketch) mode."""
 
-    useAuxOrigin: str = "no"
-    """The ``useAuxOrigin`` token determines if all coordinates are offset by the defined user origin"""
+    useAuxOrigin: Optional[bool] = None
+    """The optional ``useAuxOrigin`` token determines if all coordinates are offset by the defined user origin"""
 
     hpglPenNumber: int = 0
     """The ``hpglPenNumber`` token defines the integer pen number used for HPGL plots"""
@@ -542,37 +542,37 @@ class PlotSettings():
     hpglPenDiameter: float = 0.0
     """The ``hpglPenDiameter`` token defines the floating point pen size for HPGL plots"""
 
-    dxfPolygonMode: str = "no"
-    """The ``dxfPolygonMode`` token defines if the polygon mode should be used for DXF plots"""
+    dxfPolygonMode: Optional[bool] = None
+    """The optional ``dxfPolygonMode`` token defines if the polygon mode should be used for DXF plots"""
 
-    dxfImperialUnits: str = "no"
-    """The ``dxfImperialUnits`` token defines if imperial units should be used for DXF plots"""
+    dxfImperialUnits: Optional[bool] = None
+    """The optional ``dxfImperialUnits`` token defines if imperial units should be used for DXF plots"""
 
-    dxfUsePcbnewFont: str = "no"
-    """The ``dxfUsePcbnewFont`` token defines if the Pcbnew font (vector font) or the default
+    dxfUsePcbnewFont: Optional[bool] = None
+    """The optional ``dxfUsePcbnewFont`` token defines if the Pcbnew font (vector font) or the default
     font should be used for DXF plots"""
 
-    psNegative: str = "no"
-    """The ``psNegative`` token defines if the output should be the negative for PostScript plots"""
+    psNegative: Optional[bool] = None
+    """The optional ``psNegative`` token defines if the output should be the negative for PostScript plots"""
 
-    psA4Output: str = "no"
-    """The ``psA4Output`` token defines if the A4 page size should be used for PostScript plots"""
+    psA4Output: Optional[bool] = None
+    """The optional ``psA4Output`` token defines if the A4 page size should be used for PostScript plots"""
 
-    plotReference: str = "no"
-    """The ``plotReference`` token defines if hidden reference field text should be plotted"""
+    plotReference: Optional[bool] = None
+    """The optional ``plotReference`` token defines if hidden reference field text should be plotted"""
 
-    plotValue: str = "no"
-    """The ``plotValue`` token defines if hidden value field text should be plotted"""
+    plotValue: Optional[bool] = None
+    """The optional ``plotValue`` token defines if hidden value field text should be plotted"""
 
-    plotInvisibleText: str = "no"
-    """The ``plotInvisibleText`` token defines if hidden text other than the reference and
+    plotInvisibleText: Optional[bool] = None
+    """The optional ``plotInvisibleText`` token defines if hidden text other than the reference and
     value fields should be plotted"""
 
-    sketchPadsOnFab: str = "no"
-    """The ``sketchPadsOnFab`` token defines if pads should be plotted in the outline (sketch) mode"""
+    sketchPadsOnFab: Optional[bool] = None
+    """The optional ``sketchPadsOnFab`` token defines if pads should be plotted in the outline (sketch) mode"""
 
-    subtractMaskFromSilk: str = "no"
-    """The ``subtractMaskFromSilk`` token defines if the solder mask layers should be subtracted from
+    subtractMaskFromSilk: Optional[bool] = None
+    """The optional ``subtractMaskFromSilk`` token defines if the solder mask layers should be subtracted from
     the silk screen layers for gerber plots"""
 
     outputFormat: int = 0
@@ -584,8 +584,8 @@ class PlotSettings():
     - 4: HPGL
     - 5: PDF"""
 
-    mirror: str = "no"
-    """The ``mirror`` token defines if the plot should be mirrored"""
+    mirror: Optional[bool] = None
+    """The optional ``mirror`` token defines if the plot should be mirrored"""
 
     drillShape: int = 0
     """The ``drillShape`` token defines the type of drill marks used for drill files"""
@@ -672,25 +672,25 @@ class PlotSettings():
             elif item[0] == 'svguseinch' : object.svgUseInch = item[1]
             elif item[0] == 'svgprecision' : object.svgPrecision = item[1]
             elif item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = item[1]
-            elif item[0] == 'plotframeref' : object.plotFameRef = item[1]
-            elif item[0] == 'viasonmask' : object.viasOnMask = item[1]
+            elif item[0] == 'plotframeref' : object.plotFameRef = parse_bool(item, 'plotframeref')
+            elif item[0] == 'viasonmask' : object.viasOnMask = parse_bool(item, 'viasonmask')
             elif item[0] == 'mode' : object.mode = item[1]
-            elif item[0] == 'useauxorigin' : object.useAuxOrigin = item[1]
+            elif item[0] == 'useauxorigin' : object.useAuxOrigin = parse_bool(item, 'useauxorigin')
             elif item[0] == 'hpglpennumber' : object.hpglPenNumber = item[1]
             elif item[0] == 'hpglpenspeed' : object.hpglPenSpeed = item[1]
             elif item[0] == 'hpglpendiameter' : object.hpglPenDiameter = item[1]
-            elif item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = item[1]
-            elif item[0] == 'dxfimperialunits' : object.dxfImperialUnits = item[1]
-            elif item[0] == 'dxfusepcbnewfont' : object.dxfUsePcbnewFont = item[1]
-            elif item[0] == 'psnegative' : object.psNegative = item[1]
-            elif item[0] == 'psa4output' : object.psA4Output = item[1]
-            elif item[0] == 'plotreference' : object.plotReference = item[1]
-            elif item[0] == 'plotvalue' : object.plotValue = item[1]
-            elif item[0] == 'plotinvisibletext' : object.plotInvisibleText = item[1]
-            elif item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = item[1]
-            elif item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = item[1]
+            elif item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = parse_bool(item, 'dxfpolygonmode')
+            elif item[0] == 'dxfimperialunits' : object.dxfImperialUnits = parse_bool(item, 'dxfimperialunits')
+            elif item[0] == 'dxfusepcbnewfont' : object.dxfUsePcbnewFont = parse_bool(item, 'dxfusepcbnewfont')
+            elif item[0] == 'psnegative' : object.psNegative = parse_bool(item, 'psnegative')
+            elif item[0] == 'psa4output' : object.psA4Output = parse_bool(item, 'psa4output')
+            elif item[0] == 'plotreference' : object.plotReference = parse_bool(item, 'plotreference')
+            elif item[0] == 'plotvalue' : object.plotValue = parse_bool(item, 'plotvalue')
+            elif item[0] == 'plotinvisibletext' : object.plotInvisibleText = parse_bool(item, 'plotinvisibletext')
+            elif item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = parse_bool(item, 'sketchpadsonfab')
+            elif item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = parse_bool(item, 'subtractmaskfromsilk')
             elif item[0] == 'outputformat' : object.outputFormat = item[1]
-            elif item[0] == 'mirror' : object.mirror = item[1]
+            elif item[0] == 'mirror' : object.mirror = parse_bool(item, 'mirror')
             elif item[0] == 'drillshape' : object.drillShape = item[1]
             elif item[0] == 'scaleselection' : object.scaleSelection = item[1]
             elif item[0] == 'outputdirectory' : object.outputDirectory = item[1]
@@ -747,13 +747,17 @@ class PlotSettings():
         if self.excludeEdgeLayer is not None:
             expr.append(['excludeedgelayer', self.excludeEdgeLayer])
 
-        expr.append(['plotframeref', self.plotFameRef])
+        if self.plotFameRef is not None:
+            expr.append(format_bool('plotframeref', self.plotFameRef, yesno=True))
 
-        if self.viasOnMask == 'yes':
-            expr.append(['viasonmask', self.viasOnMask])
+        if self.viasOnMask is not None:
+            expr.append(format_bool('viasonmask', self.viasOnMask, yesno=True))
 
         expr.append(['mode', self.mode])
-        expr.append(['useauxorigin', self.useAuxOrigin])
+
+        if self.useAuxOrigin is not None:
+            expr.append(format_bool('useauxorigin', self.useAuxOrigin, yesno=True))
+
         expr.append(['hpglpennumber', self.hpglPenNumber])
         expr.append(['hpglpenspeed', self.hpglPenSpeed])
         expr.append(['hpglpendiameter', (f"{self.hpglPenDiameter:.6f}")])
@@ -770,16 +774,29 @@ class PlotSettings():
         if self.pdf_single_document is not None:
             expr.append(format_bool('pdf_single_document', self.pdf_single_document, yesno=True))
 
-        expr.append(['dxfpolygonmode', self.dxfPolygonMode])
-        expr.append(['dxfimperialunits', self.dxfImperialUnits])
-        expr.append(['dxfusepcbnewfont', self.dxfUsePcbnewFont])
-        expr.append(['psnegative', self.psNegative])
-        expr.append(['psa4output', self.psA4Output])
+        if self.dxfPolygonMode is not None:
+            expr.append(format_bool('dxfpolygonmode', self.dxfPolygonMode, yesno=True))
+        
+        if self.dxfImperialUnits is not None:
+            expr.append(format_bool('dxfimperialunits', self.dxfImperialUnits, yesno=True))
+        
+        if self.dxfUsePcbnewFont is not None:
+            expr.append(format_bool('dxfusepcbnewfont', self.dxfUsePcbnewFont, yesno=True))
+        
+        if self.psNegative is not None:
+            expr.append(format_bool('psnegative', self.psNegative, yesno=True))
+        
+        if self.psA4Output is not None:
+            expr.append(format_bool('psa4output', self.psA4Output, yesno=True))
 
         if self.plot_black_and_white is not None:
             expr.append(format_bool('plot_black_and_white', self.plot_black_and_white, yesno=True))
 
-        expr.append(['sketchpadsonfab', self.sketchPadsOnFab])
+        if self.plotInvisibleText is not None:
+            expr.append(format_bool('plotinvisibletext', self.plotInvisibleText, yesno=True))
+        
+        if self.sketchPadsOnFab is not None:
+            expr.append(format_bool('sketchpadsonfab', self.sketchPadsOnFab, yesno=True))
 
         if self.plot_pad_numbers is not None:
             expr.append(format_bool('plotpadnumbers', self.plot_pad_numbers, yesno=True))
@@ -792,19 +809,21 @@ class PlotSettings():
 
         if self.crossout_dnp_on_fab is not None:
             expr.append(format_bool('crossoutdnponfab', self.crossout_dnp_on_fab, yesno=True))
+        
+        if self.plotReference is not None:
+            expr.append(format_bool('plotreference', self.plotReference, yesno=True))
+        
+        if self.plotValue is not None:
+            expr.append(format_bool('plotvalue', self.plotValue, yesno=True))
 
-        if self.plotReference == 'yes':
-            expr.append(['plotreference', self.plotReference])
+        if self.subtractMaskFromSilk is not None:
+            expr.append(format_bool('subtractmaskfromsilk', self.subtractMaskFromSilk, yesno=True))
 
-        if self.plotValue == 'yes':
-            expr.append(['plotvalue', self.plotValue])
-
-        if self.plotInvisibleText == 'yes':
-            expr.append(['plotinvisibletext', self.plotInvisibleText])
-
-        expr.append(['subtractmaskfromsilk', self.subtractMaskFromSilk])
         expr.append(['outputformat', self.outputFormat])
-        expr.append(['mirror', self.mirror])
+
+        if self.mirror is not None:
+            expr.append(format_bool('mirror', self.mirror, yesno=True))
+
         expr.append(['drillshape', self.drillShape])
         expr.append(['scaleselection', self.scaleSelection])
         expr.append(['outputdirectory', escape_and_quote(self.outputDirectory)])
@@ -853,19 +872,25 @@ class SetupData():
     """The optional ``plotSettings`` define how the board was last plotted."""
 
     # Available since KiCad v9
-    # TODO Update docs
 
-    allow_soldermask_bridges_in_footprints: Optional[str] = None
+    allow_soldermask_bridges_in_footprints: Optional[bool] = None
+    """The optional ``allow_soldermask_bridges_in_footprints`` defines if soldermask bridges
+    in footprints are allowed."""
 
     tenting: List[str] = field(default_factory=list)
+    """The ``tenting`` token defines which features are tented (covered by mask)"""
 
     covering: List[str] = field(default_factory=list)
+    """The ``covering`` token defines which features are covered (e.g., hole covered)"""
 
     plugging: List[str] = field(default_factory=list)
+    """The ``plugging`` token defines which features are plugged (filled with epoxy/resin)"""
 
     capping: List[str] = field(default_factory=list)
+    """The ``capping`` token defines which features are capped (metal/finish over a filled/plugged via)"""
 
     filling: List[str] = field(default_factory=list)
+    """The ``filling`` token defines which features are filled (completely filled bore)"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> SetupData:
@@ -900,7 +925,8 @@ class SetupData():
             elif item[0] == 'aux_axis_origin': object.auxAxisOrigin = Position().from_sexpr(item)
             elif item[0] == 'grid_origin': object.gridOrigin = Position().from_sexpr(item)
             elif item[0] == 'pcbplotparams': object.plotSettings = PlotSettings().from_sexpr(item)
-            elif item[0] == 'allow_soldermask_bridges_in_footprints': object.allow_soldermask_bridges_in_footprints = item[1]
+            elif item[0] == 'allow_soldermask_bridges_in_footprints':
+                object.allow_soldermask_bridges_in_footprints = parse_bool(item, 'allow_soldermask_bridges_in_footprints')
             elif item[0] == 'tenting': object.tenting.extend(item[1:])
             elif item[0] == 'covering': object.covering.extend(item[1:])
             elif item[0] == 'plugging': object.plugging.extend(item[1:])
@@ -942,7 +968,7 @@ class SetupData():
             expr.append(['pad_to_paste_clearance_ratio', self.padToPasteClearanceRatio])
 
         if self.allow_soldermask_bridges_in_footprints is not None:
-            expr.append(['allow_soldermask_bridges_in_footprints', self.allow_soldermask_bridges_in_footprints])
+            expr.append(format_bool('allow_soldermask_bridges_in_footprints', self.allow_soldermask_bridges_in_footprints, yesno=True))
 
         if len(self.tenting) > 0:
             expr.append(['tenting'] + self.tenting)

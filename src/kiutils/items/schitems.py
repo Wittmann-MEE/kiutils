@@ -73,7 +73,7 @@ class Junction():
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
-            elif item[0] == 'diameter': object.color = item[1]
+            elif item[0] == 'diameter': object.diameter = item[1]
             elif item[0] == 'uuid': object.uuid = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")

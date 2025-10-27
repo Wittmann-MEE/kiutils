@@ -60,6 +60,18 @@ class Tests_Schematic_Demos(unittest.TestCase):
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
+    def test_KitDevColdfireXilinx_5213(self):
+        """Tests the behavior when creating and exporting KitDevColdfireXilinx_5213 demo schematic"""
+        self.testData.pathToTestFile = Path(SCHEMATIC_DEMO) / 'KitDevColdfireXilinx_5213'
+        schematic = Schematic().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
+
+    def test_StickHub(self):
+        """Tests the behavior when creating and exporting StickHub demo schematic"""
+        self.testData.pathToTestFile = Path(SCHEMATIC_DEMO) / 'StickHub'
+        schematic = Schematic().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
+
 
 class Tests_Schematic(unittest.TestCase):
     """Test cases for Schematics"""

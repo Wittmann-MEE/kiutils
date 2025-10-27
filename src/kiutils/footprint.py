@@ -67,6 +67,9 @@ class Attributes():
     dnp: Optional[bool] = None
     """The optional ``dnp`` token indicates that the footprint will not be populated"""
 
+    allow_soldermask_bridges: Optional[bool] = None
+    """The optional ``allow_soldermask_bridges`` token indicates that soldermask bridges are allowed"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Attributes:
         """Convert the given S-Expresstion into a Attributes object
@@ -94,6 +97,7 @@ class Attributes():
             elif is_bool_key(item, 'exclude_from_bom'): object.excludeFromBom = parse_bool(item, 'exclude_from_bom')
             elif is_bool_key(item, 'allow_missing_courtyard'): object.allowMissingCourtyard = parse_bool(item, 'allow_missing_courtyard')
             elif is_bool_key(item, 'dnp'): object.dnp = parse_bool(item, 'dnp')
+            elif is_bool_key(item, 'allow_soldermask_bridges'): object.allow_soldermask_bridges = parse_bool(item, 'allow_soldermask_bridges')
             elif item in ['through_hole', 'smd']: object.type = item
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -108,6 +112,8 @@ class Attributes():
         - ``excludeFromBom``: False
         - ``excludeFromPosFiles``: False
         - ``allowMissingCourtyard``: False
+        - ``dnp``: None
+        - ``allow_soldermask_bridges``: None
 
         KiCad won't add the ``(attr ..)`` token to a footprint when this combination is selected.
 
@@ -118,11 +124,9 @@ class Attributes():
         Returns:
             - str: S-Expression of this object
         """
-        if (self.type is None
-                and self.boardOnly == False
-                and self.excludeFromBom == False
-                and self.excludeFromPosFiles == False
-                and self.allowMissingCourtyard == False):
+        if self.type is None and all([prop == False for prop in [
+            self.boardOnly, self.excludeFromBom, self.excludeFromPosFiles,
+            self.allowMissingCourtyard, self.dnp, self.allow_soldermask_bridges]]):
             return ''
 
         raw_expr = self._to_sexpr_raw()
@@ -143,6 +147,8 @@ class Attributes():
             expr.append('allow_missing_courtyard')
         if self.dnp:
             expr.append('dnp')
+        if self.allow_soldermask_bridges:
+            expr.append('allow_soldermask_bridges')
 
         return expr
 
@@ -818,6 +824,11 @@ class Footprint():
     """The optional ``solderPasteMargin`` token defines the solder paste distance from all pads in
     the footprint. If not set, the board solder_paste_margin setting is used."""
 
+    solderPasteMarginRatio: Optional[float] = None
+    """The optional ``solderPasteMarginRatio`` token defines the ratio applied to the solder paste
+    margin for all pads in the footprint. It scales the board's solder_paste_margin value by this ratio.
+    If not set, the board ``solder_paste_margin_ratio`` setting is used."""
+
     solderPasteRatio: Optional[float] = None
     """The optional ``solderPasteRatio`` token defines the percentage of the pad size used to define
     the solder paste for all pads in the footprint. If not set, the board solder_paste_ratio setting
@@ -945,6 +956,7 @@ class Footprint():
             elif item[0] == 'autoplace_cost180': object.autoplaceCost180 = item[1]
             elif item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
             elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
+            elif item[0] == 'solder_paste_margin_ratio': object.solderPasteMarginRatio = item[1]
             elif item[0] == 'solder_paste_ratio': object.solderPasteRatio = item[1]
             elif item[0] == 'clearance': object.clearance = item[1]
             elif item[0] == 'zone_connect': object.zoneConnect = item[1]
@@ -1142,6 +1154,9 @@ class Footprint():
 
         if self.solderPasteMargin is not None:
             expr.append(['solder_paste_margin', self.solderPasteMargin])
+        
+        if self.solderPasteMarginRatio is not None:
+            expr.append(['solder_paste_margin_ratio', self.solderPasteMarginRatio])
 
         if self.solderPasteRatio is not None:
             expr.append(['solder_paste_ratio', self.solderPasteRatio])
