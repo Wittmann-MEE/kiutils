@@ -598,25 +598,43 @@ class PlotSettings():
     where the plot files will be saved"""
 
     # Available since KiCad v9
-    # TODO Update docs
 
-    pdf_front_fp_property_popups: Optional[str] = None
+    pdf_front_fp_property_popups: Optional[bool] = None
+    """The optional ``pdf_front_fp_property_popups`` token defines if interactive popups for
+    front-side footprint properties are included in PDF output"""
 
-    pdf_back_fp_property_popups: Optional[str] = None
+    pdf_back_fp_property_popups: Optional[bool] = None
+    """The optional ``pdf_back_fp_property_popups`` token defines if interactive popups for
+    back-side footprint properties are included in PDF output"""
 
-    pdf_metadata: Optional[str] = None
+    pdf_metadata: Optional[bool] = None
+    """The optional ``pdf_metadata`` token defines if document metadata should be embedded
+    in the PDF output"""
 
-    pdf_single_document: Optional[str] = None
+    pdf_single_document: Optional[bool] = None
+    """The optional ``pdf_single_document`` token defines if all layers should be plotted
+    into a single PDF document"""
 
-    plot_black_and_white: Optional[str] = None
+    plot_black_and_white: Optional[bool] = None
+    """The optional ``plot_black_and_white`` token defines if the plot should be generated
+    in black and white"""
 
-    hide_dnp_on_fab: Optional[str] = None
+    hide_dnp_on_fab: Optional[bool] = None
+    """The optional ``hide_dnp_on_fab`` token defines if 'Do Not Populate' footprints should
+    be hidden on fabrication plots"""
 
-    crossout_dnp_on_fab: Optional[str] = None
+    crossout_dnp_on_fab: Optional[bool] = None
+    """The optional ``crossout_dnp_on_fab`` token defines if 'Do Not Populate' footprints
+    should be crossed out on fabrication plots"""
 
-    sketch_dnp_on_fab: Optional[str] = None
+    sketch_dnp_on_fab: Optional[bool] = None
+    """The optional ``sketch_dnp_on_fab`` token defines if 'Do Not Populate' footprints should
+    be drawn in sketch mode on fabrication plots"""
 
-    plot_pad_numbers: Optional[str] = None
+    plot_pad_numbers: Optional[bool] = None
+    """The optional ``plot_pad_numbers`` token defines if pad numbers should be plotted
+    on fabrication layers"""
+
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PlotSettings:
@@ -676,15 +694,15 @@ class PlotSettings():
             elif item[0] == 'drillshape' : object.drillShape = item[1]
             elif item[0] == 'scaleselection' : object.scaleSelection = item[1]
             elif item[0] == 'outputdirectory' : object.outputDirectory = item[1]
-            elif item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = item[1]
-            elif item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = item[1]
-            elif item[0] == 'pdf_metadata': object.pdf_metadata = item[1]
-            elif item[0] == 'pdf_single_document': object.pdf_single_document = item[1]
-            elif item[0] == 'plot_black_and_white': object.plot_black_and_white = item[1]
-            elif item[0] == 'hidednponfab': object.hide_dnp_on_fab = item[1]
-            elif item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = item[1]
-            elif item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = item[1]
-            elif item[0] == 'plotpadnumbers': object.plot_pad_numbers = item[1]
+            elif item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = parse_bool(item, 'pdf_front_fp_property_popups')
+            elif item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = parse_bool(item, 'pdf_back_fp_property_popups')
+            elif item[0] == 'pdf_metadata': object.pdf_metadata = parse_bool(item, 'pdf_metadata')
+            elif item[0] == 'pdf_single_document': object.pdf_single_document = parse_bool(item, 'pdf_single_document')
+            elif item[0] == 'plot_black_and_white':  object.plot_black_and_white = parse_bool(item, 'plot_black_and_white')
+            elif item[0] == 'hidednponfab': object.hide_dnp_on_fab = parse_bool(item, 'hidednponfab')
+            elif item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = parse_bool(item, 'sketchdnponfab')
+            elif item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = parse_bool(item, 'crossoutdnponfab')
+            elif item[0] == 'plotpadnumbers': object.plot_pad_numbers = parse_bool(item, 'plotpadnumbers')
             else:
                 raise ValueError("Unrecognized property key: {item[0]}")
 
@@ -735,22 +753,22 @@ class PlotSettings():
             expr.append(['viasonmask', self.viasOnMask])
 
         expr.append(['mode', self.mode])
-        expr.append(['useauxorigin', 'no'])
+        expr.append(['useauxorigin', self.useAuxOrigin])
         expr.append(['hpglpennumber', self.hpglPenNumber])
         expr.append(['hpglpenspeed', self.hpglPenSpeed])
         expr.append(['hpglpendiameter', (f"{self.hpglPenDiameter:.6f}")])
 
         if self.pdf_front_fp_property_popups is not None:
-            expr.append(['pdf_front_fp_property_popups', self.pdf_front_fp_property_popups])
+            expr.append(format_bool('pdf_front_fp_property_popups', self.pdf_front_fp_property_popups, yesno=True))
 
         if self.pdf_back_fp_property_popups is not None:
-            expr.append(['pdf_back_fp_property_popups', self.pdf_back_fp_property_popups])
+            expr.append(format_bool('pdf_back_fp_property_popups', self.pdf_back_fp_property_popups, yesno=True))
 
         if self.pdf_metadata is not None:
-            expr.append(['pdf_metadata', self.pdf_metadata])
+            expr.append(format_bool('pdf_metadata', self.pdf_metadata, yesno=True))
 
         if self.pdf_single_document is not None:
-            expr.append(['pdf_single_document', self.pdf_single_document])
+            expr.append(format_bool('pdf_single_document', self.pdf_single_document, yesno=True))
 
         expr.append(['dxfpolygonmode', self.dxfPolygonMode])
         expr.append(['dxfimperialunits', self.dxfImperialUnits])
@@ -759,21 +777,21 @@ class PlotSettings():
         expr.append(['psa4output', self.psA4Output])
 
         if self.plot_black_and_white is not None:
-            expr.append(['plot_black_and_white', self.plot_black_and_white])
+            expr.append(format_bool('plot_black_and_white', self.plot_black_and_white, yesno=True))
 
         expr.append(['sketchpadsonfab', self.sketchPadsOnFab])
 
         if self.plot_pad_numbers is not None:
-            expr.append(['plotpadnumbers', self.plot_pad_numbers])
+            expr.append(format_bool('plotpadnumbers', self.plot_pad_numbers, yesno=True))
 
         if self.hide_dnp_on_fab is not None:
-            expr.append(['hidednponfab', self.hide_dnp_on_fab])
+            expr.append(format_bool('hidednponfab', self.hide_dnp_on_fab, yesno=True))
 
         if self.sketch_dnp_on_fab is not None:
-            expr.append(['sketchdnponfab', self.sketch_dnp_on_fab])
+            expr.append(format_bool('sketchdnponfab', self.sketch_dnp_on_fab, yesno=True))
 
         if self.crossout_dnp_on_fab is not None:
-            expr.append(['crossoutdnponfab', self.crossout_dnp_on_fab])
+            expr.append(format_bool('crossoutdnponfab', self.crossout_dnp_on_fab, yesno=True))
 
         if self.plotReference == 'yes':
             expr.append(['plotreference', self.plotReference])
@@ -1139,6 +1157,7 @@ class Via():
             elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
+            # elif item[0] == 'teardrops': continue
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 

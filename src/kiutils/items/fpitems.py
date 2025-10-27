@@ -75,6 +75,9 @@ class FpText():
     unlocked: Optional[bool] = None
     """The optional ``unlocked`` token defines if the object can be edited"""
 
+    locked: Optional[bool] = None
+    """The optional ``locked`` token defines if the object cannot be edited"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> FpText:
         """Convert the given S-Expresstion into a FpText object
@@ -100,6 +103,7 @@ class FpText():
         object.text = exp[2]
         for item in exp[3:]:
             if is_bool_key(item, 'unlocked'): object.unlocked = parse_bool(item, 'unlocked')
+            elif is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
@@ -132,6 +136,9 @@ class FpText():
 
     def _to_sexpr_raw(self):
         expr = ['fp_text', self.type, escape_and_quote(self.text)]
+
+        if self.locked:
+            expr.append(format_bool('locked', self.locked))
 
         pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
         if self.position.angle is not None:

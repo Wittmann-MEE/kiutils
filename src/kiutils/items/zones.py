@@ -649,6 +649,7 @@ class Zone():
             elif item[0] == 'filled_polygon': object.filledPolygons.append(FilledPolygon().from_sexpr(item))
             elif item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
             elif item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
+            # elif item[0] == 'attr': continue
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 

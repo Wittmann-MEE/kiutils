@@ -22,7 +22,8 @@ from typing import Dict
 from os import path
 
 from kiutils.items.zones import Zone
-from kiutils.items.common import Image, Coordinate, Net, Group, Font
+from kiutils.items.common import Image, Coordinate, Net, Group, Font, EmbeddedFile
+from kiutils.items.dimensions import Dimension
 from kiutils.items.fpitems import *
 from kiutils.items.gritems import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
@@ -589,11 +590,9 @@ class Pad():
                     elif primitive[0] == 'gr_arc': object.customPadPrimitives.append(GrArc().from_sexpr(primitive))
                     elif primitive[0] == 'gr_poly': object.customPadPrimitives.append(GrPoly().from_sexpr(primitive))
                     elif primitive[0] == 'gr_curve': object.customPadPrimitives.append(GrCurve().from_sexpr(primitive))
-                    # XXX: Are dimentions even implemented here?
-                    elif primitive[0] == 'dimension': raise NotImplementedError(
-                        "Dimensions are not yet handled! Please report this bug along with the file being parsed.")
             elif item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
             elif item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
+            # elif item[0] == 'teardrops': continue
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -848,7 +847,7 @@ class Footprint():
     for all pads in the footprint. If not set, the zone thermal_gap setting is used. If not set, the
     zone thermal_gap setting is used."""
 
-    attributes: Attributes = field(default_factory=lambda: Attributes())
+    attributes: Optional[Attributes] = None
     """The optional ``attributes`` section defines the attributes of the footprint"""
 
     privateLayers: List[str] = field(default_factory=list)
@@ -900,6 +899,9 @@ class Footprint():
 
     sheet_file: str = ""
     """The ``sheet_file`` token defines filename of the schematic sheet file associated with this footprint instance."""
+
+    embedded_files: list[EmbeddedFile] = field(default_factory=list)
+    """The ``embedded_files`` store data of embedded files"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Footprint:
@@ -967,10 +969,9 @@ class Footprint():
             elif item[0] == 'group': object.groups.append(Group.from_sexpr(item))
             elif item[0] == 'private_layers': object.privateLayers.extend(item[1:])
             elif item[0] == 'net_tie_pad_groups': object.netTiePadGroups.extend(item[1:])
-            elif item[0] == 'dimension':
-                raise NotImplementedError(
-                    "Dimensions are not yet handled! Please report this bug along with the file being parsed.")
+            elif item[0] == 'dimension': object.graphicItems.append(Dimension.from_sexpr(item))
             elif item[0] == 'embedded_fonts': object.embedded_fonts = item[1]
+            elif item[0] == 'embedded_files': object.embedded_files.extend([EmbeddedFile().from_sexpr(f) for f in item[1:]])
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -1184,6 +1185,11 @@ class Footprint():
 
         if self.embedded_fonts is not None:
             expr.append(['embedded_fonts', self.embedded_fonts])
+
+        # Embedded files
+        if len(self.embedded_files) > 0:
+            embedded_files_expr = ['embedded_files'] + [f._to_sexpr_raw() for f in self.embedded_files]
+            expr.append(embedded_files_expr)
 
         for item in self.models:
             expr.append(item._to_sexpr_raw())

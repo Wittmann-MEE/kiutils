@@ -39,7 +39,6 @@ class Tests_Board_Community(unittest.TestCase):
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
 
-    # TODO - This test contains "dimensions" which are not supported yet
     def test_TokayLite(self):
         """Tests the behavior when creating and exporting TokayLite board"""
         self.testData.pathToTestFile = Path(BOARD_COMMUNITY) / 'TokayLite'
