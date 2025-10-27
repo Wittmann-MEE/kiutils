@@ -19,6 +19,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, List
 
+from enum import IntEnum
+
+from kiutils.items.brditems import Arc
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import *
 from kiutils.utils.format_utils import format_float
@@ -300,8 +303,8 @@ class FillSettings():
 class ZonePolygon():
     """The ``polygon`` token defines a list of coordinates that define part of a zone"""
 
-    coordinates: List[Position] = field(default_factory=list)
-    """The ``coordinates`` defines the list of polygon X/Y coordinates used to define the zone polygon"""
+    coordinates: Union[List[Position], List[Arc]] = field(default_factory=list)
+    """The ``coordinates`` defines the list of polygon X/Y coordinates or arcs used to define the zone polygon"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> ZonePolygon:
@@ -328,7 +331,12 @@ class ZonePolygon():
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'pts':
-                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+                if all(p[0] == 'xy' for p in item[1:]):
+                    object.coordinates = [Position().from_sexpr(p) for p in item[1:]]
+                elif all(p[0] == 'arc' for p in item[1:]):
+                    object.coordinates = [Arc().from_sexpr(p) for p in item[1:]]
+                else:
+                    raise ValueError(f"Expected all points to be either 'xy' or 'arc', got mixed types. Full expression: {item}")
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -353,8 +361,22 @@ class ZonePolygon():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        if not self.coordinates:
+            return ['polygon', ['pts']]
+
+        pts = []
+        first_item = self.coordinates[0]
+        if isinstance(first_item, Position):
+            # All items are Position
+            pts = [['xy', format_float(p.X), format_float(p.Y)] for p in self.coordinates]
+        elif isinstance(first_item, Arc):
+            # All items are Arc
+            pts = [arc._to_sexpr_raw(zone_poly=True) for arc in self.coordinates]
+        else:
+            raise TypeError(f'Unexpected type in coordinates: {type(first_item)}')
+
         return ['polygon', ['pts'] + pts]
+
 
 
 @dataclass
@@ -600,6 +622,9 @@ class Zone():
     # Available since KiCad v9
     placement: Optional[PlacementSettings] = None
 
+    attr_teardrop_type: Optional[AttrTeardrop] = None
+    """The optional ``attr_teardrop_type`` token indicates if this is a teardrop zone and of which type"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Zone:
         """Convert the given S-Expresstion into a Zone object
@@ -649,7 +674,7 @@ class Zone():
             elif item[0] == 'filled_polygon': object.filledPolygons.append(FilledPolygon().from_sexpr(item))
             elif item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
             elif item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
-            # elif item[0] == 'attr': continue
+            elif item[0] == 'attr': object.attr_teardrop_type = AttrTeardrop().from_sexpr(item)
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -699,6 +724,9 @@ class Zone():
 
         if self.priority is not None:
             expr.append(['priority', self.priority])
+        
+        if self.attr_teardrop_type is not None:
+            expr.append(self.attr_teardrop_type._to_sexpr_raw())
 
         connect_pads_expr = ['connect_pads']
         if self.connectPads is not None:
@@ -735,7 +763,7 @@ class Zone():
 @dataclass
 class PlacementSettings():
 
-    enabled: str = "no"
+    enabled: bool = False
 
     sheet_name: str = ""
 
@@ -751,7 +779,7 @@ class PlacementSettings():
             - Exception: When the first item of the list is not placement
 
         Returns:
-            - KeepoutSettings: Object of the class initialized with the given S-Expression
+            - PlacementSettings: Object of the class initialized with the given S-Expression
         """
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
@@ -763,7 +791,7 @@ class PlacementSettings():
         for item in exp[1:]:
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'enabled': object.enabled = item[1]
+            elif item[0] == 'enabled': object.enabled = parse_bool(item, 'enabled')
             elif item[0] == 'sheetname': object.sheet_name = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -787,6 +815,82 @@ class PlacementSettings():
     def _to_sexpr_raw(self):
         return [
             'placement',
-            ['enabled', self.enabled],
+            format_bool('enabled', self.enabled, yesno=True),
             ['sheetname', quote(self.sheet_name)],
         ]
+
+@dataclass
+class AttrTeardrop():
+    """The ``attr_teardrop`` object defines the teardrop attributes of the zone"""
+
+    class TeardropType(IntEnum):
+        TD_NONE = 0 # Not a teardrop: just a standard zone
+        TD_UNSPECIFIED = 1 # Not specified/unknown teardrop type
+        TD_VIAPAD = 2 # a teardrop on a via or pad
+        TD_TRACKEND = 3 # a teardrop on a track end
+                        # (when 2 tracks having different widths have a teardrop on the
+                        # end of the largest track)
+
+    t_type: TeardropType = TeardropType.TD_NONE
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> AttrTeardrop:
+        """Convert the given S-Expresstion into a AttrTeardrop object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(attr (teardrop ...))``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not placement
+
+        Returns:
+            - AttrTeardrop: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'attr':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        teardrop_expr = exp[1]
+        if teardrop_expr[0] != 'teardrop':
+            raise Exception("Expression does not have the correct type, expecting: teardrop")
+
+        type_expr = teardrop_expr[1]
+        if type_expr[0] != 'type':
+            raise Exception("Expression does not have the correct type, expecting: type")
+        
+        if type_expr[1] not in ['padvia', 'track_end']:
+            raise Exception("Expression does not have the correct type, expecting: padvia or track_end")
+        
+        if type_expr[1] == 'padvia':
+            object.t_type = cls.TeardropType.TD_VIAPAD
+        elif type_expr[1] == 'track_end':
+            object.t_type = cls.TeardropType.TD_TRACKEND
+
+        return object
+
+    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
+        """Generate the S-Expression representing this object. When no coordinates are set
+        in the curve, the resulting S-Expression will be left empty.
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
+            - newline (bool): Adds a newline to the end of the output. Defaults to False.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        if self.t_type == self.TeardropType.TD_NONE:
+            return []
+
+        expr = ['attr']
+        expr.append(['teardrop', ['type', 'padvia' if self.t_type == self.TeardropType.TD_VIAPAD else 'track_end']])
+
+        return expr

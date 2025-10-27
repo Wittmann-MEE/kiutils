@@ -451,10 +451,10 @@ class Stackup():
             expr.append(['edge_connector', self.edgeConnector])
 
         if self.castellatedPads:
-            expr.append(['castellated_pads', self.castellatedPads])
+            expr.append(format_bool('castellated_pads', self.castellatedPads))
 
         if self.edgePlating:
-            expr.append(['edge_plating', self.edgePlating])
+            expr.append(format_bool('edge_plating', self.edgePlating))
 
         return expr
 
@@ -1143,8 +1143,26 @@ class Via():
 
     # Available since KiCad v9
 
-    zone_layer_connections: bool = False
-    """The ``zone_layer_connections`` token indicates which cooper layers are connected"""
+    zone_layer_connections: list[str] = field(default_factory=list)
+    """The ``zone_layer_connections`` token indicates which copper layers are connected"""
+
+    teardrops: Optional[Teardrops] = None
+    """The optional ``teardrops`` token defines the teardrop connections for the pad"""
+
+    tenting: List[str] = field(default_factory=list)
+    """The ``tenting`` token defines which features are tented (covered by mask)"""
+
+    covering: List[str] = field(default_factory=list)
+    """The ``covering`` token defines which features are covered (e.g., hole covered)"""
+
+    plugging: List[str] = field(default_factory=list)
+    """The ``plugging`` token defines which features are plugged (filled with epoxy/resin)"""
+
+    capping: List[str] = field(default_factory=list)
+    """The ``capping`` token defines which features are capped (metal/finish over a filled/plugged via)"""
+
+    filling: List[str] = field(default_factory=list)
+    """The ``filling`` token defines which features are filled (completely filled bore)"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Via:
@@ -1170,9 +1188,8 @@ class Via():
         for item in exp[1:]:
             if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif is_bool_key(item, 'remove_unused_layers'): object.removeUnusedLayers = parse_bool(item, 'remove_unused_layers')
-            elif is_bool_key(item, 'keepEndLayers'): object.keepEndLayers = parse_bool(item, 'keepEndLayers')
+            elif is_bool_key(item, 'keep_end_layers'): object.keepEndLayers = parse_bool(item, 'keep_end_layers')
             elif is_bool_key(item, 'free'): object.free = parse_bool(item, 'free')
-            elif is_bool_key(item, 'zone_layer_connections'): object.zone_layer_connections = parse_bool(item, 'zone_layer_connections')
             elif not isinstance(item, list) and item in ['micro', 'blind']: object.type = item
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
@@ -1183,7 +1200,13 @@ class Via():
             elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            # elif item[0] == 'teardrops': continue
+            elif item[0] == 'zone_layer_connections': object.zone_layer_connections.extend(item[1:])
+            elif item[0] == 'teardrops': object.teardrops = Teardrops.from_sexpr(item)
+            elif item[0] == 'tenting': object.tenting.extend(item[1:])
+            elif item[0] == 'covering': object.covering.extend(item[1:])
+            elif item[0] == 'plugging': object.plugging.extend(item[1:])
+            elif item[0] == 'capping': object.capping.extend(item[1:])
+            elif item[0] == 'filling': object.filling.extend(item[1:])
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -1211,14 +1234,12 @@ class Via():
         expr.extend([
             ['at', format_float(self.position.X), format_float(self.position.Y)],
             ['size', format_float(self.size)],
-            ['drill', self.drill],
+            ['drill', format_float(self.drill)],
         ])
 
         layer_list = ['layers']
-
         for layer in self.layers:
             layer_list.append(escape_and_quote(layer))
-
         expr.append(layer_list)
 
         if self.removeUnusedLayers:
@@ -1232,6 +1253,27 @@ class Via():
 
         if self.free:
             expr.append(format_bool("free", self.free))
+        
+        if len(self.zone_layer_connections) > 0:
+            expr.append(['zone_layer_connections'] + [escape_and_quote(layer) for layer in self.zone_layer_connections])
+
+        if len(self.tenting) > 0:
+            expr.append(['tenting'] + self.tenting)
+
+        if len(self.covering) > 0:
+            expr.append(['covering'] + self.covering)
+
+        if len(self.plugging) > 0:
+            expr.append(['plugging'] + self.plugging)
+
+        if len(self.capping) > 0:
+            expr.append(['capping'] + self.capping)
+
+        if len(self.filling) > 0:
+            expr.append(['filling'] + self.filling)
+
+        if self.teardrops is not None:
+            expr.append(self.teardrops._to_sexpr_raw())
 
         if self.zone_layer_connections:
             expr.append(['zone_layer_connections'])
@@ -1329,7 +1371,7 @@ class Arc():
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self):
+    def _to_sexpr_raw(self, zone_poly=False):
         expr = ['arc']
 
         if self.locked:
@@ -1339,10 +1381,14 @@ class Arc():
             ['start', format_float(self.start.X), format_float(self.start.Y)],
             ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
             ['end', format_float(self.end.X), format_float(self.end.Y)],
-            ['width', format_float(self.width)],
-            ['layer', escape_and_quote(self.layer)],
-            ['net', self.net],
         ])
+
+        if not zone_poly:
+            expr.extend([
+                ['width', format_float(self.width)],
+                ['layer', escape_and_quote(self.layer)],
+                ['net', self.net],
+            ])
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])
@@ -1670,3 +1716,108 @@ class Generated():
             expr.append(members)
 
         return expr
+
+@dataclass
+class Teardrops():
+    """The ``teardrops`` object defines the via/pad teardrop connections"""
+
+    max_length: Optional[float] = None
+    """The optional ``max_length`` token defines the maximum length of the teardrop"""
+
+    max_width: Optional[float] = None
+    """The optional ``max_width`` token defines the maximum width of the teardrop"""
+
+    best_length_ratio: Optional[float] = None
+    """The optional ``best_length_ratio`` token defines the length of teardrop in relation the pad/via size"""
+
+    best_width_ratio: Optional[float] = None
+    """The optional ``best_width_ratio`` token defines the width (on wider side) of teardrop in relation the pad/via size"""
+
+    filter_ratio: Optional[float] = None
+    """The optional ``filter_ratio`` token defines the ratio of the teardrop width to the pad/via size"""
+
+    curved_edges: Optional[bool] = None
+    """The optional ``curved_edges`` token defines if the teardrop has curved edges"""
+
+    enabled: Optional[bool] = None
+    """The optional ``enabled`` token defines if the teardrop should be generated"""
+
+    allow_two_segments: Optional[bool] = None
+    """The optional ``allow_two_segments`` token defines if the teardrop can span over two segments"""
+
+    prefer_zone_connections: Optional[bool] = None
+    """The optional ``prefer_zone_connections`` token defines if zone connections should use teardrops"""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> Teardrops:
+        """Convert the given S-Expresstion into a Teardrops object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(teardrops ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not generator
+
+        Returns:
+            - Teardrops: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != 'teardrops':
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if is_bool_key(item, 'enabled'): object.enabled = parse_bool(item, 'enabled')
+            elif is_bool_key(item, 'curved_edges'): object.curved_edges = parse_bool(item, 'curved_edges')
+            elif is_bool_key(item, 'allow_two_segments'): object.allow_two_segments = parse_bool(item, 'allow_two_segments')
+            elif is_bool_key(item, 'prefer_zone_connections'): object.prefer_zone_connections = parse_bool(item, 'prefer_zone_connections')
+            elif not isinstance(item, list):
+                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
+            elif item[0] == 'max_length': object.max_length = float(item[1])
+            elif item[0] == 'max_width': object.max_width = float(item[1])
+            elif item[0] == 'best_length_ratio': object.best_length_ratio = float(item[1])
+            elif item[0] == 'best_width_ratio': object.best_width_ratio = float(item[1])
+            elif item[0] == 'filter_ratio': object.filter_ratio = float(item[1])
+            else:
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+        
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+    
+    def _to_sexpr_raw(self):
+        expr = ['teardrops']
+
+        field_specs = {
+            'best_length_ratio': lambda v: ['best_length_ratio', format_float(v)],
+            'max_length':        lambda v: ['max_length', format_float(v)],
+            'best_width_ratio':  lambda v: ['best_width_ratio', format_float(v)],
+            'max_width':         lambda v: ['max_width', format_float(v)],
+            'curved_edges':      lambda v: format_bool('curved_edges', v, yesno=True),
+            'filter_ratio':      lambda v: ['filter_ratio', format_float(v)],
+            'enabled':           lambda v: format_bool('enabled', v, yesno=True),
+            'allow_two_segments':lambda v: format_bool('allow_two_segments', v, yesno=True),
+            'prefer_zone_connections': lambda v: format_bool('prefer_zone_connections', v, yesno=True),
+        }
+
+        for field, formatter in field_specs.items():
+            value = getattr(self, field)
+            if value is not None:
+                expr.append(formatter(value))
+
+        return expr
+

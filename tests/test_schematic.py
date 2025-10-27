@@ -72,6 +72,12 @@ class Tests_Schematic_Demos(unittest.TestCase):
         schematic = Schematic().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(schematic, self.testData))
 
+    def test_Video(self):
+        """Tests the behavior when creating and exporting Video demo schematic"""
+        self.testData.pathToTestFile = Path(SCHEMATIC_DEMO) / 'Video'
+        schematic = Schematic().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(schematic, self.testData))
+
 
 class Tests_Schematic(unittest.TestCase):
     """Test cases for Schematics"""

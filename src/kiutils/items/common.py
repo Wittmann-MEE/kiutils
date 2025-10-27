@@ -1376,7 +1376,8 @@ class EmbeddedFile():
 
         expr.append(['name', quote(self.name)])
         expr.append(['type', self.type])
-        expr.append(['data'] + self.data)
+        if len(self.data) > 0:
+            expr.append(['data'] + self.data)
         expr.append(['checksum', quote(self.checksum)])
 
         return expr

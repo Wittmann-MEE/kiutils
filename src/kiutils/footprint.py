@@ -22,6 +22,7 @@ from typing import Dict
 from os import path
 
 from kiutils.items.zones import Zone
+from kiutils.items.brditems import Teardrops
 from kiutils.items.common import Image, Coordinate, Net, Group, Font, EmbeddedFile
 from kiutils.items.dimensions import Dimension
 from kiutils.items.fpitems import *
@@ -282,21 +283,27 @@ class DrillDefinition():
 
         if exp[0] != 'drill':
             raise Exception("Expression does not have the correct type")
-
+        
         object = cls()
-        # If offset is given, others won't be present
-        if isinstance(exp[1], list):
-            object.offset = Position().from_sexpr(exp[1])
+        
+        if exp[1] == 'oval':
+            object.oval = True
+            diameter_idx = 2
+            extra_start = 3
         else:
-            # Depending on the ``oval`` token, the fields may be shifted ..
-            if exp[1] == 'oval':
-                object.oval = True
-                object.diameter = exp[2]
-                object.width = exp[3]
+            object.oval = False
+            diameter_idx = 1
+            extra_start = 2
+
+        # Set diameter
+        object.diameter = float(exp[diameter_idx])
+
+        # Process remaining items for width and offset
+        for item in exp[extra_start:]:
+            if isinstance(item, list) and item[0] == 'offset':
+                object.offset = Position().from_sexpr(item)
             else:
-                object.diameter = exp[1]
-                if len(exp) > 2:
-                    object.width = exp[2]
+                object.width = float(item)
 
         return object
 
@@ -320,10 +327,10 @@ class DrillDefinition():
             expr.append('oval')
 
         if self.diameter is not None:
-            expr.append(self.diameter)
+            expr.append(format_float(self.diameter))
 
         if self.oval and self.width is not None:
-            expr.append(self.width)
+            expr.append(format_float(self.width))
 
         if self.offset is not None:
             offset = ['offset', format_float(self.offset.X), format_float(self.offset.Y)]
@@ -500,10 +507,13 @@ class Pad():
     - 3: Only through hold pad is connected to zone using thermal relief
     """
 
-    thermalWidth: Optional[float] = None
-    """The optional ``thermalWidth`` token attribute defines the thermal relief spoke width used for
+    thermalBridgeWidth: Optional[float] = None
+    """The optional ``thermalBridgeWidth`` token attribute defines the thermal relief spoke width used for
     zone connection for the pad. This only affects a pad connected to a zone with a thermal
-    relief. If not set, the footprint thermal_width setting is used."""
+    relief. If not set, the footprint thermalBridgeWidth setting is used."""
+
+    thermalBridgeAngle: Optional[float] = None
+    """The optional ``thermalBridgeAngle`` affects angle of thermal relief spoke pad escape"""
 
     thermalGap: Optional[float] = None
     """The optional ``thermalGap`` token attribute defines the distance from the pad to the zone of
@@ -524,13 +534,12 @@ class Pad():
     a custom pad"""
 
     # Available since KiCad v9
-    # TODO Update docs
 
-    zone_layer_connections: bool = False
+    zone_layer_connections: list[str] = field(default_factory=list)
+    """The ``zone_layer_connections`` token indicates which copper layers are connected"""
 
-    thermal_bridge_width: Optional[float] = None
-
-    thermal_bridge_angle: Optional[float] = None
+    teardrops: Optional[Teardrops] = None
+    """The optional ``teardrops`` token defines the teardrop connections for the pad"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> Pad:
@@ -559,7 +568,6 @@ class Pad():
 
         for item in exp[4:]:
             if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
-            elif is_bool_key(item, 'zone_layer_connections'): object.zone_layer_connections = parse_bool(item, 'zone_layer_connections')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
@@ -580,10 +588,11 @@ class Pad():
             elif item[0] == 'die_length': object.dieLength = item[1]
             elif item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
             elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
-            elif item[0] == 'solder_paste_margin_ratio': object.solderPasteMarginRatio = item[1]
+            elif item[0] in ['solder_paste_margin_ratio', 'solder_paste_ratio']: object.solderPasteMarginRatio = item[1]
             elif item[0] == 'clearance': object.clearance = item[1]
             elif item[0] == 'zone_connect': object.zoneConnect = item[1]
-            elif item[0] == 'thermal_width': object.thermalWidth = item[1]
+            elif item[0] in ['thermal_bridge_width', 'thermal_width']: object.thermalBridgeWidth = item[1]
+            elif item[0] == 'thermal_bridge_angle': object.thermalBridgeAngle = float(item[1])
             elif item[0] == 'thermal_gap': object.thermalGap = item[1]
             elif item[0] == 'options': object.customPadOptions = PadOptions().from_sexpr(item)
             elif item[0] == 'primitives':
@@ -596,9 +605,8 @@ class Pad():
                     elif primitive[0] == 'gr_arc': object.customPadPrimitives.append(GrArc().from_sexpr(primitive))
                     elif primitive[0] == 'gr_poly': object.customPadPrimitives.append(GrPoly().from_sexpr(primitive))
                     elif primitive[0] == 'gr_curve': object.customPadPrimitives.append(GrCurve().from_sexpr(primitive))
-            elif item[0] == 'thermal_bridge_width': object.thermal_bridge_width = item[1]
-            elif item[0] == 'thermal_bridge_angle': object.thermal_bridge_angle = item[1]
-            # elif item[0] == 'teardrops': continue
+            elif item[0] == 'zone_layer_connections': object.zone_layer_connections.extend(item[1:])
+            elif item[0] == 'teardrops': object.teardrops = Teardrops.from_sexpr(item)
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -648,11 +656,13 @@ class Pad():
 
         if self.keepEndLayers is not None:
             expr.append(['keep_end_layers', self.keepEndLayers])
+        
+        if len(self.zone_layer_connections) > 0:
+            zlc_expr = ['zone_layer_connections'] + [escape_and_quote(layer) for layer in self.zone_layer_connections]
+            expr.append(zlc_expr)
 
         if self.roundrectRatio is not None:
             expr.append(['roundrect_rratio', self.roundrectRatio])
-
-        expr.append(format_bool('zone_layer_connections', self.zone_layer_connections))
 
         if self.chamferRatio is not None:
             expr.append(['chamfer_ratio', self.chamferRatio])
@@ -688,17 +698,14 @@ class Pad():
         if self.zoneConnect is not None:
             expr.append(['zone_connect', self.zoneConnect])
 
-        if self.thermalWidth is not None:
-            expr.append(['thermal_width', self.thermalWidth])
+        if self.thermalBridgeWidth is not None:
+            expr.append(['thermal_bridge_width', format_float(self.thermalBridgeWidth)])
 
-        if self.thermal_bridge_width is not None:
-            expr.append(['thermal_bridge_width', self.thermal_bridge_width])
-
-        if self.thermal_bridge_angle is not None:
-            expr.append(['thermal_bridge_angle', self.thermal_bridge_angle])
+        if self.thermalBridgeAngle is not None:
+            expr.append(['thermal_bridge_angle', format_float(self.thermalBridgeAngle)])
 
         if self.thermalGap is not None:
-            expr.append(['thermal_gap', self.thermalGap])
+            expr.append(['thermal_gap', format_float(self.thermalGap)])
 
         if self.customPadOptions is not None:
             expr.append(self.customPadOptions._to_sexpr_raw())
@@ -708,6 +715,9 @@ class Pad():
             for primitive in self.customPadPrimitives:
                 primitives.append(primitive._to_sexpr_raw())
             expr.append(primitives)
+        
+        if self.teardrops is not None:
+            expr.append(self.teardrops._to_sexpr_raw())
 
         if self.tstamp is not None:
             expr.append(['uuid', quote(self.tstamp)])

@@ -53,6 +53,7 @@ class Tests_Board_Demos(unittest.TestCase):
         self.testData.compareToTestFile = True
         return super().setUp()
 
+    # This test currently fails due to minor differences in parsing (-0 is cast to int 0)
     # def test_RoyalBlue54LFeather(self):
     #     """Tests the behavior when creating and exporting RoyalBlue54L-Feather demo board"""
     #     self.testData.pathToTestFile = Path(BOARD_DEMO) / 'RoyalBlue54L-Feather'
@@ -68,6 +69,12 @@ class Tests_Board_Demos(unittest.TestCase):
     def test_StickHub(self):
         """Tests the behavior when creating and exporting StickHub demo board"""
         self.testData.pathToTestFile = Path(BOARD_DEMO) / 'StickHub'
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
+
+    def test_Video(self):
+        """Tests the behavior when creating and exporting Video demo board"""
+        self.testData.pathToTestFile = Path(BOARD_DEMO) / 'Video'
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
 
