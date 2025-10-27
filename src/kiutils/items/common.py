@@ -143,7 +143,7 @@ class Coordinate():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['xyz', self.X, self.Y, self.Z]
+        return ['xyz', format_float(self.X), format_float(self.Y), format_float(self.Z)]
 
 
 @dataclass
@@ -159,7 +159,7 @@ class ColorRGBA():
     B: int = 0
     """The ``B`` token defines the blue channel of the color"""
 
-    A: int = 0
+    A: float = 0.0
     """The ``A`` token defines the alpha channel of the color"""
 
     precision: Optional[int] = None
@@ -187,9 +187,9 @@ class ColorRGBA():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.R = exp[1]
-        object.G = exp[2]
-        object.B = exp[3]
+        object.R = int(exp[1])
+        object.G = int(exp[2])
+        object.B = int(exp[3])
         object.A = exp[4]
 
         return object
@@ -211,7 +211,7 @@ class ColorRGBA():
         if self.precision is not None:
             alpha = f'{self.A:.{self.precision}f}'
         else:
-            alpha = self.A
+            alpha = format_float(self.A)
 
         return ['color', self.R, self.G, self.B, alpha]
 
@@ -601,7 +601,7 @@ class Net():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.number = exp[1]
+        object.number = int(exp[1])
         object.name = exp[2]
 
         return object
@@ -752,10 +752,8 @@ class PageSettings():
             object.width = exp[2]
             object.height = exp[3]
 
-        for item in exp[2:]:
-            if item == 'portrait': object.portrait = True
-            else:
-                raise ValueError(f"Unrecognized property key: {item}. Full expression: {exp}")
+        if any(item == 'portrait' for item in exp[2:]):
+            object.portrait = True
 
         return object
 

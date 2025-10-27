@@ -286,24 +286,19 @@ class DrillDefinition():
         
         object = cls()
         
-        if exp[1] == 'oval':
-            object.oval = True
-            diameter_idx = 2
-            extra_start = 3
-        else:
-            object.oval = False
-            diameter_idx = 1
-            extra_start = 2
-
-        # Set diameter
-        object.diameter = float(exp[diameter_idx])
-
-        # Process remaining items for width and offset
-        for item in exp[extra_start:]:
-            if isinstance(item, list) and item[0] == 'offset':
+        for item in exp[1:]:
+            if isinstance(item, str) and item == 'oval':
+                object.oval = True
+            elif isinstance(item, (int, float, str)):
+                num = float(item)
+                if object.diameter is None:
+                    object.diameter = object.width = num
+                else:
+                    object.width = num
+            elif isinstance(item, list) and item[0] == 'offset':
                 object.offset = Position().from_sexpr(item)
             else:
-                object.width = float(item)
+                raise ValueError(f"Expression does not have the correct type. Expected oval, size or offset, got: {item}")
 
         return object
 
@@ -590,7 +585,7 @@ class Pad():
             elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
             elif item[0] in ['solder_paste_margin_ratio', 'solder_paste_ratio']: object.solderPasteMarginRatio = item[1]
             elif item[0] == 'clearance': object.clearance = item[1]
-            elif item[0] == 'zone_connect': object.zoneConnect = item[1]
+            elif item[0] == 'zone_connect': object.zoneConnect = int(item[1])
             elif item[0] in ['thermal_bridge_width', 'thermal_width']: object.thermalBridgeWidth = item[1]
             elif item[0] == 'thermal_bridge_angle': object.thermalBridgeAngle = float(item[1])
             elif item[0] == 'thermal_gap': object.thermalGap = item[1]
@@ -662,10 +657,10 @@ class Pad():
             expr.append(zlc_expr)
 
         if self.roundrectRatio is not None:
-            expr.append(['roundrect_rratio', self.roundrectRatio])
+            expr.append(['roundrect_rratio', format_float(self.roundrectRatio)])
 
         if self.chamferRatio is not None:
-            expr.append(['chamfer_ratio', self.chamferRatio])
+            expr.append(['chamfer_ratio', format_float(self.chamferRatio)])
 
         if len(self.chamfer) > 0:
             chamfer_expr = ['chamfer'] + self.chamfer
@@ -684,16 +679,16 @@ class Pad():
             expr.append(['pintype', escape_and_quote(self.pinType)])
 
         if self.solderMaskMargin is not None:
-            expr.append(['solder_mask_margin', self.solderMaskMargin])
+            expr.append(['solder_mask_margin', format_float(self.solderMaskMargin)])
 
         if self.solderPasteMargin is not None:
-            expr.append(['solder_paste_margin', self.solderPasteMargin])
+            expr.append(['solder_paste_margin', format_float(self.solderPasteMargin)])
 
         if self.solderPasteMarginRatio is not None:
-            expr.append(['solder_paste_margin_ratio', self.solderPasteMarginRatio])
+            expr.append(['solder_paste_margin_ratio', format_float(self.solderPasteMarginRatio)])
 
         if self.clearance is not None:
-            expr.append(['clearance', self.clearance])
+            expr.append(['clearance', format_float(self.clearance)])
 
         if self.zoneConnect is not None:
             expr.append(['zone_connect', self.zoneConnect])
@@ -839,9 +834,9 @@ class Footprint():
     margin for all pads in the footprint. It scales the board's solder_paste_margin value by this ratio.
     If not set, the board ``solder_paste_margin_ratio`` setting is used."""
 
-    solderPasteRatio: Optional[float] = None
-    """The optional ``solderPasteRatio`` token defines the percentage of the pad size used to define
-    the solder paste for all pads in the footprint. If not set, the board solder_paste_ratio setting
+    solderPasteMarginRatio: Optional[float] = None
+    """The optional ``solderPasteMarginRatio`` token defines the percentage of the pad size used to define
+    the solder paste for all pads in the footprint. If not set, the board solder_paste_margin_ratio setting
     is used."""
 
     clearance: Optional[float] = None
@@ -858,8 +853,8 @@ class Footprint():
       - 3: Only through hold pads are connected to zone using thermal reliefs
     """
 
-    thermalWidth: Optional[float] = None
-    """The optional ``thermalWidth`` token defined the thermal relief spoke width used for zone connections
+    thermalBridgeWidth: Optional[float] = None
+    """The optional ``thermalBridgeWidth`` token defined the thermal relief spoke width used for zone connections
     for all pads in the footprint. This only affects pads connected to zones with thermal reliefs. If
     not set, the zone thermal_width setting is used."""
 
@@ -962,15 +957,14 @@ class Footprint():
             elif item[0] == 'tags': object.tags = item[1]
             elif item[0] == 'path': object.path = item[1]
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'autoplace_cost90': object.autoplaceCost90 = item[1]
-            elif item[0] == 'autoplace_cost180': object.autoplaceCost180 = item[1]
+            elif item[0] == 'autoplace_cost90': object.autoplaceCost90 = int(item[1])
+            elif item[0] == 'autoplace_cost180': object.autoplaceCost180 = int(item[1])
             elif item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
             elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
-            elif item[0] == 'solder_paste_margin_ratio': object.solderPasteMarginRatio = item[1]
-            elif item[0] == 'solder_paste_ratio': object.solderPasteRatio = item[1]
+            elif item[0] in ['solder_paste_margin_ratio', 'solder_paste_ratio']: object.solderPasteMarginRatio = item[1]
             elif item[0] == 'clearance': object.clearance = item[1]
-            elif item[0] == 'zone_connect': object.zoneConnect = item[1]
-            elif item[0] == 'thermal_width': object.thermalWidth = item[1]
+            elif item[0] == 'zone_connect': object.zoneConnect = int(item[1])
+            elif item[0] in ['thermal_bridge_width', 'thermal_width']: object.thermalBridgeWidth = item[1]
             elif item[0] == 'thermal_gap': object.thermalGap = item[1]
             elif item[0] == 'attr': object.attributes = Attributes.from_sexpr(item)
             elif item[0] == 'model': object.models.append(Model.from_sexpr(item))
@@ -1160,28 +1154,25 @@ class Footprint():
             expr.append(['autoplace_cost180', self.autoplaceCost180])
 
         if self.solderMaskMargin is not None:
-            expr.append(['solder_mask_margin', self.solderMaskMargin])
+            expr.append(['solder_mask_margin', format_float(self.solderMaskMargin)])
 
         if self.solderPasteMargin is not None:
-            expr.append(['solder_paste_margin', self.solderPasteMargin])
+            expr.append(['solder_paste_margin', format_float(self.solderPasteMargin)])
         
         if self.solderPasteMarginRatio is not None:
-            expr.append(['solder_paste_margin_ratio', self.solderPasteMarginRatio])
-
-        if self.solderPasteRatio is not None:
-            expr.append(['solder_paste_ratio', self.solderPasteRatio])
+            expr.append(['solder_paste_margin_ratio', format_float(self.solderPasteMarginRatio)])
 
         if self.clearance is not None:
-            expr.append(['clearance', self.clearance])
+            expr.append(['clearance', format_float(self.clearance)])
 
         if self.zoneConnect is not None:
             expr.append(['zone_connect', self.zoneConnect])
 
-        if self.thermalWidth is not None:
-            expr.append(['thermal_width', self.thermalWidth])
+        if self.thermalBridgeWidth is not None:
+            expr.append(['thermal_bridge_width', format_float(self.thermalBridgeWidth)])
 
         if self.thermalGap is not None:
-            expr.append(['thermal_gap', self.thermalGap])
+            expr.append(['thermal_gap', format_float(self.thermalGap)])
 
         if self.attributes is not None:
             raw_attr = self.attributes._to_sexpr_raw()

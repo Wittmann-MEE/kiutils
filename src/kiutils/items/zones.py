@@ -650,7 +650,7 @@ class Zone():
             if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'net': object.net = int(item[1])
             elif item[0] == 'net_name': object.netName = item[1]
             elif item[0] == 'layers' or item[0] == 'layer':
                 for layer in item[1:]:
@@ -731,7 +731,7 @@ class Zone():
         connect_pads_expr = ['connect_pads']
         if self.connectPads is not None:
             connect_pads_expr.append(self.connectPads)
-        connect_pads_expr.append(['clearance', self.clearance])
+        connect_pads_expr.append(['clearance', format_float(self.clearance)])
         expr.append(connect_pads_expr)
 
         expr.append(['min_thickness', self.minThickness])

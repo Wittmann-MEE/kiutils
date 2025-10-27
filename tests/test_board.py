@@ -8,7 +8,7 @@ License identifier:
 """
 
 import unittest
-from os import path
+from os import path, getenv
 from pathlib import Path
 from kiutils.footprint import Attributes
 
@@ -53,12 +53,11 @@ class Tests_Board_Demos(unittest.TestCase):
         self.testData.compareToTestFile = True
         return super().setUp()
 
-    # This test currently fails due to minor differences in parsing (-0 is cast to int 0)
-    # def test_RoyalBlue54LFeather(self):
-    #     """Tests the behavior when creating and exporting RoyalBlue54L-Feather demo board"""
-    #     self.testData.pathToTestFile = Path(BOARD_DEMO) / 'RoyalBlue54L-Feather'
-    #     board = Board().from_file(self.testData.pathToTestFile)
-    #     self.assertTrue(to_file_and_compare(board, self.testData))
+    def test_RoyalBlue54LFeather(self):
+        """Tests the behavior when creating and exporting RoyalBlue54L-Feather demo board"""
+        self.testData.pathToTestFile = Path(BOARD_DEMO) / 'RoyalBlue54L-Feather'
+        board = Board().from_file(self.testData.pathToTestFile)
+        self.assertTrue(to_file_and_compare(board, self.testData))
 
     def test_KitDevColdfireXilinx_5213(self):
         """Tests the behavior when creating and exporting KitDevColdfireXilinx_5213 demo board"""
@@ -77,6 +76,47 @@ class Tests_Board_Demos(unittest.TestCase):
         self.testData.pathToTestFile = Path(BOARD_DEMO) / 'Video'
         board = Board().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(board, self.testData))
+
+class Tests_Private_Boards(unittest.TestCase):
+    """Test cases for private boards"""
+
+    def setUp(self) -> None:
+        prepare_test(self)
+        self.testData.compareToTestFile = True
+        return super().setUp()
+
+    def test_all_private(self):
+        """Tests creating and exporting all private boards"""
+        # Read environment variable
+        private_path = getenv("PRIVATE_KICAD_REPO")
+        if not private_path:
+            self.skipTest("Environment variable PRIVATE_KICAD_REPO not set, skipping private boards test.")
+
+        private_boards_path = Path(private_path)
+        if not private_boards_path.exists():
+            self.skipTest(f"Path {private_boards_path} does not exist, skipping private boards test.")
+        
+        failures = []
+        for board_file in private_boards_path.rglob('*.kicad_pcb'):
+            print(f"Testing private board file: {board_file}")
+            with self.subTest(board=board_file):
+                self.testData.pathToTestFile = board_file
+                try:
+                    board = Board().from_file(self.testData.pathToTestFile)
+                except:
+                    print(f"Failed to parse board {board_file}, skipping.")
+                    continue
+
+                if board.generator_version is not None:
+                    try:
+                        self.assertTrue(to_file_and_compare(board, self.testData))
+                    except AssertionError as e:
+                        failures.append((board_file, str(e)))
+        
+        if failures:
+            failure_messages = "\n".join([f"Board: {file}, Error: {error}" for file, error in failures])
+            self.fail(f"Some private boards failed the tests:\n{failure_messages}")
+
 
 class Tests_Board(unittest.TestCase):
     """Test cases for Boards"""

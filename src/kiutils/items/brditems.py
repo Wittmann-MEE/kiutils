@@ -132,7 +132,7 @@ class LayerToken():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.ordinal = exp[0]
+        object.ordinal = int(exp[0])
         object.name = exp[1]
         object.type = exp[2]
         if len(exp) == 4:
@@ -203,16 +203,16 @@ class StackupSubLayer():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['addsublayer', ['thickness', self.thickness]]
+        expr = ['addsublayer', ['thickness', format_float(self.thickness)]]
 
         if self.material is not None:
             expr.append(['material', self.material])
 
         if self.epsilonR is not None:
-            expr.append(['epsilon_r', self.epsilonR])
+            expr.append(['epsilon_r', format_float(self.epsilonR)])
 
         if self.lossTangent is not None:
-            expr.append(['loss_tangent', self.lossTangent])
+            expr.append(['loss_tangent', format_float(self.lossTangent)])
 
         return expr
 
@@ -344,10 +344,10 @@ class StackupLayer():
             expr.append(['material', escape_and_quote(self.material)])
 
         if self.epsilonR is not None:
-            expr.append(['epsilon_r', self.epsilonR])
+            expr.append(['epsilon_r', format_float(self.epsilonR)])
 
         if self.lossTangent is not None:
-            expr.append(['loss_tangent', self.lossTangent])
+            expr.append(['loss_tangent', format_float(self.lossTangent)])
 
         for layer in self.subLayers:
             expr.append(layer._to_sexpr_raw())
@@ -635,6 +635,9 @@ class PlotSettings():
     """The optional ``plot_pad_numbers`` token defines if pad numbers should be plotted
     on fabrication layers"""
 
+    plot_fp_text: Optional[bool] = None
+    """The optional ``plot_fp_text`` token defines if footprint text should be plotted
+    on fabrication layers"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PlotSettings:
@@ -674,10 +677,10 @@ class PlotSettings():
             elif item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = item[1]
             elif item[0] == 'plotframeref' : object.plotFameRef = parse_bool(item, 'plotframeref')
             elif item[0] == 'viasonmask' : object.viasOnMask = parse_bool(item, 'viasonmask')
-            elif item[0] == 'mode' : object.mode = item[1]
+            elif item[0] == 'mode' : object.mode = int(item[1])
             elif item[0] == 'useauxorigin' : object.useAuxOrigin = parse_bool(item, 'useauxorigin')
-            elif item[0] == 'hpglpennumber' : object.hpglPenNumber = item[1]
-            elif item[0] == 'hpglpenspeed' : object.hpglPenSpeed = item[1]
+            elif item[0] == 'hpglpennumber' : object.hpglPenNumber = int(item[1])
+            elif item[0] == 'hpglpenspeed' : object.hpglPenSpeed = int(item[1])
             elif item[0] == 'hpglpendiameter' : object.hpglPenDiameter = item[1]
             elif item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = parse_bool(item, 'dxfpolygonmode')
             elif item[0] == 'dxfimperialunits' : object.dxfImperialUnits = parse_bool(item, 'dxfimperialunits')
@@ -691,8 +694,8 @@ class PlotSettings():
             elif item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = parse_bool(item, 'subtractmaskfromsilk')
             elif item[0] == 'outputformat' : object.outputFormat = item[1]
             elif item[0] == 'mirror' : object.mirror = parse_bool(item, 'mirror')
-            elif item[0] == 'drillshape' : object.drillShape = item[1]
-            elif item[0] == 'scaleselection' : object.scaleSelection = item[1]
+            elif item[0] == 'drillshape' : object.drillShape = int(item[1])
+            elif item[0] == 'scaleselection' : object.scaleSelection = int(item[1])
             elif item[0] == 'outputdirectory' : object.outputDirectory = item[1]
             elif item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = parse_bool(item, 'pdf_front_fp_property_popups')
             elif item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = parse_bool(item, 'pdf_back_fp_property_popups')
@@ -703,8 +706,9 @@ class PlotSettings():
             elif item[0] == 'sketchdnponfab': object.sketch_dnp_on_fab = parse_bool(item, 'sketchdnponfab')
             elif item[0] == 'crossoutdnponfab': object.crossout_dnp_on_fab = parse_bool(item, 'crossoutdnponfab')
             elif item[0] == 'plotpadnumbers': object.plot_pad_numbers = parse_bool(item, 'plotpadnumbers')
+            elif item[0] == 'plotfptext': object.plot_fp_text = parse_bool(item, 'plotfptext')
             else:
-                raise ValueError("Unrecognized property key: {item[0]}")
+                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
         return object
 
@@ -788,9 +792,18 @@ class PlotSettings():
         
         if self.psA4Output is not None:
             expr.append(format_bool('psa4output', self.psA4Output, yesno=True))
+        
+        if self.plotReference is not None:
+            expr.append(format_bool('plotreference', self.plotReference, yesno=True))
+        
+        if self.plotValue is not None:
+            expr.append(format_bool('plotvalue', self.plotValue, yesno=True))
 
         if self.plot_black_and_white is not None:
             expr.append(format_bool('plot_black_and_white', self.plot_black_and_white, yesno=True))
+        
+        if self.plot_fp_text is not None:
+            expr.append(format_bool('plotfptext', self.plot_fp_text, yesno=True))
 
         if self.plotInvisibleText is not None:
             expr.append(format_bool('plotinvisibletext', self.plotInvisibleText, yesno=True))
@@ -809,12 +822,6 @@ class PlotSettings():
 
         if self.crossout_dnp_on_fab is not None:
             expr.append(format_bool('crossoutdnponfab', self.crossout_dnp_on_fab, yesno=True))
-        
-        if self.plotReference is not None:
-            expr.append(format_bool('plotreference', self.plotReference, yesno=True))
-        
-        if self.plotValue is not None:
-            expr.append(format_bool('plotvalue', self.plotValue, yesno=True))
 
         if self.subtractMaskFromSilk is not None:
             expr.append(format_bool('subtractmaskfromsilk', self.subtractMaskFromSilk, yesno=True))
@@ -1056,7 +1063,7 @@ class Segment():
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'net': object.net = int(item[1])
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
@@ -1197,7 +1204,7 @@ class Via():
             elif item[0] == 'size': object.size = item[1]
             elif item[0] == 'drill': object.drill = item[1]
             elif item[0] == 'layers': object.layers.extend(item[1:])
-            elif item[0] == 'net': object.net = item[1]
+            elif item[0] == 'net': object.net = int(item[1])
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'zone_layer_connections': object.zone_layer_connections.extend(item[1:])
@@ -1387,7 +1394,7 @@ class Arc():
             expr.extend([
                 ['width', format_float(self.width)],
                 ['layer', escape_and_quote(self.layer)],
-                ['net', self.net],
+                ['net', int(self.net)],
             ])
 
         if self.tstamp is not None:
@@ -1696,19 +1703,19 @@ class Generated():
         expr.append(['last_status', escape_and_quote(self.last_status)])
         expr.append(['last_track_width', self.last_track_width])
         expr.append(['last_tuning', escape_and_quote(self.last_tuning)])
-        expr.append(['max_amplitude', self.max_amplitude])
-        expr.append(['min_amplitude', self.min_amplitude])
-        expr.append(['min_spacing', self.min_spacing])
+        expr.append(['max_amplitude', format_float(self.max_amplitude)])
+        expr.append(['min_amplitude', format_float(self.min_amplitude)])
+        expr.append(['min_spacing', format_float(self.min_spacing)])
         expr.append(['origin', ['xy', format_float(self.origin.X), format_float(self.origin.Y)]])
         expr.append(['override_custom_rules', self.override_custom_rules])
         expr.append(['rounded', self.rounded])
         expr.append(['single_sided', self.single_sided])
-        expr.append(['target_length', self.target_length])
-        expr.append(['target_length_max', self.target_length_max])
-        expr.append(['target_length_min', self.target_length_min])
-        expr.append(['target_skew', self.target_skew])
-        expr.append(['target_skew_max', self.target_skew_max])
-        expr.append(['target_skew_min', self.target_skew_min])
+        expr.append(['target_length', format_float(self.target_length)])
+        expr.append(['target_length_max', format_float(self.target_length_max)])
+        expr.append(['target_length_min', format_float(self.target_length_min)])
+        expr.append(['target_skew', format_float(self.target_skew)])
+        expr.append(['target_skew_max', format_float(self.target_skew_max)])
+        expr.append(['target_skew_min', format_float(self.target_skew_min)])
         expr.append(['tuning_mode', escape_and_quote(self.tuning_mode)])
 
         if len(self.members) > 0:

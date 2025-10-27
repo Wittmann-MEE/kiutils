@@ -488,7 +488,7 @@ class Symbol():
         if self.pinNames:
             pin_names = ['pin_names']
             if self.pinNamesOffset is not None:
-                pin_names.append(['offset', self.pinNamesOffset])
+                pin_names.append(['offset', format_float(self.pinNamesOffset)])
             if self.pinNamesHide:
                 pin_names.append(format_bool('hide', self.pinNamesHide))
             expr.append(pin_names)
