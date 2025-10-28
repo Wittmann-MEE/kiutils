@@ -30,7 +30,6 @@ from kiutils.items.gritems import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 
 @dataclass
@@ -235,7 +234,7 @@ class Model():
         expr.append(format_bool('hide', self.hide))
 
         if self.opacity is not None:
-            expr.append(['opacity', format_float(self.opacity)])
+            expr.append(['opacity', self.opacity])
 
         expr.append(['offset', self.pos._to_sexpr_raw()])
         expr.append(['scale', self.scale._to_sexpr_raw()])
@@ -322,13 +321,13 @@ class DrillDefinition():
             expr.append('oval')
 
         if self.diameter is not None:
-            expr.append(format_float(self.diameter))
+            expr.append(self.diameter)
 
         if self.oval and self.width is not None:
-            expr.append(format_float(self.width))
+            expr.append(self.width)
 
         if self.offset is not None:
-            offset = ['offset', format_float(self.offset.X), format_float(self.offset.Y)]
+            offset = ['offset', self.offset.X, self.offset.Y]
             expr.append(offset)
 
         return expr
@@ -630,12 +629,12 @@ class Pad():
 
         expr.append(format_bool('locked', self.locked))
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(['size', self.size.X, self.size.Y])
 
         if self.drill is not None:
             expr.append(self.drill._to_sexpr_raw())
@@ -657,17 +656,17 @@ class Pad():
             expr.append(zlc_expr)
 
         if self.roundrectRatio is not None:
-            expr.append(['roundrect_rratio', format_float(self.roundrectRatio)])
+            expr.append(['roundrect_rratio', self.roundrectRatio])
 
         if self.chamferRatio is not None:
-            expr.append(['chamfer_ratio', format_float(self.chamferRatio)])
+            expr.append(['chamfer_ratio', self.chamferRatio])
 
         if len(self.chamfer) > 0:
             chamfer_expr = ['chamfer'] + self.chamfer
             expr.append(chamfer_expr)
 
         if self.dieLength is not None:
-            expr.append(['die_length', format_float(self.dieLength)])
+            expr.append(['die_length', self.dieLength])
 
         if self.net is not None:
             expr.append(self.net._to_sexpr_raw())
@@ -679,28 +678,28 @@ class Pad():
             expr.append(['pintype', escape_and_quote(self.pinType)])
 
         if self.solderMaskMargin is not None:
-            expr.append(['solder_mask_margin', format_float(self.solderMaskMargin)])
+            expr.append(['solder_mask_margin', self.solderMaskMargin])
 
         if self.solderPasteMargin is not None:
-            expr.append(['solder_paste_margin', format_float(self.solderPasteMargin)])
+            expr.append(['solder_paste_margin', self.solderPasteMargin])
 
         if self.solderPasteMarginRatio is not None:
-            expr.append(['solder_paste_margin_ratio', format_float(self.solderPasteMarginRatio)])
+            expr.append(['solder_paste_margin_ratio', self.solderPasteMarginRatio])
 
         if self.clearance is not None:
-            expr.append(['clearance', format_float(self.clearance)])
+            expr.append(['clearance', self.clearance])
 
         if self.zoneConnect is not None:
             expr.append(['zone_connect', self.zoneConnect])
 
         if self.thermalBridgeWidth is not None:
-            expr.append(['thermal_bridge_width', format_float(self.thermalBridgeWidth)])
+            expr.append(['thermal_bridge_width', self.thermalBridgeWidth])
 
         if self.thermalBridgeAngle is not None:
-            expr.append(['thermal_bridge_angle', format_float(self.thermalBridgeAngle)])
+            expr.append(['thermal_bridge_angle', self.thermalBridgeAngle])
 
         if self.thermalGap is not None:
-            expr.append(['thermal_gap', format_float(self.thermalGap)])
+            expr.append(['thermal_gap', self.thermalGap])
 
         if self.customPadOptions is not None:
             expr.append(self.customPadOptions._to_sexpr_raw())
@@ -1124,7 +1123,7 @@ class Footprint():
             expr.append(['uuid', quote(self.tstamp)])
 
         if self.position is not None:
-            pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+            pos = ['at', self.position.X, self.position.Y]
             if self.position.angle is not None:
                 pos.append(self.position.angle)
             expr.append(pos)
@@ -1154,25 +1153,25 @@ class Footprint():
             expr.append(['autoplace_cost180', self.autoplaceCost180])
 
         if self.solderMaskMargin is not None:
-            expr.append(['solder_mask_margin', format_float(self.solderMaskMargin)])
+            expr.append(['solder_mask_margin', self.solderMaskMargin])
 
         if self.solderPasteMargin is not None:
-            expr.append(['solder_paste_margin', format_float(self.solderPasteMargin)])
+            expr.append(['solder_paste_margin', self.solderPasteMargin])
         
         if self.solderPasteMarginRatio is not None:
-            expr.append(['solder_paste_margin_ratio', format_float(self.solderPasteMarginRatio)])
+            expr.append(['solder_paste_margin_ratio', self.solderPasteMarginRatio])
 
         if self.clearance is not None:
-            expr.append(['clearance', format_float(self.clearance)])
+            expr.append(['clearance', self.clearance])
 
         if self.zoneConnect is not None:
             expr.append(['zone_connect', self.zoneConnect])
 
         if self.thermalBridgeWidth is not None:
-            expr.append(['thermal_bridge_width', format_float(self.thermalBridgeWidth)])
+            expr.append(['thermal_bridge_width', self.thermalBridgeWidth])
 
         if self.thermalGap is not None:
-            expr.append(['thermal_gap', format_float(self.thermalGap)])
+            expr.append(['thermal_gap', self.thermalGap])
 
         if self.attributes is not None:
             raw_attr = self.attributes._to_sexpr_raw()

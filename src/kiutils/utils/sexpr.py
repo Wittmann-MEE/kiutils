@@ -4,6 +4,8 @@
 
 import re
 
+from .format_utils import format_float
+
 dbg = False
 
 term_regex = r'''(?mx)
@@ -49,6 +51,9 @@ def sexp_to_string(expr) -> str:
             return ''
         else:
             return '(' + ' '.join(sexp_to_string(item) for item in expr) + ')'
+
+    if isinstance(expr, float):
+        expr = format_float(expr)
 
     return str(expr)
 

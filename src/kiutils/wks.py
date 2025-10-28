@@ -23,7 +23,6 @@ from kiutils.items.common import Justify
 from kiutils.utils.string_utils import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.misc.config import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 
 @dataclass
@@ -76,7 +75,7 @@ class WksFontSize():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['size', format_float(self.width), format_float(self.height)]
+        expr = ['size', self.width, self.height]
         return expr
 
 
@@ -147,7 +146,7 @@ class WksFont():
         expr = ['font']
 
         if self.linewidth is not None:
-            expr.append(['linewidth', format_float(self.linewidth)])
+            expr.append(['linewidth', self.linewidth])
 
         if self.size is not None:
             expr.append(self.size._to_sexpr_raw())
@@ -306,12 +305,12 @@ class Line():
         ]
 
         # Add start and end coordinates and corner info
-        start_corner = ['start', format_float(self.start.X), format_float(self.start.Y)]
+        start_corner = ['start', self.start.X, self.start.Y]
         if self.start.corner is not None:
             start_corner.append(self.start.corner)
         expr.append(start_corner)
 
-        end_corner = ['end', format_float(self.end.X), format_float(self.end.Y)]
+        end_corner = ['end', self.end.X, self.end.Y]
         if self.end.corner is not None:
             end_corner.append(self.end.corner)
         expr.append(end_corner)
@@ -319,13 +318,13 @@ class Line():
         if self.option is not None:
             expr.append(['option', self.option])
         if self.lineWidth is not None:
-            expr.append(['linewidth', format_float(self.lineWidth)])
+            expr.append(['linewidth', self.lineWidth])
         if self.repeat is not None:
             expr.append(['repeat', self.repeat])
         if self.incrx is not None:
-            expr.append(['incrx', format_float(self.incrx)])
+            expr.append(['incrx', self.incrx])
         if self.incry is not None:
-            expr.append(['incry', format_float(self.incry)])
+            expr.append(['incry', self.incry])
         if self.comment is not None:
             expr.append(['comment', escape_and_quote(self.comment)])
 
@@ -423,12 +422,12 @@ class Rect():
         ]
 
         # Add start and end coordinates and corner info
-        start_corner = ['start', format_float(self.start.X), format_float(self.start.Y)]
+        start_corner = ['start', self.start.X, self.start.Y]
         if self.start.corner is not None:
             start_corner.append(self.start.corner)
         expr.append(start_corner)
 
-        end_corner = ['end', format_float(self.end.X), format_float(self.end.Y)]
+        end_corner = ['end', self.end.X, self.end.Y]
         if self.end.corner is not None:
             end_corner.append(self.end.corner)
         expr.append(end_corner)
@@ -436,13 +435,13 @@ class Rect():
         if self.option is not None:
             expr.append(['option', self.option])
         if self.lineWidth is not None:
-            expr.append(['linewidth', format_float(self.lineWidth)])
+            expr.append(['linewidth', self.lineWidth])
         if self.repeat is not None:
             expr.append(['repeat', self.repeat])
         if self.incrx is not None:
-            expr.append(['incrx', format_float(self.incrx)])
+            expr.append(['incrx', self.incrx])
         if self.incry is not None:
-            expr.append(['incry', format_float(self.incry)])
+            expr.append(['incry', self.incry])
         if self.comment is not None:
             expr.append(['comment', escape_and_quote(self.comment)])
 
@@ -613,7 +612,7 @@ class Bitmap():
             ['name', escape_and_quote(self.name)],
         ]
 
-        pos = ['pos', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['pos', self.position.X, self.position.Y]
         if self.position.corner is not None:
             pos.append(self.position.corner)
         expr.append(pos)
@@ -621,14 +620,14 @@ class Bitmap():
         if self.option is not None:
             expr.append(['option', self.option])
 
-        expr.append(['scale', format_float(self.scale)])
+        expr.append(['scale', self.scale])
 
         if self.repeat is not None:
             expr.append(['repeat', self.repeat])
         if self.incrx is not None:
-            expr.append(['incrx', format_float(self.incrx)])
+            expr.append(['incrx', self.incrx])
         if self.incry is not None:
-            expr.append(['incry', format_float(self.incry)])
+            expr.append(['incry', self.incry])
         if self.comment is not None:
             expr.append(['comment', escape_and_quote(self.comment)])
 
@@ -755,7 +754,7 @@ class TbText():
             ['name', escape_and_quote(self.name)],
         ]
 
-        pos = ['pos', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['pos', self.position.X, self.position.Y]
         if self.position.corner is not None:
             pos.append(self.position.corner)
         expr.append(pos)
@@ -763,21 +762,21 @@ class TbText():
         if self.option is not None:
             expr.append(['option', self.option])
         if self.rotate is not None:
-            expr.append(['rotate', format_float(self.rotate)])
+            expr.append(['rotate', self.rotate])
         if self.font is not None:
             expr.append(self.font._to_sexpr_raw())
         if self.justify is not None:
             expr.append(self.justify._to_sexpr_raw())
         if self.maxlen is not None:
-            expr.append(['maxlen', format_float(self.maxlen)])
+            expr.append(['maxlen', self.maxlen])
         if self.maxheight is not None:
-            expr.append(['maxheight', format_float(self.maxheight)])
+            expr.append(['maxheight', self.maxheight])
         if self.repeat is not None:
             expr.append(['repeat', self.repeat])
         if self.incrx is not None:
-            expr.append(['incrx', format_float(self.incrx)])
+            expr.append(['incrx', self.incrx])
         if self.incry is not None:
-            expr.append(['incry', format_float(self.incry)])
+            expr.append(['incry', self.incry])
         if self.incrlabel is not None:
             expr.append(['incrlabel', self.incrlabel])
         if self.comment is not None:
@@ -836,7 +835,7 @@ class TextSize():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['textsize', format_float(self.width), format_float(self.height)]
+        return ['textsize', self.width, self.height]
 
 @dataclass
 class Setup():

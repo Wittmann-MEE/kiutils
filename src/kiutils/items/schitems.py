@@ -21,7 +21,6 @@ from typing import Optional, List, Dict
 
 from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
@@ -96,8 +95,8 @@ class Junction():
     def _to_sexpr_raw(self):
         expr = ['junction']
 
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
-        expr.append(['diameter', format_float(self.diameter)])
+        expr.append(['at', self.position.X, self.position.Y])
+        expr.append(['diameter', self.diameter])
         expr.append(self.color._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
@@ -166,7 +165,7 @@ class NoConnect():
     def _to_sexpr_raw(self):
         expr = ['no_connect']
 
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
+        expr.append(['at', self.position.X, self.position.Y])
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
 
@@ -242,8 +241,8 @@ class BusEntry():
     def _to_sexpr_raw(self):
         expr = ['bus_entry']
 
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
-        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(['at', self.position.X, self.position.Y])
+        expr.append(['size', self.size.X, self.size.Y])
         expr.append(self.stroke._to_sexpr_raw())
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])
@@ -390,7 +389,7 @@ class Connection():
 
         pts_expr = ['pts']
         for point in self.points:
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(['xy', point.X, point.Y])
         expr.append(pts_expr)
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -474,7 +473,7 @@ class PolyLine():
 
         pts_expr = ['pts']
         for point in self.points:
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(['xy', point.X, point.Y])
         expr.append(pts_expr)
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -566,9 +565,9 @@ class Text():
         if self.exclude_from_sim is not None:
             expr.append(['exclude_from_sim', self.exclude_from_sim])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         expr.append(self.effects._to_sexpr_raw())
@@ -678,12 +677,12 @@ class TextBox():
         if self.exclude_from_sim is not None:
             expr.append(['exclude_from_sim', self.exclude_from_sim])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(['size', self.size.X, self.size.Y])
         expr.append(['margins'] + list(map(str, self.margins)))
         if len(self.span) > 0:
             expr.append(['span', self.span[0], self.span[1]])
@@ -774,9 +773,9 @@ class LocalLabel():
     def _to_sexpr_raw(self):
         expr = ['label', escape_and_quote(self.text)]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
@@ -876,9 +875,9 @@ class GlobalLabel():
 
         expr.append(['shape', self.shape])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
@@ -977,9 +976,9 @@ class HierarchicalLabel():
 
         expr.append(['shape', self.shape])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         expr.append(format_bool('fields_autoplaced', self.fieldsAutoplaced))
@@ -1306,9 +1305,9 @@ class SchematicSymbol():
 
         expr.append(['lib_id', escape_and_quote(self.libId)])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         if self.mirror is not None:
@@ -1420,9 +1419,9 @@ class HierarchicalPin():
     def _to_sexpr_raw(self):
         expr = ['pin', escape_and_quote(self.name), self.connectionType]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         if self.uuid is not None:
@@ -1698,8 +1697,8 @@ class HierarchicalSheet():
     def _to_sexpr_raw(self):
         expr = [
             'sheet',
-            ['at', format_float(self.position.X), format_float(self.position.Y)],
-            ['size', format_float(self.width), format_float(self.height)],
+            ['at', self.position.X, self.position.Y],
+            ['size', self.width, self.height],
         ]
 
         if self.exclude_from_sim is not None:
@@ -1956,8 +1955,8 @@ class Rectangle():
     def _to_sexpr_raw(self):
         expr = [
             'rectangle',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['start', self.start.X, self.start.Y],
+            ['end', self.end.X, self.end.Y],
         ]
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -2047,9 +2046,9 @@ class Arc():
     def _to_sexpr_raw(self):
         expr = [
             'arc',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['start', self.start.X, self.start.Y],
+            ['mid', self.mid.X, self.mid.Y],
+            ['end', self.end.X, self.end.Y],
         ]
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -2135,8 +2134,8 @@ class Circle():
     def _to_sexpr_raw(self):
         expr = [
             'circle',
-            ['center', format_float(self.center.X), format_float(self.center.Y)],
-            ['radius', format_float(self.radius)],
+            ['center', self.center.X, self.center.Y],
+            ['radius', self.radius],
         ]
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -2235,13 +2234,13 @@ class NetclassFlag():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
 
         expr = [
             'netclass_flag', escape_and_quote(self.text),
-            ['length', format_float(self.length)],
+            ['length', self.length],
             ['shape', self.shape],
             pos,
             format_bool('fields_autoplaced', self.fieldsAutoplaced),
@@ -2480,8 +2479,8 @@ class Table():
         if self.separators is not None:
             expr.append(self.separators._to_sexpr_raw())
 
-        expr.append(['column_widths'] + [format_float(w) for w in self.column_widths])
-        expr.append(['row_heights'] + [format_float(h) for h in self.row_heights])
+        expr.append(['column_widths'] + [w for w in self.column_widths])
+        expr.append(['row_heights'] + [h for h in self.row_heights])
 
         if self.cells:
             cells_expr = ['cells']

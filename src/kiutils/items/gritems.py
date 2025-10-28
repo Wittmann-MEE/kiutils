@@ -22,7 +22,6 @@ from typing import Optional, List
 
 from kiutils.items.common import Effects, Position, RenderCache, Stroke
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
@@ -121,9 +120,9 @@ class GrText():
 
         expr.append(format_bool('locked', self.locked))
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         layer = ['layer', escape_and_quote(self.layer)] if self.layer is not None else None
@@ -381,15 +380,15 @@ class GrLine():
     def _to_sexpr_raw(self):
         expr = [
             'gr_line',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['start', self.start.X, self.start.Y],
+            ['end', self.end.X, self.end.Y],
         ]
 
-        if self.angle is not None: expr.append(['angle', format_float(self.angle)])
+        if self.angle is not None: expr.append(['angle', self.angle])
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
-            expr.append(['width', format_float(self.width)])
+            expr.append(['width', self.width])
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -490,14 +489,14 @@ class GrRect():
     def _to_sexpr_raw(self):
         expr = [
             'gr_rect',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['start', self.start.X, self.start.Y],
+            ['end', self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
-            expr.append(['width', format_float(self.width)])
+            expr.append(['width', self.width])
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -601,14 +600,14 @@ class GrCircle():
     def _to_sexpr_raw(self):
         expr = [
             'gr_circle',
-            ['center', format_float(self.center.X), format_float(self.center.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['center', self.center.X, self.center.Y],
+            ['end', self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
-            expr.append(['width', format_float(self.width)])
+            expr.append(['width', self.width])
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -712,15 +711,15 @@ class GrArc():
     def _to_sexpr_raw(self):
         expr = [
             'gr_arc',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['start', self.start.X, self.start.Y],
+            ['mid', self.mid.X, self.mid.Y],
+            ['end', self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
-            expr.append(['width', format_float(self.width)])
+            expr.append(['width', self.width])
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -828,13 +827,13 @@ class GrPoly():
 
         pts = ['pts']
         for point in self.coordinates:
-            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts.append(['xy', point.X, point.Y])
         expr.append(pts)
 
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
-            expr.append(['width', format_float(self.width)])
+            expr.append(['width', self.width])
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -936,13 +935,13 @@ class GrCurve():
 
         pts = ['pts']
         for point in self.coordinates:
-            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts.append(['xy', point.X, point.Y])
         expr.append(pts)
 
         if self.width is not None:
             if self.stroke is not None:
                 raise Exception("I didn't expect both stroke and width. Something is off...")
-            expr.append(['width', format_float(self.width)])
+            expr.append(['width', self.width])
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -1010,4 +1009,4 @@ class GrStroke():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['stroke', ['width', format_float(self.width)], ['type', self.type]]
+        return ['stroke', ['width', self.width], ['type', self.type]]

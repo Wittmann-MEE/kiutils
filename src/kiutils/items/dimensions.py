@@ -21,7 +21,6 @@ from typing import Optional, List
 
 from kiutils.items.common import Position
 from kiutils.items.gritems import GrText
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.string_utils import *
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
@@ -239,21 +238,21 @@ class DimensionStyle():
     def _to_sexpr_raw(self):
         expr = ['style']
 
-        expr.append(['thickness', format_float(self.thickness)])
-        expr.append(['arrow_length', format_float(self.arrowLength)])
+        expr.append(['thickness', self.thickness])
+        expr.append(['arrow_length', self.arrowLength])
         expr.append(['text_position_mode', self.textPositionMode])
 
         if self.arrow_direction is not None:
             expr.append(['arrow_direction', self.arrow_direction])
 
         if self.extensionHeight is not None:
-            expr.append(['extension_height', format_float(self.extensionHeight)])
+            expr.append(['extension_height', self.extensionHeight])
 
         if self.textFrame is not None:
             expr.append(['text_frame', self.textFrame])
 
         if self.extensionOffset is not None:
-            expr.append(['extension_offset', format_float(self.extensionOffset)])
+            expr.append(['extension_offset', self.extensionOffset])
 
         expr.append(format_bool('keep_text_aligned', self.keepTextAligned))
 
@@ -381,17 +380,17 @@ class Dimension():
         # Points
         pts_expr = ['pts']
         for point in self.pts:
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(['xy', point.X, point.Y])
         expr.append(pts_expr)
 
         if self.height is not None:
-            expr.append(['height', format_float(self.height)])
+            expr.append(['height', self.height])
 
         if self.orientation is not None:
-            expr.append(['orientation', format_float(self.orientation)])
+            expr.append(['orientation', self.orientation])
 
         if self.leaderLength is not None:
-            expr.append(['leader_length', format_float(self.leaderLength)])
+            expr.append(['leader_length', self.leaderLength])
 
         if self.format is not None:
             expr.append(self.format._to_sexpr_raw())

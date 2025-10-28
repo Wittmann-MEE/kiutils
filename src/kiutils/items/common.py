@@ -24,7 +24,6 @@ from enum import Enum
 import urllib.parse
 
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
@@ -143,7 +142,7 @@ class Coordinate():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['xyz', format_float(self.X), format_float(self.Y), format_float(self.Z)]
+        return ['xyz', self.X, self.Y, self.Z]
 
 
 @dataclass
@@ -211,7 +210,7 @@ class ColorRGBA():
         if self.precision is not None:
             alpha = f'{self.A:.{self.precision}f}'
         else:
-            alpha = format_float(self.A)
+            alpha = self.A
 
         return ['color', self.R, self.G, self.B, alpha]
 
@@ -283,7 +282,7 @@ class Stroke():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['stroke', ['width', format_float(self.width)]]
+        expr = ['stroke', ['width', self.width]]
 
         if self.type is not None:
             expr.append(['type', self.type])
@@ -385,10 +384,10 @@ class Font():
         if self.face is not None:
             expr.append(['face', escape_and_quote(self.face)])
 
-        expr.append(['size', format_float(self.height), format_float(self.width)])
+        expr.append(['size', self.height, self.width])
 
         if self.thickness is not None:
-            expr.append(['thickness', format_float(self.thickness)])
+            expr.append(['thickness', self.thickness])
 
         if self.bold:
             expr.append(format_bool('bold', self.bold))
@@ -400,7 +399,7 @@ class Font():
             expr.append(format_bool('italic', self.italic))
 
         if self.lineSpacing is not None:
-            expr.append(['line_spacing', format_float(self.lineSpacing)])
+            expr.append(['line_spacing', self.lineSpacing])
 
         return expr
 
@@ -779,7 +778,7 @@ class PageSettings():
         if self.paperSize == 'User':
             if self.width is None or self.height is None:
                 raise Exception("Page size set to 'User' but width or height not specified")
-            expr.extend([format_float(self.width), format_float(self.height)])
+            expr.extend([self.width, self.height])
 
         if self.portrait:
             expr.append('portrait')
@@ -980,9 +979,9 @@ class Property():
 
         expr = ['property', escape_and_quote(self.key), escape_and_quote(value)]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         if self.id is not None:
@@ -1057,7 +1056,7 @@ class RenderCachePolygon():
     def _to_sexpr_raw(self):
         pts_expr = []
         for i, point in enumerate(self.pts):
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(['xy', point.X, point.Y])
 
         return ['polygon', ['pts'] + pts_expr]
 
@@ -1280,13 +1279,13 @@ class Image():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['image', ['at', format_float(self.position.X), format_float(self.position.Y)]]
+        expr = ['image', ['at', self.position.X, self.position.Y]]
 
         if self.layer is not None:
             expr.append(['layer', escape_and_quote(self.layer)])
 
         if self.scale is not None:
-            expr.append(['scale', format_float(self.scale)])
+            expr.append(['scale', self.scale])
 
         if self.uuid is not None:
             expr.append(['uuid', quote(self.uuid)])

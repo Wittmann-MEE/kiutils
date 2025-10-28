@@ -22,7 +22,6 @@ from kiutils.items.syitems import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.utils.string_utils import *
 from kiutils.misc.config import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 
 
@@ -183,12 +182,12 @@ class SymbolPin():
     def _to_sexpr_raw(self):
         expr = ['pin', self.electricalType, self.graphicalStyle]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ['at', self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(['length', format_float(self.length)])
+        expr.append(['length', self.length])
 
         if self.hide is not None:
             expr.append(format_bool('hide', self.hide))
@@ -488,7 +487,7 @@ class Symbol():
         if self.pinNames:
             pin_names = ['pin_names']
             if self.pinNamesOffset is not None:
-                pin_names.append(['offset', format_float(self.pinNamesOffset)])
+                pin_names.append(['offset', self.pinNamesOffset])
             if self.pinNamesHide:
                 pin_names.append(format_bool('hide', self.pinNamesHide))
             expr.append(pin_names)

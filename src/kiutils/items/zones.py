@@ -24,7 +24,6 @@ from enum import IntEnum
 from kiutils.items.brditems import Arc
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
@@ -260,26 +259,26 @@ class FillSettings():
         if self.mode is not None:
             expr.append(['mode', self.mode])
 
-        expr.append(['thermal_gap', format_float(self.thermalGap)])
-        expr.append(['thermal_bridge_width', format_float(self.thermalBridgeWidth)])
+        expr.append(['thermal_gap', self.thermalGap])
+        expr.append(['thermal_bridge_width', self.thermalBridgeWidth])
 
         if self.smoothingStyle is not None:
             expr.append(['smoothing', self.smoothingStyle])
 
         if self.smoothingRadius is not None:
-            expr.append(['radius', format_float(self.smoothingRadius)])
+            expr.append(['radius', self.smoothingRadius])
 
         if self.islandRemovalMode is not None:
             expr.append(['island_removal_mode', self.islandRemovalMode])
 
         if self.islandAreaMin is not None:
-            expr.append(['island_area_min', format_float(self.islandAreaMin)])
+            expr.append(['island_area_min', self.islandAreaMin])
 
         if self.hatchThickness is not None:
-            expr.append(['hatch_thickness', format_float(self.hatchThickness)])
+            expr.append(['hatch_thickness', self.hatchThickness])
 
         if self.hatchGap is not None:
-            expr.append(['hatch_gap', format_float(self.hatchGap)])
+            expr.append(['hatch_gap', self.hatchGap])
 
         if self.hatchOrientation is not None:
             expr.append(['hatch_orientation', self.hatchOrientation])
@@ -288,13 +287,13 @@ class FillSettings():
             expr.append(['hatch_smoothing_level', self.hatchSmoothingLevel])
 
         if self.hatchSmoothingValue is not None:
-            expr.append(['hatch_smoothing_value', format_float(self.hatchSmoothingValue)])
+            expr.append(['hatch_smoothing_value', self.hatchSmoothingValue])
 
         if self.hatchBorderAlgorithm is not None:
             expr.append(['hatch_border_algorithm', self.hatchBorderAlgorithm])
 
         if self.hatchMinHoleArea is not None:
-            expr.append(['hatch_min_hole_area', format_float(self.hatchMinHoleArea)])
+            expr.append(['hatch_min_hole_area', self.hatchMinHoleArea])
 
         return expr
 
@@ -368,7 +367,7 @@ class ZonePolygon():
         first_item = self.coordinates[0]
         if isinstance(first_item, Position):
             # All items are Position
-            pts = [['xy', format_float(p.X), format_float(p.Y)] for p in self.coordinates]
+            pts = [['xy', p.X, p.Y] for p in self.coordinates]
         elif isinstance(first_item, Arc):
             # All items are Arc
             pts = [arc._to_sexpr_raw(zone_poly=True) for arc in self.coordinates]
@@ -454,7 +453,7 @@ class FilledPolygon():
         if self.island:
             expr.append(format_bool('island', self.island, compact=True))
 
-        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        pts = [['xy', point.X, point.Y] for point in self.coordinates]
         expr.append(['pts'] + pts)
 
         return expr
@@ -527,7 +526,7 @@ class FillSegments():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        pts = [['xy', point.X, point.Y] for point in self.coordinates]
         return [
             'fill_segments',
             ['layer', escape_and_quote(self.layer)],
@@ -731,7 +730,7 @@ class Zone():
         connect_pads_expr = ['connect_pads']
         if self.connectPads is not None:
             connect_pads_expr.append(self.connectPads)
-        connect_pads_expr.append(['clearance', format_float(self.clearance)])
+        connect_pads_expr.append(['clearance', self.clearance])
         expr.append(connect_pads_expr)
 
         expr.append(['min_thickness', float(self.minThickness)])

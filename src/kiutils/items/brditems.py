@@ -20,7 +20,6 @@ from typing import Optional, List
 
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
@@ -84,7 +83,7 @@ class GeneralSettings():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['general', ['thickness', format_float(self.thickness)]]
+        expr = ['general', ['thickness', self.thickness]]
 
         if self.legacy_teardrops is not None:
             expr.append(['legacy_teardrops', self.legacy_teardrops])
@@ -203,16 +202,16 @@ class StackupSubLayer():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['addsublayer', ['thickness', format_float(self.thickness)]]
+        expr = ['addsublayer', ['thickness', self.thickness]]
 
         if self.material is not None:
             expr.append(['material', self.material])
 
         if self.epsilonR is not None:
-            expr.append(['epsilon_r', format_float(self.epsilonR)])
+            expr.append(['epsilon_r', self.epsilonR])
 
         if self.lossTangent is not None:
-            expr.append(['loss_tangent', format_float(self.lossTangent)])
+            expr.append(['loss_tangent', self.lossTangent])
 
         return expr
 
@@ -338,16 +337,16 @@ class StackupLayer():
             expr.append(['color', escape_and_quote(self.color)])
 
         if self.thickness is not None:
-            expr.append(['thickness', format_float(self.thickness)])
+            expr.append(['thickness', self.thickness])
 
         if self.material is not None:
             expr.append(['material', escape_and_quote(self.material)])
 
         if self.epsilonR is not None:
-            expr.append(['epsilon_r', format_float(self.epsilonR)])
+            expr.append(['epsilon_r', self.epsilonR])
 
         if self.lossTangent is not None:
-            expr.append(['loss_tangent', format_float(self.lossTangent)])
+            expr.append(['loss_tangent', self.lossTangent])
 
         for layer in self.subLayers:
             expr.append(layer._to_sexpr_raw())
@@ -746,7 +745,7 @@ class PlotSettings():
         if self.svgUseInch is not None:
             expr.append(['svguseinch', self.svgUseInch])
 
-        expr.append(['svgprecision', format_float(self.svgPrecision)])
+        expr.append(['svgprecision', self.svgPrecision])
 
         if self.excludeEdgeLayer is not None:
             expr.append(['excludeedgelayer', self.excludeEdgeLayer])
@@ -963,16 +962,16 @@ class SetupData():
         if self.stackup is not None:
             expr.append(self.stackup._to_sexpr_raw())
 
-        expr.append(['pad_to_mask_clearance', format_float(self.packToMaskClearance)])
+        expr.append(['pad_to_mask_clearance', self.packToMaskClearance])
 
         if self.solderMaskMinWidth is not None:
-            expr.append(['solder_mask_min_width', format_float(self.solderMaskMinWidth)])
+            expr.append(['solder_mask_min_width', self.solderMaskMinWidth])
 
         if self.padToPasteClearance is not None:
-            expr.append(['pad_to_paste_clearance', format_float(self.padToPasteClearance)])
+            expr.append(['pad_to_paste_clearance', self.padToPasteClearance])
 
         if self.padToPasteClearanceRatio is not None:
-            expr.append(['pad_to_paste_clearance_ratio', format_float(self.padToPasteClearanceRatio)])
+            expr.append(['pad_to_paste_clearance_ratio', self.padToPasteClearanceRatio])
 
         if self.allow_soldermask_bridges_in_footprints is not None:
             expr.append(format_bool('allow_soldermask_bridges_in_footprints', self.allow_soldermask_bridges_in_footprints, yesno=True))
@@ -981,10 +980,10 @@ class SetupData():
             expr.append(['tenting'] + self.tenting)
 
         if self.auxAxisOrigin is not None:
-            expr.append(['aux_axis_origin', format_float(self.auxAxisOrigin.X), format_float(self.auxAxisOrigin.Y)])
+            expr.append(['aux_axis_origin', self.auxAxisOrigin.X, self.auxAxisOrigin.Y])
 
         if self.gridOrigin is not None:
-            expr.append(['grid_origin', format_float(self.gridOrigin.X), format_float(self.gridOrigin.Y)])
+            expr.append(['grid_origin', self.gridOrigin.X, self.gridOrigin.Y])
 
         if len(self.covering) > 0:
             expr.append(['covering'] + self.covering)
@@ -1087,9 +1086,9 @@ class Segment():
     def _to_sexpr_raw(self):
         expr = [
             'segment',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
-            ['width', format_float(self.width)],
+            ['start', self.start.X, self.start.Y],
+            ['end', self.end.X, self.end.Y],
+            ['width', self.width],
         ]
 
         if self.locked:
@@ -1239,9 +1238,9 @@ class Via():
             expr.append(self.type)
 
         expr.extend([
-            ['at', format_float(self.position.X), format_float(self.position.Y)],
-            ['size', format_float(self.size)],
-            ['drill', format_float(self.drill)],
+            ['at', self.position.X, self.position.Y],
+            ['size', self.size],
+            ['drill', self.drill],
         ])
 
         layer_list = ['layers']
@@ -1385,14 +1384,14 @@ class Arc():
             expr.append(format_bool("locked", self.locked))
 
         expr.extend([
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            ['start', self.start.X, self.start.Y],
+            ['mid', self.mid.X, self.mid.Y],
+            ['end', self.end.X, self.end.Y],
         ])
 
         if not zone_poly:
             expr.extend([
-                ['width', format_float(self.width)],
+                ['width', self.width],
                 ['layer', escape_and_quote(self.layer)],
                 ['net', self.net],
             ])
@@ -1482,9 +1481,9 @@ class Target():
         return [
             'target',
             self.type,
-            ['at', format_float(self.position.X), format_float(self.position.Y)],
-            ['size', format_float(self.size)],
-            ['width', format_float(self.width)],
+            ['at', self.position.X, self.position.Y],
+            ['size', self.size],
+            ['width', self.width],
             ['layer', quote(self.layer)],
             ['uuid', quote(self.tstamp)],
         ]
@@ -1686,36 +1685,36 @@ class Generated():
         if len(self.base_line) > 0:
             base_line_pts = ['pts']
             for point in self.base_line:
-                base_line_pts.append(['xy', format_float(point.X), format_float(point.Y)])
+                base_line_pts.append(['xy', point.X, point.Y])
             expr.append(['base_line', base_line_pts])
 
         if len(self.base_line_coupled) > 0:
             coupled_pts = ['pts']
             for point in self.base_line_coupled:
-                coupled_pts.append(['xy', format_float(point.X), format_float(point.Y)])
+                coupled_pts.append(['xy', point.X, point.Y])
             expr.append(['base_line_coupled', coupled_pts])
 
         expr.append(['corner_radius_percent', self.corner_radius])
-        expr.append(['end', ['xy', format_float(self.end.X), format_float(self.end.Y)]])
+        expr.append(['end', ['xy', self.end.X, self.end.Y]])
         expr.append(['initial_side', escape_and_quote(self.initial_side)])
         expr.append(['last_diff_pair_gap', self.last_diff_pair_gap])
         expr.append(['last_netname', escape_and_quote(self.last_net_name)])
         expr.append(['last_status', escape_and_quote(self.last_status)])
         expr.append(['last_track_width', self.last_track_width])
         expr.append(['last_tuning', escape_and_quote(self.last_tuning)])
-        expr.append(['max_amplitude', format_float(self.max_amplitude)])
-        expr.append(['min_amplitude', format_float(self.min_amplitude)])
-        expr.append(['min_spacing', format_float(self.min_spacing)])
-        expr.append(['origin', ['xy', format_float(self.origin.X), format_float(self.origin.Y)]])
+        expr.append(['max_amplitude', self.max_amplitude])
+        expr.append(['min_amplitude', self.min_amplitude])
+        expr.append(['min_spacing', self.min_spacing])
+        expr.append(['origin', ['xy', self.origin.X, self.origin.Y]])
         expr.append(['override_custom_rules', self.override_custom_rules])
         expr.append(['rounded', self.rounded])
         expr.append(['single_sided', self.single_sided])
-        expr.append(['target_length', format_float(self.target_length)])
-        expr.append(['target_length_max', format_float(self.target_length_max)])
-        expr.append(['target_length_min', format_float(self.target_length_min)])
-        expr.append(['target_skew', format_float(self.target_skew)])
-        expr.append(['target_skew_max', format_float(self.target_skew_max)])
-        expr.append(['target_skew_min', format_float(self.target_skew_min)])
+        expr.append(['target_length', self.target_length])
+        expr.append(['target_length_max', self.target_length_max])
+        expr.append(['target_length_min', self.target_length_min])
+        expr.append(['target_skew', self.target_skew])
+        expr.append(['target_skew_max', self.target_skew_max])
+        expr.append(['target_skew_min', self.target_skew_min])
         expr.append(['tuning_mode', escape_and_quote(self.tuning_mode)])
 
         if len(self.members) > 0:
@@ -1810,12 +1809,12 @@ class Teardrops():
         expr = ['teardrops']
 
         field_specs = {
-            'best_length_ratio': lambda v: ['best_length_ratio', format_float(v)],
-            'max_length':        lambda v: ['max_length', format_float(v)],
-            'best_width_ratio':  lambda v: ['best_width_ratio', format_float(v)],
-            'max_width':         lambda v: ['max_width', format_float(v)],
+            'best_length_ratio': lambda v: ['best_length_ratio', v],
+            'max_length':        lambda v: ['max_length', v],
+            'best_width_ratio':  lambda v: ['best_width_ratio', v],
+            'max_width':         lambda v: ['max_width', v],
             'curved_edges':      lambda v: format_bool('curved_edges', v, yesno=True),
-            'filter_ratio':      lambda v: ['filter_ratio', format_float(v)],
+            'filter_ratio':      lambda v: ['filter_ratio', v],
             'enabled':           lambda v: format_bool('enabled', v, yesno=True),
             'allow_two_segments':lambda v: format_bool('allow_two_segments', v, yesno=True),
             'prefer_zone_connections': lambda v: format_bool('prefer_zone_connections', v, yesno=True),
