@@ -584,7 +584,7 @@ class Pad():
             elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
             elif item[0] in ['solder_paste_margin_ratio', 'solder_paste_ratio']: object.solderPasteMarginRatio = item[1]
             elif item[0] == 'clearance': object.clearance = item[1]
-            elif item[0] == 'zone_connect': object.zoneConnect = int(item[1])
+            elif item[0] == 'zone_connect': object.zoneConnect = item[1]
             elif item[0] in ['thermal_bridge_width', 'thermal_width']: object.thermalBridgeWidth = item[1]
             elif item[0] == 'thermal_bridge_angle': object.thermalBridgeAngle = float(item[1])
             elif item[0] == 'thermal_gap': object.thermalGap = item[1]
@@ -956,13 +956,13 @@ class Footprint():
             elif item[0] == 'tags': object.tags = item[1]
             elif item[0] == 'path': object.path = item[1]
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'autoplace_cost90': object.autoplaceCost90 = int(item[1])
-            elif item[0] == 'autoplace_cost180': object.autoplaceCost180 = int(item[1])
+            elif item[0] == 'autoplace_cost90': object.autoplaceCost90 = item[1]
+            elif item[0] == 'autoplace_cost180': object.autoplaceCost180 = item[1]
             elif item[0] == 'solder_mask_margin': object.solderMaskMargin = item[1]
             elif item[0] == 'solder_paste_margin': object.solderPasteMargin = item[1]
             elif item[0] in ['solder_paste_margin_ratio', 'solder_paste_ratio']: object.solderPasteMarginRatio = item[1]
             elif item[0] == 'clearance': object.clearance = item[1]
-            elif item[0] == 'zone_connect': object.zoneConnect = int(item[1])
+            elif item[0] == 'zone_connect': object.zoneConnect = item[1]
             elif item[0] in ['thermal_bridge_width', 'thermal_width']: object.thermalBridgeWidth = item[1]
             elif item[0] == 'thermal_gap': object.thermalGap = item[1]
             elif item[0] == 'attr': object.attributes = Attributes.from_sexpr(item)

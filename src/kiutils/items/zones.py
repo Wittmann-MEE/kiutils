@@ -222,14 +222,14 @@ class FillSettings():
             elif item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
             elif item[0] == 'smoothing': object.smoothingStyle = item[1]
             elif item[0] == 'radius': object.smoothingRadius = item[1]
-            elif item[0] == 'island_removal_mode': object.islandRemovalMode = int(item[1])
+            elif item[0] == 'island_removal_mode': object.islandRemovalMode = item[1]
             elif item[0] == 'island_area_min': object.islandAreaMin = item[1]
             elif item[0] == 'hatch_thickness': object.hatchThickness = item[1]
             elif item[0] == 'hatch_gap': object.hatchGap = item[1]
             elif item[0] == 'hatch_orientation': object.hatchOrientation = item[1]
-            elif item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = int(item[1])
+            elif item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = item[1]
             elif item[0] == 'hatch_smoothing_value': object.hatchSmoothingValue = item[1]
-            elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = int(item[1])
+            elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
             elif item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -649,7 +649,7 @@ class Zone():
             if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
             elif not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'net': object.net = int(item[1])
+            elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'net_name': object.netName = item[1]
             elif item[0] == 'layers' or item[0] == 'layer':
                 for layer in item[1:]:
@@ -658,7 +658,7 @@ class Zone():
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'name': object.name = item[1]
             elif item[0] == 'hatch': object.hatch = Hatch(style=item[1], pitch=item[2])
-            elif item[0] == 'priority': object.priority = int(item[1])
+            elif item[0] == 'priority': object.priority = item[1]
             elif item[0] == 'connect_pads':
                 if len(item) == 2:
                     object.clearance = item[1][1]

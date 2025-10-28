@@ -186,9 +186,9 @@ class ColorRGBA():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.R = int(exp[1])
-        object.G = int(exp[2])
-        object.B = int(exp[3])
+        object.R = exp[1]
+        object.G = exp[2]
+        object.B = exp[3]
         object.A = exp[4]
 
         return object
@@ -600,7 +600,7 @@ class Net():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.number = int(exp[1])
+        object.number = exp[1]
         object.name = exp[2]
 
         return object
@@ -1102,7 +1102,7 @@ class RenderCache():
 
         object = cls()
         object.text = exp[1]
-        object.id = int(exp[2])
+        object.id = exp[2]
         for item in exp[3:]:
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")

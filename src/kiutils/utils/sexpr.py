@@ -32,9 +32,7 @@ def parse_sexp(sexp):
             tmpout, out = out, stack.pop(-1)
             out.append(tmpout)
         elif term == 'num':
-            v = float(value)
-            if v != -0.0 and v != 0.0 and v.is_integer(): v = int(v)
-            out.append(v)
+            out.append(float(value))
         elif term == 'sq':
             out.append(value[1:-1].replace(r'\"', '"'))
         elif term == 's':

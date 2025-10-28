@@ -277,7 +277,7 @@ class Line():
             elif item[0] == 'end': object.end = WksPosition().from_sexpr(item)
             elif item[0] == 'option': object.option = item[1]
             elif item[0] == 'linewidth': object.lineWidth = item[1]
-            elif item[0] == 'repeat': object.repeat = int(item[1])
+            elif item[0] == 'repeat': object.repeat = item[1]
             elif item[0] == 'incrx': object.incrx = item[1]
             elif item[0] == 'incry': object.incry = item[1]
             elif item[0] == 'comment': object.comment = item[1]
@@ -396,7 +396,7 @@ class Rect():
             if item[0] == 'end': object.end = WksPosition().from_sexpr(item)
             if item[0] == 'option': object.option = item[1]
             if item[0] == 'linewidth': object.lineWidth = item[1]
-            if item[0] == 'repeat': object.repeat = int(item[1])
+            if item[0] == 'repeat': object.repeat = item[1]
             if item[0] == 'incrx': object.incrx = item[1]
             if item[0] == 'incry': object.incry = item[1]
             if item[0] == 'comment': object.comment = item[1]
@@ -583,7 +583,7 @@ class Bitmap():
             elif item[0] == 'pos': object.position = WksPosition().from_sexpr(item)
             elif item[0] == 'option': object.option = item[1]
             elif item[0] == 'scale': object.scale = item[1]
-            elif item[0] == 'repeat': object.repeat = int(item[1])
+            elif item[0] == 'repeat': object.repeat = item[1]
             elif item[0] == 'incrx': object.incrx = item[1]
             elif item[0] == 'incry': object.incry = item[1]
             elif item[0] == 'comment': object.comment = item[1]
@@ -725,10 +725,10 @@ class TbText():
             elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
             elif item[0] == 'maxlen': object.maxlen = item[1]
             elif item[0] == 'maxheight': object.maxheight = item[1]
-            elif item[0] == 'repeat': object.repeat = int(item[1])
+            elif item[0] == 'repeat': object.repeat = item[1]
             elif item[0] == 'incrx': object.incrx = item[1]
             elif item[0] == 'incry': object.incry = item[1]
-            elif item[0] == 'incrlabel': object.incrlabel = int(item[1])
+            elif item[0] == 'incrlabel': object.incrlabel = item[1]
             elif item[0] == 'comment': object.comment = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")

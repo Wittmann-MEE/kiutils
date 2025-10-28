@@ -91,9 +91,9 @@ class DimensionFormat():
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'prefix': object.prefix = item[1]
             elif item[0] == 'suffix': object.suffix = item[1]
-            elif item[0] == 'units': object.units = int(item[1])
-            elif item[0] == 'units_format': object.unitsFormat = int(item[1])
-            elif item[0] == 'precision': object.precision = int(item[1])
+            elif item[0] == 'units': object.units = item[1]
+            elif item[0] == 'units_format': object.unitsFormat = item[1]
+            elif item[0] == 'precision': object.precision = item[1]
             elif item[0] == 'override_value': object.overrideValue = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
@@ -212,9 +212,9 @@ class DimensionStyle():
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'thickness': object.thickness = item[1]
             elif item[0] == 'arrow_length': object.arrowLength = item[1]
-            elif item[0] == 'text_position_mode': object.textPositionMode = int(item[1])
+            elif item[0] == 'text_position_mode': object.textPositionMode = item[1]
             elif item[0] == 'extension_height': object.extensionHeight = item[1]
-            elif item[0] == 'text_frame': object.textFrame = int(item[1])
+            elif item[0] == 'text_frame': object.textFrame = item[1]
             elif item[0] == 'extension_offset': object.extensionOffset = item[1]
             elif item[0] == 'arrow_direction': object.arrow_direction = item[1]
             else:

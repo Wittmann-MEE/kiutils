@@ -279,8 +279,8 @@ class Symbol():
                 # The symbol is a child symbol
                 self.libraryNickname = None
                 self.entryName = parse_symbol_id.group(1)
-                self.unitId = int(parse_symbol_id.group(2))
-                self.styleId = int(parse_symbol_id.group(3))
+                self.unitId = parse_symbol_id.group(2)
+                self.styleId = parse_symbol_id.group(3)
             else:
                 # The symbol is a top-level symbol without a library nickname
                 self.libraryNickname = None

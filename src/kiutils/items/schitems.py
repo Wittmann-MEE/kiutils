@@ -651,7 +651,7 @@ class TextBox():
             elif item[0] == 'uuid': object.uuid = item[1]
             elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
             elif item[0] == 'margins': object.margins = [float(margin) for margin in item[1:]]
-            elif item[0] == 'span': object.span = (int(item[1]), int(item[2]))
+            elif item[0] == 'span': object.span = (item[1], item[2])
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -1040,7 +1040,7 @@ class SymbolProjectPath():
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'reference': object.reference = item[1]
-            elif item[0] == 'unit': object.unit = int(item[1])
+            elif item[0] == 'unit': object.unit = item[1]
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
 
@@ -1272,7 +1272,7 @@ class SchematicSymbol():
             elif item[0] == 'lib_id': object.libId = item[1]
             elif item[0] == 'lib_name': object.libName = item[1]
             elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'unit': object.unit = int(item[1])
+            elif item[0] == 'unit': object.unit = item[1]
             elif item[0] == 'at': object.position = Position().from_sexpr(item)
             elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
             elif item[0] == 'pin': object.pins.update({item[1]: item[2][1]})
@@ -1850,7 +1850,7 @@ class SymbolInstance():
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
             elif item[0] == 'reference': object.reference = item[1]
-            elif item[0] == 'unit': object.unit = int(item[1])
+            elif item[0] == 'unit': object.unit = item[1]
             elif item[0] == 'value': object.value = item[1]
             elif item[0] == 'footprint': object.footprint = item[1]
             else:
@@ -2441,7 +2441,7 @@ class Table():
         for item in exp[1:]:
             if not isinstance(item, list):
                 raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'column_count': object.column_count = int(item[1])
+            elif item[0] == 'column_count': object.column_count = item[1]
             elif item[0] == 'border': object.border = TableBorder().from_sexpr(item)
             elif item[0] == 'separators': object.separators = TableSeparators().from_sexpr(item)
             elif item[0] == 'column_widths':

@@ -131,7 +131,7 @@ class LayerToken():
             raise Exception("Expression does not have the correct type")
 
         object = cls()
-        object.ordinal = int(exp[0])
+        object.ordinal = exp[0]
         object.name = exp[1]
         object.type = exp[2]
         if len(exp) == 4:
@@ -676,10 +676,10 @@ class PlotSettings():
             elif item[0] == 'excludeedgelayer' : object.excludeEdgeLayer = item[1]
             elif item[0] == 'plotframeref' : object.plotFameRef = parse_bool(item, 'plotframeref')
             elif item[0] == 'viasonmask' : object.viasOnMask = parse_bool(item, 'viasonmask')
-            elif item[0] == 'mode' : object.mode = int(item[1])
+            elif item[0] == 'mode' : object.mode = item[1]
             elif item[0] == 'useauxorigin' : object.useAuxOrigin = parse_bool(item, 'useauxorigin')
-            elif item[0] == 'hpglpennumber' : object.hpglPenNumber = int(item[1])
-            elif item[0] == 'hpglpenspeed' : object.hpglPenSpeed = int(item[1])
+            elif item[0] == 'hpglpennumber' : object.hpglPenNumber = item[1]
+            elif item[0] == 'hpglpenspeed' : object.hpglPenSpeed = item[1]
             elif item[0] == 'hpglpendiameter' : object.hpglPenDiameter = item[1]
             elif item[0] == 'dxfpolygonmode' : object.dxfPolygonMode = parse_bool(item, 'dxfpolygonmode')
             elif item[0] == 'dxfimperialunits' : object.dxfImperialUnits = parse_bool(item, 'dxfimperialunits')
@@ -691,10 +691,10 @@ class PlotSettings():
             elif item[0] == 'plotinvisibletext' : object.plotInvisibleText = parse_bool(item, 'plotinvisibletext')
             elif item[0] == 'sketchpadsonfab' : object.sketchPadsOnFab = parse_bool(item, 'sketchpadsonfab')
             elif item[0] == 'subtractmaskfromsilk' : object.subtractMaskFromSilk = parse_bool(item, 'subtractmaskfromsilk')
-            elif item[0] == 'outputformat' : object.outputFormat = int(item[1])
+            elif item[0] == 'outputformat' : object.outputFormat = item[1]
             elif item[0] == 'mirror' : object.mirror = parse_bool(item, 'mirror')
-            elif item[0] == 'drillshape' : object.drillShape = int(item[1])
-            elif item[0] == 'scaleselection' : object.scaleSelection = int(item[1])
+            elif item[0] == 'drillshape' : object.drillShape = item[1]
+            elif item[0] == 'scaleselection' : object.scaleSelection = item[1]
             elif item[0] == 'outputdirectory' : object.outputDirectory = item[1]
             elif item[0] == 'pdf_front_fp_property_popups': object.pdf_front_fp_property_popups = parse_bool(item, 'pdf_front_fp_property_popups')
             elif item[0] == 'pdf_back_fp_property_popups': object.pdf_back_fp_property_popups = parse_bool(item, 'pdf_back_fp_property_popups')
@@ -1062,7 +1062,7 @@ class Segment():
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'net': object.net = int(item[1])
+            elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
@@ -1203,7 +1203,7 @@ class Via():
             elif item[0] == 'size': object.size = item[1]
             elif item[0] == 'drill': object.drill = item[1]
             elif item[0] == 'layers': object.layers.extend(item[1:])
-            elif item[0] == 'net': object.net = int(item[1])
+            elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             elif item[0] == 'zone_layer_connections': object.zone_layer_connections.extend(item[1:])
@@ -1356,7 +1356,7 @@ class Arc():
             elif item[0] == 'end': object.end = Position().from_sexpr(item)
             elif item[0] == 'width': object.width = item[1]
             elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'net': object.net = int(item[1])
+            elif item[0] == 'net': object.net = item[1]
             elif item[0] == 'tstamp': object.tstamp = item[1]
             elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
             else:
@@ -1628,7 +1628,7 @@ class Generated():
                     raise Exception(f"Expected points property pts, got: {points_expr}")
                 for point in points_expr[1:]:
                     object.base_line_coupled.append(Position().from_sexpr(point))
-            elif item[0] == 'corner_radius_percent': object.corner_radius = int(item[1])
+            elif item[0] == 'corner_radius_percent': object.corner_radius = item[1]
             elif item[0] == 'end': object.end = Position().from_sexpr(item[1])
             elif item[0] == 'initial_side': object.initial_side = item[1]
             elif item[0] == 'last_diff_pair_gap': object.last_diff_pair_gap = item[1]
