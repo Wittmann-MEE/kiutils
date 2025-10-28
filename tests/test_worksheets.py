@@ -11,10 +11,16 @@ import unittest
 from os import path
 from pathlib import Path
 
-from tests.testfunctions import to_file_and_compare, prepare_test, cleanup_after_test, TEST_BASE
+from tests.testfunctions import (
+    to_file_and_compare,
+    prepare_test,
+    cleanup_after_test,
+    TEST_BASE,
+)
 from kiutils.wks import WorkSheet
 
-WORKSHEET_BASE = path.join(TEST_BASE, 'worksheets')
+WORKSHEET_BASE = path.join(TEST_BASE, "worksheets")
+
 
 class Tests_WorkSheets(unittest.TestCase):
     """Test cases for Worksheets"""
@@ -26,7 +32,7 @@ class Tests_WorkSheets(unittest.TestCase):
     def test_allWorkSheetItems(self):
         """Tests the parsing of all available worksheet items"""
         self.testData.compareToTestFile = True
-        self.testData.pathToTestFile = Path(WORKSHEET_BASE) / 'test_allWorkSheetItems'
+        self.testData.pathToTestFile = Path(WORKSHEET_BASE) / "test_allWorkSheetItems"
         wks = WorkSheet().from_file(self.testData.pathToTestFile)
         self.assertTrue(to_file_and_compare(wks, self.testData))
 

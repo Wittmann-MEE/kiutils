@@ -28,8 +28,9 @@ from kiutils.utils.sexpr import sexp_to_string
 # FIXME: Several classes have a ``stroke`` member. This feature will be introduced in KiCad 7 and
 #        has yet to be tested here.
 
+
 @dataclass
-class FpText():
+class FpText:
     """The ``fp_text`` token defines a graphic line in a footprint definition.
 
     Documentation:
@@ -60,7 +61,7 @@ class FpText():
     effects: Effects = field(default_factory=lambda: Effects())
     """The ``effects`` token defines how the text is displayed"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the text object"""
 
     renderCache: Optional[RenderCache] = None
@@ -94,29 +95,41 @@ class FpText():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_text':
+        if exp[0] != "fp_text":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.type = exp[1]
         object.text = exp[2]
         for item in exp[3:]:
-            if is_bool_key(item, 'unlocked'): object.unlocked = parse_bool(item, 'unlocked')
-            elif is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
-            elif is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
+            if is_bool_key(item, "unlocked"):
+                object.unlocked = parse_bool(item, "unlocked")
+            elif is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
+            elif is_bool_key(item, "hide"):
+                object.hide = parse_bool(item, "hide")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'layer':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "layer":
                 object.layer = item[1]
-                if(len(item) > 2) and item[2] == "knockout":
+                if (len(item) > 2) and item[2] == "knockout":
                     object.knockout = True
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "render_cache":
+                object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -134,32 +147,32 @@ class FpText():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fp_text', self.type, escape_and_quote(self.text)]
+        expr = ["fp_text", self.type, escape_and_quote(self.text)]
 
         if self.locked:
-            expr.append(format_bool('locked', self.locked))
+            expr.append(format_bool("locked", self.locked))
 
-        pos = ['at', self.position.X, self.position.Y]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
             pos.append(self.position.angle)
         if self.position.unlocked:
-            pos.append(format_bool('unlocked', self.position.unlocked))
+            pos.append(format_bool("unlocked", self.position.unlocked))
         expr.append(pos)
 
         if self.unlocked:
-            expr.append(format_bool('unlocked', self.unlocked))
+            expr.append(format_bool("unlocked", self.unlocked))
 
         if self.layer is not None:
-            layer_expr = ['layer', escape_and_quote(self.layer)]
+            layer_expr = ["layer", escape_and_quote(self.layer)]
             if self.knockout:
-                layer_expr.append('knockout')
+                layer_expr.append("knockout")
             expr.append(layer_expr)
 
         if self.hide:
-            expr.append(format_bool('hide', self.hide))
+            expr.append(format_bool("hide", self.hide))
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         expr.append(self.effects._to_sexpr_raw())
 
@@ -170,7 +183,7 @@ class FpText():
 
 
 @dataclass
-class FpLine():
+class FpLine:
     """The ``fp_line`` token defines a graphic line in a footprint definition.
 
     Documentation:
@@ -186,10 +199,10 @@ class FpLine():
     layer: str = "F.Cu"
     """The ``layer`` token defines the canonical layer the line resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = 0.12  # Used for KiCad < 7
     """The ``width`` token defines the line width of the line. (prior to version 7)"""
 
-    stroke: Optional[Stroke] = None   # Used for KiCad >= 7
+    stroke: Optional[Stroke] = None  # Used for KiCad >= 7
     """The ``stroke`` describes the line width and style of the line. (version 7)"""
 
     # FIXME: This is not implemented in to_sexpr() because it does not seem to be used on lines
@@ -197,7 +210,7 @@ class FpLine():
     locked: bool = False
     """The optional ``locked`` token defines if the line cannot be edited"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the line object"""
 
     @classmethod
@@ -217,27 +230,37 @@ class FpLine():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_line':
+        if exp[0] != "fp_line":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position.from_sexpr(item)
-            elif item[0] == 'end': object.end = Position.from_sexpr(item)
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'width':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position.from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position.from_sexpr(item)
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "width":
                 object.width = item[1]
                 object.stroke = None
-            elif item[0] == 'stroke':
+            elif item[0] == "stroke":
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -256,27 +279,27 @@ class FpLine():
 
     def _to_sexpr_raw(self):
         expr = [
-            'fp_line',
-            ['start', self.start.X, self.start.Y],
-            ['end', self.end.X, self.end.Y],
+            "fp_line",
+            ["start", self.start.X, self.start.Y],
+            ["end", self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(["width", self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool('locked', self.locked))
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(format_bool("locked", self.locked))
+        expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         return expr
 
 
 @dataclass
-class FpRect():
+class FpRect:
     """The ``fp_rect`` token defines a graphic rectangle in a footprint definition.
 
     Documentation:
@@ -292,10 +315,10 @@ class FpRect():
     layer: str = "F.Cu"
     """The ``layer`` token defines the canonical layer the rectangle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = 0.12  # Used for KiCad < 7
     """The ``width`` token defines the line width of the rectangle. (prior to version 7)"""
 
-    stroke: Optional[Stroke] = None   # Used for KiCad >= 7
+    stroke: Optional[Stroke] = None  # Used for KiCad >= 7
     """The ``stroke`` describes the line width and style of the rectangle. (version 7)"""
 
     fill: Optional[str] = None
@@ -305,7 +328,7 @@ class FpRect():
     locked: bool = False
     """The optional ``locked`` token defines if the rectangle cannot be edited"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the rectangle object"""
 
     @classmethod
@@ -325,28 +348,39 @@ class FpRect():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_rect':
+        if exp[0] != "fp_rect":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position.from_sexpr(item)
-            elif item[0] == 'end': object.end = Position.from_sexpr(item)
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'fill': object.fill = item[1]
-            elif item[0] == 'width':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position.from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position.from_sexpr(item)
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "fill":
+                object.fill = item[1]
+            elif item[0] == "width":
                 object.width = item[1]
                 object.stroke = None
-            elif item[0] == 'stroke':
+            elif item[0] == "stroke":
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -365,34 +399,34 @@ class FpRect():
 
     def _to_sexpr_raw(self):
         expr = [
-            'fp_rect',
-            ['start', self.start.X, self.start.Y],
-            ['end', self.end.X, self.end.Y],
+            "fp_rect",
+            ["start", self.start.X, self.start.Y],
+            ["end", self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(["width", self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
         if self.fill is not None:
-            expr.append(['fill', self.fill])
+            expr.append(["fill", self.fill])
 
-        expr.append(format_bool('locked', self.locked))
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(format_bool("locked", self.locked))
+        expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         return expr
 
 
 @dataclass
-class FpTextBox():
+class FpTextBox:
     """The ``fp_text_box`` token defines a rectangle containing line-wrapped text.
-    
+
     Available since KiCad v7
-    
+
     Documentation:
         https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_footprint_text_box
     """
@@ -458,7 +492,7 @@ class FpTextBox():
         if not isinstance(exp, list) or len(exp) < 2:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_text_box':
+        if exp[0] != "fp_text_box":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -474,21 +508,36 @@ class FpTextBox():
 
         for item in exp[start_at:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'unlocked' and item[1] == 'yes': object.locked = False
-            elif item[0] == 'start': object.start = Position.from_sexpr(item)
-            elif item[0] == 'end': object.end = Position.from_sexpr(item)
-            elif item[0] == 'pts':
-                for point in item[1:]: object.pts.append(Position().from_sexpr(point))
-            elif item[0] == 'angle': object.angle = item[1]
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
-            elif item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "unlocked" and item[1] == "yes":
+                object.locked = False
+            elif item[0] == "start":
+                object.start = Position.from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position.from_sexpr(item)
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.pts.append(Position().from_sexpr(point))
+            elif item[0] == "angle":
+                object.angle = item[1]
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "effects":
+                object.effects = Effects.from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke.from_sexpr(item)
+            elif item[0] == "render_cache":
+                object.renderCache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -514,32 +563,40 @@ class FpTextBox():
     def _to_sexpr_raw(self):
         if self.angle is not None and self.angle not in [0.0, 90.0, 180.0, 270.0]:
             if len(self.pts) != 4:
-                raise Exception("None-cardinal angles must have exactly four corner points defined")
+                raise Exception(
+                    "None-cardinal angles must have exactly four corner points defined"
+                )
         if self.angle is None or self.angle in [0.0, 90.0, 180.0, 270.0]:
             if self.start is None or self.end is None:
-                raise Exception("No angle or a cardinal angle needs a start and end token defined")
+                raise Exception(
+                    "No angle or a cardinal angle needs a start and end token defined"
+                )
 
-        expr = ['fp_text_box', format_bool('locked', self.locked), escape_and_quote(self.text)]
+        expr = [
+            "fp_text_box",
+            format_bool("locked", self.locked),
+            escape_and_quote(self.text),
+        ]
 
         if len(self.pts) == 4:
-            pts_expr = ['pts']
+            pts_expr = ["pts"]
             for pt in self.pts:
-                pts_expr.append(['xy', pt.X, pt.Y])
+                pts_expr.append(["xy", pt.X, pt.Y])
             expr.append(pts_expr)
 
         if self.start is not None:
-            expr.append(['start', self.start.X, self.start.Y])
+            expr.append(["start", self.start.X, self.start.Y])
 
         if self.end is not None:
-            expr.append(['end', self.end.X, self.end.Y])
+            expr.append(["end", self.end.X, self.end.Y])
 
         if self.angle is not None:
-            expr.append(['angle', self.angle])
+            expr.append(["angle", self.angle])
 
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())
@@ -554,7 +611,7 @@ class FpTextBox():
 
 
 @dataclass
-class FpCircle():
+class FpCircle:
     """The ``fp_circle `` token defines a graphic circle in a footprint definition.
 
     Documentation:
@@ -570,10 +627,10 @@ class FpCircle():
     layer: str = "F.Cu"
     """The ``layer`` token defines the canonical layer the circle resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = 0.12  # Used for KiCad < 7
     """The ``width`` token defines the line width of the circle. (prior to version 7)"""
 
-    stroke: Optional[Stroke] = None   # Used for KiCad >= 7
+    stroke: Optional[Stroke] = None  # Used for KiCad >= 7
     """The ``stroke`` describes the line width and style of the circle. (version 7)"""
 
     fill: Optional[str] = None
@@ -583,7 +640,7 @@ class FpCircle():
     locked: bool = False
     """The optional ``locked`` token defines if the circle cannot be edited"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the circle object"""
 
     @classmethod
@@ -603,28 +660,39 @@ class FpCircle():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_circle':
+        if exp[0] != "fp_circle":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'center': object.center = Position.from_sexpr(item)
-            elif item[0] == 'end': object.end = Position.from_sexpr(item)
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'fill': object.fill = item[1]
-            elif item[0] == 'width':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "center":
+                object.center = Position.from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position.from_sexpr(item)
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "fill":
+                object.fill = item[1]
+            elif item[0] == "width":
                 object.width = item[1]
                 object.stroke = None
-            elif item[0] == 'stroke':
+            elif item[0] == "stroke":
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -643,30 +711,30 @@ class FpCircle():
 
     def _to_sexpr_raw(self):
         expr = [
-            'fp_circle',
-            ['center', self.center.X, self.center.Y],
-            ['end', self.end.X, self.end.Y],
+            "fp_circle",
+            ["center", self.center.X, self.center.Y],
+            ["end", self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(["width", self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
         if self.fill is not None:
-            expr.append(['fill', self.fill])
+            expr.append(["fill", self.fill])
 
-        expr.append(format_bool('locked', self.locked))
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(format_bool("locked", self.locked))
+        expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         return expr
 
 
 @dataclass
-class FpArc():
+class FpArc:
     """The ``fp_arc`` token defines a graphic arc in a footprint definition.
 
     Documentation:
@@ -685,16 +753,16 @@ class FpArc():
     layer: str = "F.Cu"
     """The ``layer`` token defines the canonical layer the arc resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = 0.12  # Used for KiCad < 7
     """The ``width`` token defines the line width of the arc. (prior to version 7)"""
 
-    stroke: Optional[Stroke] = None   # Used for KiCad >= 7
+    stroke: Optional[Stroke] = None  # Used for KiCad >= 7
     """The ``stroke`` describes the line width and style of the arc. (version 7)"""
 
     locked: bool = False
     """The optional ``locked`` token defines if the arc cannot be edited"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the arc object"""
 
     @classmethod
@@ -714,28 +782,39 @@ class FpArc():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_arc':
+        if exp[0] != "fp_arc":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position.from_sexpr(item)
-            elif item[0] == 'mid': object.mid = Position.from_sexpr(item)
-            elif item[0] == 'end': object.end = Position.from_sexpr(item)
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'width':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position.from_sexpr(item)
+            elif item[0] == "mid":
+                object.mid = Position.from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position.from_sexpr(item)
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "width":
                 object.width = item[1]
                 object.stroke = None
-            elif item[0] == 'stroke':
+            elif item[0] == "stroke":
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -754,28 +833,28 @@ class FpArc():
 
     def _to_sexpr_raw(self):
         expr = [
-            'fp_arc',
-            ['start', self.start.X, self.start.Y],
-            ['mid', self.mid.X, self.mid.Y],
-            ['end', self.end.X, self.end.Y],
+            "fp_arc",
+            ["start", self.start.X, self.start.Y],
+            ["mid", self.mid.X, self.mid.Y],
+            ["end", self.end.X, self.end.Y],
         ]
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(["width", self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(format_bool('locked', self.locked))
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(format_bool("locked", self.locked))
+        expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         return expr
 
 
 @dataclass
-class FpPoly():
+class FpPoly:
     """The ``fp_poly`` token defines a graphic polygon in a footprint definition.
 
     Documentation:
@@ -788,10 +867,10 @@ class FpPoly():
     coordinates: List[Position] = field(default_factory=list)
     """The ``coordinates`` define the list of X/Y coordinates of the polygon outline"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = 0.12  # Used for KiCad < 7
     """The ``width`` token defines the line width of the polygon. (prior to version 7)"""
 
-    stroke: Optional[Stroke] = None   # Used for KiCad >= 7
+    stroke: Optional[Stroke] = None  # Used for KiCad >= 7
     """The ``stroke`` describes the line width and style of the polygon. (version 7)"""
 
     fill: Optional[str] = None
@@ -801,7 +880,7 @@ class FpPoly():
     locked: bool = False
     """The optional ``locked`` token defines if the polygon cannot be edited"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the polygon object"""
 
     @classmethod
@@ -821,29 +900,38 @@ class FpPoly():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_poly':
+        if exp[0] != "fp_poly":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'pts':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "pts":
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'fill': object.fill = item[1]
-            elif item[0] == 'width':
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "fill":
+                object.fill = item[1]
+            elif item[0] == "width":
                 object.width = item[1]
                 object.stroke = None
-            elif item[0] == 'stroke':
+            elif item[0] == "stroke":
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -865,31 +953,31 @@ class FpPoly():
         if len(self.coordinates) == 0:
             return []
 
-        expr = ['fp_poly']
-        pts_expr = ['pts']
+        expr = ["fp_poly"]
+        pts_expr = ["pts"]
         for point in self.coordinates:
-            pts_expr.append(['xy', point.X, point.Y])
+            pts_expr.append(["xy", point.X, point.Y])
         expr.append(pts_expr)
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(["width", self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
         if self.fill is not None:
-            expr.append(['fill', self.fill])
+            expr.append(["fill", self.fill])
 
-        expr.append(format_bool('locked', self.locked))
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(format_bool("locked", self.locked))
+        expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         return expr
 
 
 @dataclass
-class FpCurve():
+class FpCurve:
     """The ``fp_curve`` token defines a graphic Cubic Bezier curve in a footprint definition.
 
     Documentation:
@@ -902,16 +990,16 @@ class FpCurve():
     layer: str = "F.Cu"
     """The ``layer`` token defines the canonical layer the curve resides on"""
 
-    width: Optional[float] = 0.12     # Used for KiCad < 7
+    width: Optional[float] = 0.12  # Used for KiCad < 7
     """The ``width`` token defines the line width of the curve. (prior to version 7)"""
 
-    stroke: Optional[Stroke] = None   # Used for KiCad >= 7
+    stroke: Optional[Stroke] = None  # Used for KiCad >= 7
     """The ``stroke`` describes the line width and style of the curve. (version 7)"""
 
     locked: bool = False
     """The optional ``locked`` token defines if the curve cannot be edited"""
 
-    tstamp: Optional[str] = None      # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the curve object"""
 
     @classmethod
@@ -931,28 +1019,36 @@ class FpCurve():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fp_curve':
+        if exp[0] != "fp_curve":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'pts':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "pts":
                 for point in item[1:]:
                     object.coordinates.append(Position().from_sexpr(point))
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'width':
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "width":
                 object.width = item[1]
                 object.stroke = None
-            elif item[0] == 'stroke':
+            elif item[0] == "stroke":
                 object.stroke = Stroke.from_sexpr(item)
                 object.width = None
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -974,24 +1070,24 @@ class FpCurve():
         if len(self.coordinates) == 0:
             return []
 
-        expr = ['fp_curve']
+        expr = ["fp_curve"]
 
-        pts_expr = ['pts']
+        pts_expr = ["pts"]
         for point in self.coordinates:
-            pts_expr.append(['xy', point.X, point.Y])
+            pts_expr.append(["xy", point.X, point.Y])
         expr.append(pts_expr)
 
         if self.width is not None:
-            expr.append(['width', self.width])
+            expr.append(["width", self.width])
         elif self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
 
-        expr.append(['layer', escape_and_quote(self.layer)])
+        expr.append(["layer", escape_and_quote(self.layer)])
 
-        expr.append(format_bool('locked', self.locked))
+        expr.append(format_bool("locked", self.locked))
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         return expr
 
@@ -999,7 +1095,7 @@ class FpCurve():
 @dataclass
 class FpProperty:
     """
-        Helper class for dealing with properties of a footprint.
+    Helper class for dealing with properties of a footprint.
     """
 
     key: str = ""
@@ -1049,27 +1145,37 @@ class FpProperty:
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'property':
+        if exp[0] != "property":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.key = exp[1]
         object.value = exp[2]
         for item in exp[3:]:
-            if is_bool_key(item, 'hide'): object.hide = parse_bool(item, 'hide')
-            elif is_bool_key(item, 'unlocked'): object.unlocked = parse_bool(item, 'unlocked')
+            if is_bool_key(item, "hide"):
+                object.hide = parse_bool(item, "hide")
+            elif is_bool_key(item, "unlocked"):
+                object.unlocked = parse_bool(item, "unlocked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'layer':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "layer":
                 object.layer = item[1]
                 if len(item) == 3 and item[2] == "knockout":
                     object.ko = True
-            elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'render_cache': object.render_cache = RenderCache.from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects.from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "render_cache":
+                object.render_cache = RenderCache.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1091,28 +1197,28 @@ class FpProperty:
         if self.key != "ki_fp_filters":
             prop_type = quote(prop_type)
 
-        expr = ['property', prop_type, escape_and_quote(self.value)]
+        expr = ["property", prop_type, escape_and_quote(self.value)]
 
         if self.position is not None:
-            pos = ['at', self.position.X, self.position.Y]
+            pos = ["at", self.position.X, self.position.Y]
             if self.position.angle is not None:
                 pos.append(self.position.angle)
             expr.append(pos)
 
         if self.unlocked:
-            expr.append(format_bool('unlocked', self.unlocked))
+            expr.append(format_bool("unlocked", self.unlocked))
 
         if self.layer is not None:
-            layer_expr = ['layer', escape_and_quote(self.layer)]
+            layer_expr = ["layer", escape_and_quote(self.layer)]
             if self.ko:
                 layer_expr.append("knockout")
             expr.append(layer_expr)
 
         if self.hide:
-            expr.append(format_bool('hide', self.hide))
+            expr.append(format_bool("hide", self.hide))
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())
@@ -1121,4 +1227,3 @@ class FpProperty:
             expr.append(self.render_cache._to_sexpr_raw())
 
         return expr
-

@@ -6,15 +6,14 @@ Author:
 License identifier:
     GPL-3.0
 """
+
 import unittest
 
 import os
 import sys
 
 PROJECT_PATH = os.getcwd()
-SOURCE_PATH = os.path.join(
-    PROJECT_PATH, "src"
-)
+SOURCE_PATH = os.path.join(PROJECT_PATH, "src")
 sys.path.append(SOURCE_PATH)
 
 from tests.test_board import *
@@ -25,10 +24,12 @@ from tests.test_misc import *
 from tests.reporter.runner import HTMLTestRunner
 
 if __name__ == "__main__":
-    unittest.main(testRunner=HTMLTestRunner(
-        combine_reports = True,
-        verbosity = 3,
-        report_title = 'KiUtils Unittest Report',
-        report_name = 'KiUtils_Testreport',
-        open_in_browser = False
-    ))
+    unittest.main(
+        testRunner=HTMLTestRunner(
+            combine_reports=True,
+            verbosity=3,
+            report_title="KiUtils Unittest Report",
+            report_name="KiUtils_Testreport",
+            open_in_browser=False,
+        )
+    )

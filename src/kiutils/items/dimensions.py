@@ -25,8 +25,9 @@ from kiutils.utils.string_utils import *
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
+
 @dataclass
-class DimensionFormat():
+class DimensionFormat:
     """The ``format`` token defines the text formatting of a dimension
 
     Documentation:
@@ -81,22 +82,33 @@ class DimensionFormat():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'format':
+        if exp[0] != "format":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'suppress_zeroes'): object.suppressZeroes = parse_bool(item, 'suppress_zeroes')
+            if is_bool_key(item, "suppress_zeroes"):
+                object.suppressZeroes = parse_bool(item, "suppress_zeroes")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'prefix': object.prefix = item[1]
-            elif item[0] == 'suffix': object.suffix = item[1]
-            elif item[0] == 'units': object.units = item[1]
-            elif item[0] == 'units_format': object.unitsFormat = item[1]
-            elif item[0] == 'precision': object.precision = item[1]
-            elif item[0] == 'override_value': object.overrideValue = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "prefix":
+                object.prefix = item[1]
+            elif item[0] == "suffix":
+                object.suffix = item[1]
+            elif item[0] == "units":
+                object.units = item[1]
+            elif item[0] == "units_format":
+                object.unitsFormat = item[1]
+            elif item[0] == "precision":
+                object.precision = item[1]
+            elif item[0] == "override_value":
+                object.overrideValue = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -114,28 +126,28 @@ class DimensionFormat():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['format']
+        expr = ["format"]
 
         if self.prefix is not None:
-            expr.append(['prefix', escape_and_quote(self.prefix)])
+            expr.append(["prefix", escape_and_quote(self.prefix)])
 
         if self.suffix is not None:
-            expr.append(['suffix', escape_and_quote(self.suffix)])
+            expr.append(["suffix", escape_and_quote(self.suffix)])
 
-        expr.append(['units', self.units])
-        expr.append(['units_format', self.unitsFormat])
-        expr.append(['precision', self.precision])
+        expr.append(["units", self.units])
+        expr.append(["units_format", self.unitsFormat])
+        expr.append(["precision", self.precision])
 
         if self.overrideValue is not None:
-            expr.append(['override_value', escape_and_quote(self.overrideValue)])
+            expr.append(["override_value", escape_and_quote(self.overrideValue)])
 
-        expr.append(format_bool('suppress_zeroes', self.suppressZeroes))
+        expr.append(format_bool("suppress_zeroes", self.suppressZeroes))
 
         return expr
 
 
 @dataclass
-class DimensionStyle():
+class DimensionStyle:
     """The ``style`` token defines the style of a dimension
 
     Documentation:
@@ -202,23 +214,35 @@ class DimensionStyle():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'style':
+        if exp[0] != "style":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'keep_text_aligned'): object.keepTextAligned = parse_bool(item, 'keep_text_aligned')
+            if is_bool_key(item, "keep_text_aligned"):
+                object.keepTextAligned = parse_bool(item, "keep_text_aligned")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'thickness': object.thickness = item[1]
-            elif item[0] == 'arrow_length': object.arrowLength = item[1]
-            elif item[0] == 'text_position_mode': object.textPositionMode = item[1]
-            elif item[0] == 'extension_height': object.extensionHeight = item[1]
-            elif item[0] == 'text_frame': object.textFrame = item[1]
-            elif item[0] == 'extension_offset': object.extensionOffset = item[1]
-            elif item[0] == 'arrow_direction': object.arrow_direction = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "thickness":
+                object.thickness = item[1]
+            elif item[0] == "arrow_length":
+                object.arrowLength = item[1]
+            elif item[0] == "text_position_mode":
+                object.textPositionMode = item[1]
+            elif item[0] == "extension_height":
+                object.extensionHeight = item[1]
+            elif item[0] == "text_frame":
+                object.textFrame = item[1]
+            elif item[0] == "extension_offset":
+                object.extensionOffset = item[1]
+            elif item[0] == "arrow_direction":
+                object.arrow_direction = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -236,31 +260,31 @@ class DimensionStyle():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['style']
+        expr = ["style"]
 
-        expr.append(['thickness', self.thickness])
-        expr.append(['arrow_length', self.arrowLength])
-        expr.append(['text_position_mode', self.textPositionMode])
+        expr.append(["thickness", self.thickness])
+        expr.append(["arrow_length", self.arrowLength])
+        expr.append(["text_position_mode", self.textPositionMode])
 
         if self.arrow_direction is not None:
-            expr.append(['arrow_direction', self.arrow_direction])
+            expr.append(["arrow_direction", self.arrow_direction])
 
         if self.extensionHeight is not None:
-            expr.append(['extension_height', self.extensionHeight])
+            expr.append(["extension_height", self.extensionHeight])
 
         if self.textFrame is not None:
-            expr.append(['text_frame', self.textFrame])
+            expr.append(["text_frame", self.textFrame])
 
         if self.extensionOffset is not None:
-            expr.append(['extension_offset', self.extensionOffset])
+            expr.append(["extension_offset", self.extensionOffset])
 
-        expr.append(format_bool('keep_text_aligned', self.keepTextAligned))
+        expr.append(format_bool("keep_text_aligned", self.keepTextAligned))
 
         return expr
 
 
 @dataclass
-class Dimension():
+class Dimension:
     """The ``dimension`` token defines a dimension in the PCB
 
     Documentation:
@@ -322,29 +346,46 @@ class Dimension():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'dimension':
+        if exp[0] != "dimension":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if is_bool_key(item, 'locked'): object.locked = parse_bool(item, 'locked')
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'locked' and item[1] == 'yes': object.locked = True
-            elif item[0] == 'type': object.type = item[1]
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'height': object.height = item[1]
-            elif item[0] == 'orientation': object.orientation = item[1]
-            elif item[0] == 'leader_length': object.leaderLength = item[1]
-            elif item[0] == 'gr_text': object.grText = GrText().from_sexpr(item)
-            elif item[0] == 'format': object.format = DimensionFormat().from_sexpr(item)
-            elif item[0] == 'style': object.style = DimensionStyle().from_sexpr(item)
-            elif item[0] == 'pts':
-                for point in item[1:]: object.pts.append(Position().from_sexpr(point))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "locked" and item[1] == "yes":
+                object.locked = True
+            elif item[0] == "type":
+                object.type = item[1]
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "height":
+                object.height = item[1]
+            elif item[0] == "orientation":
+                object.orientation = item[1]
+            elif item[0] == "leader_length":
+                object.leaderLength = item[1]
+            elif item[0] == "gr_text":
+                object.grText = GrText().from_sexpr(item)
+            elif item[0] == "format":
+                object.format = DimensionFormat().from_sexpr(item)
+            elif item[0] == "style":
+                object.style = DimensionStyle().from_sexpr(item)
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.pts.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -369,28 +410,28 @@ class Dimension():
             raise Exception("Number of points must not be zero")
 
         expr = [
-            'dimension',
-            ['type', self.type],
-            ['layer', quote(self.layer)],
-            ['uuid', quote(self.tstamp)],
+            "dimension",
+            ["type", self.type],
+            ["layer", quote(self.layer)],
+            ["uuid", quote(self.tstamp)],
         ]
 
-        expr.append(format_bool('locked', self.locked))
+        expr.append(format_bool("locked", self.locked))
 
         # Points
-        pts_expr = ['pts']
+        pts_expr = ["pts"]
         for point in self.pts:
-            pts_expr.append(['xy', point.X, point.Y])
+            pts_expr.append(["xy", point.X, point.Y])
         expr.append(pts_expr)
 
         if self.height is not None:
-            expr.append(['height', self.height])
+            expr.append(["height", self.height])
 
         if self.orientation is not None:
-            expr.append(['orientation', self.orientation])
+            expr.append(["orientation", self.orientation])
 
         if self.leaderLength is not None:
-            expr.append(['leader_length', self.leaderLength])
+            expr.append(["leader_length", self.leaderLength])
 
         if self.format is not None:
             expr.append(self.format._to_sexpr_raw())

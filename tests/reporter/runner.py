@@ -9,21 +9,34 @@ UTF8 = "UTF-8"
 
 
 class HTMLTestRunner(TextTestRunner):
-    """" A test runner class that output the results. """
+    """ " A test runner class that output the results."""
 
     time_format = "%Y-%m-%d_%H-%M-%S"
 
-    def __init__(self, output="./reports/", verbosity=2, stream=sys.stderr,
-                 descriptions=True, failfast=False, buffer=False,
-                 report_title=None, report_name=None, template=None, resultclass=None,
-                 add_timestamp=True, open_in_browser=False,
-                 combine_reports=False, template_args=None):
+    def __init__(
+        self,
+        output="./reports/",
+        verbosity=2,
+        stream=sys.stderr,
+        descriptions=True,
+        failfast=False,
+        buffer=False,
+        report_title=None,
+        report_name=None,
+        template=None,
+        resultclass=None,
+        add_timestamp=True,
+        open_in_browser=False,
+        combine_reports=False,
+        template_args=None,
+    ):
         self.verbosity = verbosity
         self.output = output
         self.encoding = UTF8
 
-        TextTestRunner.__init__(self, stream, descriptions, verbosity,
-                                failfast=failfast, buffer=buffer)
+        TextTestRunner.__init__(
+            self, stream, descriptions, verbosity, failfast=failfast, buffer=buffer
+        )
 
         if add_timestamp:
             self.timestamp = time.strftime(self.time_format)
@@ -50,17 +63,17 @@ class HTMLTestRunner(TextTestRunner):
         self.time_taken = 0
 
     def _make_result(self):
-        """ Create a TestResult object which will be used to store
-        information about the executed tests. """
+        """Create a TestResult object which will be used to store
+        information about the executed tests."""
         return self.resultclass(self.stream, self.descriptions, self.verbosity)
 
     def run(self, test):
-        """ Runs the given testcase or testsuite. """
+        """Runs the given testcase or testsuite."""
         try:
 
             result = self._make_result()
             result.failfast = self.failfast
-            if hasattr(test, 'properties'):
+            if hasattr(test, "properties"):
                 # junit testsuite properties
                 result.properties = test.properties
 
@@ -76,8 +89,11 @@ class HTMLTestRunner(TextTestRunner):
             result.printErrors()
             self.stream.writeln(result.separator2)
             run = result.testsRun
-            self.stream.writeln("Ran {} test{} in {}".format(run,
-                                run != 1 and "s" or "", str(self.time_taken)[:7]))
+            self.stream.writeln(
+                "Ran {} test{} in {}".format(
+                    run, run != 1 and "s" or "", str(self.time_taken)[:7]
+                )
+            )
             self.stream.writeln()
 
             expectedFails = len(result.expectedFailures)
@@ -108,12 +124,13 @@ class HTMLTestRunner(TextTestRunner):
                 self.stream.writeln("\n")
 
             self.stream.writeln()
-            self.stream.writeln('Generating HTML reports... ')
+            self.stream.writeln("Generating HTML reports... ")
             result.generate_reports(self)
             if self.open_in_browser:
                 import webbrowser
+
                 for report in result.report_files:
-                    webbrowser.open_new_tab('file://' + report)
+                    webbrowser.open_new_tab("file://" + report)
         finally:
             pass
         return result

@@ -22,8 +22,9 @@ from os import path
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.utils.string_utils import *
 
+
 @dataclass
-class Constraint():
+class Constraint:
     """The ``Constraint`` token defines a design rule's constraint"""
 
     type: str = "clearance"
@@ -85,7 +86,7 @@ class Constraint():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'constraint':
+        if exp[0] != "constraint":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -93,9 +94,12 @@ class Constraint():
         for item in exp[2:]:
             if not isinstance(item, list):
                 object.elements.append(item)
-            elif item[0] == 'min': object.min = item[1]
-            elif item[0] == 'opt': object.opt = item[1]
-            elif item[0] == 'max': object.max = item[1]
+            elif item[0] == "min":
+                object.min = item[1]
+            elif item[0] == "opt":
+                object.opt = item[1]
+            elif item[0] == "max":
+                object.max = item[1]
 
         return object
 
@@ -113,14 +117,14 @@ class Constraint():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['constraint', self.type]
+        expr = ["constraint", self.type]
 
         if self.min is not None:
-            expr.append(['min', escape_and_quote(self.min)])
+            expr.append(["min", escape_and_quote(self.min)])
         if self.opt is not None:
-            expr.append(['opt', escape_and_quote(self.opt)])
+            expr.append(["opt", escape_and_quote(self.opt)])
         if self.max is not None:
-            expr.append(['max', escape_and_quote(self.max)])
+            expr.append(["max", escape_and_quote(self.max)])
 
         if len(self.elements) > 0:
             expr.extend(self.elements)
@@ -129,7 +133,7 @@ class Constraint():
 
 
 @dataclass
-class Rule():
+class Rule:
     """The ``Rule`` token defines a custom design rule"""
 
     name: str = ""
@@ -169,20 +173,28 @@ class Rule():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'rule':
+        if exp[0] != "rule":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'constraint': object.constraints.append(Constraint().from_sexpr(item))
-            elif item[0] == 'condition': object.condition = item[1]
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'severity': object.severity = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "constraint":
+                object.constraints.append(Constraint().from_sexpr(item))
+            elif item[0] == "condition":
+                object.condition = item[1]
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "severity":
+                object.severity = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -199,24 +211,24 @@ class Rule():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self, indent: int = 0):
-        expr = ['rule', escape_and_quote(self.name)]
+        expr = ["rule", escape_and_quote(self.name)]
 
         if self.layer is not None:
-            expr.append(['layer', dequote(self.layer)])
+            expr.append(["layer", dequote(self.layer)])
 
         for item in self.constraints:
             expr.append(item._to_sexpr_raw())
 
-        expr.append(['condition', escape_and_quote(self.condition)])
+        expr.append(["condition", escape_and_quote(self.condition)])
 
         if self.severity is not None:
-            expr.append(['severity', dequote(self.severity)])
+            expr.append(["severity", dequote(self.severity)])
 
         return expr
 
 
 @dataclass
-class DesignRules():
+class DesignRules:
     """The ``DesignRules`` token defines a set of custom design rules (`.kicad_dru` files)"""
 
     version: int = 1
@@ -249,13 +261,15 @@ class DesignRules():
         if not isinstance(exp[0], list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0][0] != 'version':
+        if exp[0][0] != "version":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp:
-            if item[0] == 'version': object.version = item[1]
-            elif item[0] == 'rule': object.rules.append(Rule().from_sexpr(item))
+            if item[0] == "version":
+                object.version = item[1]
+            elif item[0] == "rule":
+                object.rules.append(Rule().from_sexpr(item))
 
         return object
 
@@ -266,7 +280,7 @@ class DesignRules():
 
         Args:
             - filepath (str): Path or path-like object that points to the file
-            - encoding (str, optional): Encoding of the input file. Defaults to None (platform 
+            - encoding (str, optional): Encoding of the input file. Defaults to None (platform
                                         dependent encoding).
         Raises:
             - Exception: If the given path is not a file
@@ -277,10 +291,10 @@ class DesignRules():
         if not path.isfile(filepath):
             raise Exception("Given path is not a file!")
 
-        with open(filepath, 'r', encoding=encoding) as infile:
+        with open(filepath, "r", encoding=encoding) as infile:
             # This dirty fix adds opening and closing brackets `(..)` to the read input to enable
             # the S-Expression parser to work for the DRU-format as well.
-            data = f'({infile.read()})'
+            data = f"({infile.read()})"
             item = cls.from_sexpr(parse_sexp(data))
             item.filePath = filepath
             return item
@@ -294,13 +308,13 @@ class DesignRules():
         """
         return cls(version=1)
 
-    def to_file(self, filepath = None, encoding: Optional[str] = None):
+    def to_file(self, filepath=None, encoding: Optional[str] = None):
         """Save the object to a file in S-Expression format
 
         Args:
             - filepath (str, optional): Path-like string to the file. Defaults to None. If not set,
                                         the attribute ``self.filePath`` will be used instead.
-            - encoding (str, optional): Encoding of the output file. Defaults to None (platform 
+            - encoding (str, optional): Encoding of the output file. Defaults to None (platform
                                         dependent encoding).
 
         Raises:
@@ -311,7 +325,7 @@ class DesignRules():
                 raise Exception("File path not set")
             filepath = self.filePath
 
-        with open(filepath, 'w', encoding=encoding) as outfile:
+        with open(filepath, "w", encoding=encoding) as outfile:
             pre_formatted_sexpr = self.to_sexpr()
             outfile.write(prettify(pre_formatted_sexpr))
 
@@ -327,11 +341,10 @@ class DesignRules():
         """
         raw_expr = self._to_sexpr_raw()
         # Join the expressions together without extra nesting
-        expr_str = ' '.join(sexp_to_string(item) for item in raw_expr)
+        expr_str = " ".join(sexp_to_string(item) for item in raw_expr)
         return expr_str
 
     def _to_sexpr_raw(self):
-        expr = ['version', self.version]
+        expr = ["version", self.version]
         rules_expr = [rule._to_sexpr_raw() for rule in self.rules]
         return [expr] + rules_expr
-

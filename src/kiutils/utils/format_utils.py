@@ -3,7 +3,7 @@ def format_float(n: float) -> str:
         # Very small number: fixed-point with 16 decimals
         s = f"{n:.16f}"
         # Strip trailing zeros and possible trailing decimal
-        s = s.rstrip('0').rstrip('.') if '.' in s else s
+        s = s.rstrip("0").rstrip(".") if "." in s else s
     else:
         # Otherwise: general format with 10 significant digits
         s = f"{n:.10g}"
