@@ -112,9 +112,7 @@ class Tests_Private_Schematics(unittest.TestCase):
             )
 
         failures = []
-        schematics = private_schematics_path.rglob("*.kicad_sch")
-        print("Collected schematics: ", schematics)
-        for schematic_file in schematics:
+        for schematic_file in private_schematics_path.rglob("*.kicad_sch"):
             print(f"Testing private schematic file: {schematic_file}")
             with self.subTest(schematic=schematic_file):
                 self.testData.pathToTestFile = schematic_file

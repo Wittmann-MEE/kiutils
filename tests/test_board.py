@@ -109,9 +109,7 @@ class Tests_Private_Boards(unittest.TestCase):
             )
 
         failures = []
-        boards = private_boards_path.rglob("*.kicad_pcb")
-        print("Collected boards: ", boards)
-        for board_file in boards:
+        for board_file in private_boards_path.rglob("*.kicad_pcb"):
             print(f"Testing private board file: {board_file}")
             with self.subTest(board=board_file):
                 self.testData.pathToTestFile = board_file
