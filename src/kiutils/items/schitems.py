@@ -19,14 +19,22 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
-from kiutils.items.common import Fill, Position, ColorRGBA, ProjectInstance, Stroke, Effects, Property
+from kiutils.items.common import (
+    Fill,
+    Position,
+    ColorRGBA,
+    ProjectInstance,
+    Stroke,
+    Effects,
+    Property,
+)
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
+
 @dataclass
-class Junction():
+class Junction:
     """The ``junction`` token defines a junction in the schematic
 
     Documentation:
@@ -64,19 +72,27 @@ class Junction():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'junction':
+        if exp[0] != "junction":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
-            elif item[0] == 'diameter': object.color = item[1]
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "color":
+                object.color = ColorRGBA().from_sexpr(item)
+            elif item[0] == "diameter":
+                object.diameter = item[1]
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -94,19 +110,19 @@ class Junction():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['junction']
+        expr = ["junction"]
 
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
-        expr.append(['diameter', format_float(self.diameter)])
+        expr.append(["at", self.position.X, self.position.Y])
+        expr.append(["diameter", self.diameter])
         expr.append(self.color._to_sexpr_raw())
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class NoConnect():
+class NoConnect:
     """The ``no_connect`` token defines a unused pin connection in the schematic
 
     Documentation:
@@ -136,17 +152,23 @@ class NoConnect():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'no_connect':
+        if exp[0] != "no_connect":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -164,17 +186,17 @@ class NoConnect():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['no_connect']
+        expr = ["no_connect"]
 
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
+        expr.append(["at", self.position.X, self.position.Y])
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class BusEntry():
+class BusEntry:
     """The ``bus_entry`` token defines a bus entry in the schematic
 
     Documentation:
@@ -187,7 +209,9 @@ class BusEntry():
     uuid: Optional[str] = None
     """The optional ``uuid`` defines the universally unique identifier. Defaults to ``None.``"""
 
-    size: Position = field(default_factory=lambda: Position())         # Re-using Position class here
+    size: Position = field(
+        default_factory=lambda: Position()
+    )  # Re-using Position class here
     """The ``size`` token attributes define the X and Y distance of the end point from
        the position of the bus entry"""
 
@@ -211,19 +235,27 @@ class BusEntry():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'bus_entry':
+        if exp[0] != "bus_entry":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'size': object.size = Position().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "size":
+                object.size = Position().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -240,19 +272,19 @@ class BusEntry():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['bus_entry']
+        expr = ["bus_entry"]
 
-        expr.append(['at', format_float(self.position.X), format_float(self.position.Y)])
-        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(["at", self.position.X, self.position.Y])
+        expr.append(["size", self.size.X, self.size.Y])
         expr.append(self.stroke._to_sexpr_raw())
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class BusAlias():
+class BusAlias:
     """The ``bus_alias`` token defines a bus entry in the schematic
 
     Documentation:
@@ -285,15 +317,17 @@ class BusAlias():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'bus_alias':
+        if exp[0] != "bus_alias":
             raise Exception("Expression does not have the correct type")
 
         if len(exp) != 3:
-            raise Exception("Exactly three items are expected in a bus_alias S-Expression.")
-        
-        if not isinstance(exp[2], list) or exp[2][0] != 'members':
+            raise Exception(
+                "Exactly three items are expected in a bus_alias S-Expression."
+            )
+
+        if not isinstance(exp[2], list) or exp[2][0] != "members":
             raise Exception("bus_alias needs to contain a list of members")
-        
+
         object = cls()
         object.name = exp[1]
         object.members = [x for x in exp[2][1:]]
@@ -314,11 +348,11 @@ class BusAlias():
 
     def _to_sexpr_raw(self):
         members_quoted = [escape_and_quote(member) for member in self.members]
-        return ['bus_alias', escape_and_quote(self.name), ['members'] + members_quoted]
+        return ["bus_alias", escape_and_quote(self.name), ["members"] + members_quoted]
 
 
 @dataclass
-class Connection():
+class Connection:
     """The ``wire`` and ``bus`` tokens define wires and buses in the schematic
 
     Documentation:
@@ -355,20 +389,27 @@ class Connection():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if not (exp[0] == 'wire' or exp[0] == 'bus'):
+        if not (exp[0] == "wire" or exp[0] == "bus"):
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.type = exp[0]
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'pts':
-                for point in item[1:]: object.points.append(Position().from_sexpr(point))
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.points.append(Position().from_sexpr(point))
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -388,21 +429,21 @@ class Connection():
     def _to_sexpr_raw(self):
         expr = [self.type]
 
-        pts_expr = ['pts']
+        pts_expr = ["pts"]
         for point in self.points:
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(["xy", point.X, point.Y])
         expr.append(pts_expr)
 
         expr.append(self.stroke._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class PolyLine():
+class PolyLine:
     """The ``polyline`` token defines one or more lines that may or may not represent a polygon
 
     Documentation:
@@ -439,20 +480,28 @@ class PolyLine():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'polyline':
+        if exp[0] != "polyline":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'pts':
-                for point in item[1:]: object.points.append(Position().from_sexpr(point))
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.points.append(Position().from_sexpr(point))
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -470,11 +519,11 @@ class PolyLine():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['polyline']
+        expr = ["polyline"]
 
-        pts_expr = ['pts']
+        pts_expr = ["pts"]
         for point in self.points:
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(["xy", point.X, point.Y])
         expr.append(pts_expr)
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -483,13 +532,13 @@ class PolyLine():
             expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class Text():
+class Text:
     """The ``text`` token defines graphical text in a schematic
 
     Documentation:
@@ -530,20 +579,28 @@ class Text():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'text':
+        if exp[0] != "text":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "exclude_from_sim":
+                object.exclude_from_sim = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -561,25 +618,26 @@ class Text():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['text', escape_and_quote(self.text)]
+        expr = ["text", escape_and_quote(self.text)]
 
         if self.exclude_from_sim is not None:
-            expr.append(['exclude_from_sim', self.exclude_from_sim])
+            expr.append(["exclude_from_sim", self.exclude_from_sim])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         expr.append(self.effects._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
+
 @dataclass
-class TextBox():
+class TextBox:
     """The ``text_box`` token defines a text box inside a schematic
 
     Available since KiCad v7
@@ -587,6 +645,7 @@ class TextBox():
     Documentation:
         ????
     """
+
     text: str = ""
     """The ``text`` token defines the text string"""
 
@@ -619,7 +678,7 @@ class TextBox():
     """The ``span`` token defines the column and row span of the text box"""
 
     @classmethod
-    def from_sexpr(cls, exp: list, table_cell = False) -> TextBox:
+    def from_sexpr(cls, exp: list, table_cell=False) -> TextBox:
         """Convert the given S-Expresstion into a TextBox object
 
         Args:
@@ -635,7 +694,7 @@ class TextBox():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        target_type = 'table_cell' if table_cell else 'text_box'
+        target_type = "table_cell" if table_cell else "text_box"
         if exp[0] != target_type:
             raise Exception("Expression does not have the correct type")
 
@@ -643,18 +702,31 @@ class TextBox():
         object.text = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'size': object.size = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            elif item[0] == 'margins': object.margins = [float(margin) for margin in item[1:]]
-            elif item[0] == 'span': object.span = (int(item[1]), int(item[2]))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "size":
+                object.size = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "exclude_from_sim":
+                object.exclude_from_sim = item[1]
+            elif item[0] == "margins":
+                object.margins = [float(margin) for margin in item[1:]]
+            elif item[0] == "span":
+                object.span = (item[1], item[2])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -672,33 +744,33 @@ class TextBox():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self, table_cell=False):
-        target_type = 'table_cell' if table_cell else 'text_box'
+        target_type = "table_cell" if table_cell else "text_box"
         expr = [target_type, escape_and_quote(self.text)]
 
         if self.exclude_from_sim is not None:
-            expr.append(['exclude_from_sim', self.exclude_from_sim])
+            expr.append(["exclude_from_sim", self.exclude_from_sim])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
-        expr.append(['margins'] + list(map(str, self.margins)))
+        expr.append(["size", self.size.X, self.size.Y])
+        expr.append(["margins"] + list(map(str, self.margins)))
         if len(self.span) > 0:
-            expr.append(['span', self.span[0], self.span[1]])
+            expr.append(["span", self.span[0], self.span[1]])
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class LocalLabel():
+class LocalLabel:
     """The ``label`` token defines an wire or bus label name in a schematic
 
     Documentation:
@@ -740,22 +812,29 @@ class LocalLabel():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'label':
+        if exp[0] != "label":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, "fields_autoplaced"):
+                object.fieldsAutoplaced = parse_bool(item, "fields_autoplaced")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "property":
+                object.properties.append(Property().from_sexpr(item))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}. Exp: {exp}")
-            
+
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -772,17 +851,17 @@ class LocalLabel():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['label', escape_and_quote(self.text)]
+        expr = ["label", escape_and_quote(self.text)]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
             expr.append(prop._to_sexpr_raw())
@@ -791,7 +870,7 @@ class LocalLabel():
 
 
 @dataclass
-class GlobalLabel():
+class GlobalLabel:
     """The ``global_label`` token defines a label name that is visible across all schematics in a design
 
     Documentation:
@@ -839,22 +918,32 @@ class GlobalLabel():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'global_label':
+        if exp[0] != "global_label":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, "fields_autoplaced"):
+                object.fieldsAutoplaced = parse_bool(item, "fields_autoplaced")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
-            elif item[0] == 'shape': object.shape = item[1]
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "property":
+                object.properties.append(Property().from_sexpr(item))
+            elif item[0] == "shape":
+                object.shape = item[1]
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -872,19 +961,19 @@ class GlobalLabel():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['global_label', escape_and_quote(self.text)]
+        expr = ["global_label", escape_and_quote(self.text)]
 
-        expr.append(['shape', self.shape])
+        expr.append(["shape", self.shape])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
             expr.append(prop._to_sexpr_raw())
@@ -893,7 +982,7 @@ class GlobalLabel():
 
 
 @dataclass
-class HierarchicalLabel():
+class HierarchicalLabel:
     """The ``hierarchical_label`` token defines a label that are used by hierarchical sheets to
     define connections between sheet in hierarchical designs
 
@@ -916,7 +1005,7 @@ class HierarchicalLabel():
 
     uuid: Optional[str] = None
     """The optional ``uuid`` defines the universally unique identifier. Defaults to ``None.``"""
-    
+
     fieldsAutoplaced: bool = False
     """The ``fields_autoplaced`` is a flag that indicates that any PROPERTIES associated
     with the global label have been place automatically"""
@@ -940,22 +1029,32 @@ class HierarchicalLabel():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'hierarchical_label':
+        if exp[0] != "hierarchical_label":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, "fields_autoplaced"):
+                object.fieldsAutoplaced = parse_bool(item, "fields_autoplaced")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'shape': object.shape = item[1]
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "shape":
+                object.shape = item[1]
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "property":
+                object.properties.append(Property().from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -973,19 +1072,19 @@ class HierarchicalLabel():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['hierarchical_label', escape_and_quote(self.text)]
+        expr = ["hierarchical_label", escape_and_quote(self.text)]
 
-        expr.append(['shape', self.shape])
+        expr.append(["shape", self.shape])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))
         expr.append(self.effects._to_sexpr_raw())
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
             expr.append(prop._to_sexpr_raw())
@@ -994,7 +1093,7 @@ class HierarchicalLabel():
 
 
 @dataclass
-class SymbolProjectPath():
+class SymbolProjectPath:
     """The symbol project path defines the ``path`` token to the sheet instance of the instance data
     of a symbol.
 
@@ -1003,7 +1102,7 @@ class SymbolProjectPath():
     Documentation:
         https://dev-docs.kicad.org/en/file-formats/sexpr-schematic/#_symbol_section
     """
-    
+
     sheetInstancePath: str = ""
     """The ``PATH_INSTANCE`` token defines the path to the symbol instance"""
 
@@ -1016,7 +1115,7 @@ class SymbolProjectPath():
     symbols that do not define multiple units, this will always be 1."""
 
     @classmethod
-    def from_sexpr(cls, exp: list) -> SymbolProjectPath:        
+    def from_sexpr(cls, exp: list) -> SymbolProjectPath:
         """Convert the given S-Expression into a SymbolProjectPath object
 
         Args:
@@ -1032,18 +1131,24 @@ class SymbolProjectPath():
         if not isinstance(exp, list) or len(exp) < 2:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'path':
+        if exp[0] != "path":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.sheetInstancePath = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'reference': object.reference = item[1]
-            elif item[0] == 'unit': object.unit = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "reference":
+                object.reference = item[1]
+            elif item[0] == "unit":
+                object.unit = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1061,16 +1166,16 @@ class SymbolProjectPath():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['path', escape_and_quote(self.sheetInstancePath)]
-        expr.append(['reference', escape_and_quote(self.reference)])
-        expr.append(['unit', self.unit])
+        expr = ["path", escape_and_quote(self.sheetInstancePath)]
+        expr.append(["reference", escape_and_quote(self.reference)])
+        expr.append(["unit", self.unit])
         return expr
 
 
 @dataclass
 class SymbolProjectInstance(ProjectInstance):
     """The ``project`` token attribute defines the name of the project as well as a list of symbol
-    project paths (instance data). There can be instance data from other project when schematics 
+    project paths (instance data). There can be instance data from other project when schematics
     are shared across multiple projects. The projects will have to be sorted by the ``name`` token
     in alphabetical order.
 
@@ -1082,9 +1187,9 @@ class SymbolProjectInstance(ProjectInstance):
 
     paths: List[SymbolProjectPath] = field(default_factory=list)
     """The ``paths`` token defines a list of symbol project paths for this project instance"""
-    
+
     @classmethod
-    def from_sexpr(cls, exp: list) -> SymbolProjectInstance:        
+    def from_sexpr(cls, exp: list) -> SymbolProjectInstance:
         """Convert the given S-Expression into a SymbolProjectInstance object
 
         Args:
@@ -1100,17 +1205,22 @@ class SymbolProjectInstance(ProjectInstance):
         if not isinstance(exp, list) or len(exp) < 2:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'project':
+        if exp[0] != "project":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'path': object.paths.append(SymbolProjectPath.from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "path":
+                object.paths.append(SymbolProjectPath.from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1128,7 +1238,7 @@ class SymbolProjectInstance(ProjectInstance):
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['project', escape_and_quote(self.name)]
+        expr = ["project", escape_and_quote(self.name)]
 
         for path in self.paths:
             expr.append(path._to_sexpr_raw())
@@ -1137,7 +1247,7 @@ class SymbolProjectInstance(ProjectInstance):
 
 
 @dataclass
-class SchematicSymbol():
+class SchematicSymbol:
     """The ``symbol`` token in the symbol section of the schematic defines an instance of a symbol
     from the library symbol section of the schematic
 
@@ -1157,9 +1267,9 @@ class SchematicSymbol():
               if ``libraryNickname`` token is not set.
         """
         if self.libraryNickname:
-            return f'{self.libraryNickname}:{self.entryName}'
+            return f"{self.libraryNickname}:{self.entryName}"
         else:
-            return f'{self.entryName}'
+            return f"{self.entryName}"
 
     @libId.setter
     def libId(self, symbol_id: str):
@@ -1258,30 +1368,48 @@ class SchematicSymbol():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'symbol':
+        if exp[0] != "symbol":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'fields_autoplaced': object.fieldsAutoplaced = parse_bool(item, 'fields_autoplaced')
-            elif item[0] == 'in_bom': object.inBom = parse_bool(item, 'in_bom')
-            elif item[0] == 'on_board': object.onBoard = parse_bool(item, 'on_board')
-            elif item[0] == 'dnp': object.dnp = parse_bool(item, 'dnp')
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = parse_bool(item, 'exclude_from_sim')
+            if is_bool_key(item, "fields_autoplaced"):
+                object.fieldsAutoplaced = parse_bool(item, "fields_autoplaced")
+            elif is_bool_key(item, "in_bom"):
+                object.inBom = parse_bool(item, "in_bom")
+            elif is_bool_key(item, "on_board"):
+                object.onBoard = parse_bool(item, "on_board")
+            elif is_bool_key(item, "dnp"):
+                object.dnp = parse_bool(item, "dnp")
+            elif is_bool_key(item, "exclude_from_sim"):
+                object.exclude_from_sim = parse_bool(item, "exclude_from_sim")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'lib_id': object.libId = item[1]
-            elif item[0] == 'lib_name': object.libName = item[1]
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'unit': object.unit = item[1]
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'property': object.properties.append(Property().from_sexpr(item))
-            elif item[0] == 'pin': object.pins.update({item[1]: item[2][1]})
-            elif item[0] == 'mirror': object.mirror = item[1]
-            elif item[0] == 'instances':
-                for instance in item[1:]: object.instances.append(SymbolProjectInstance.from_sexpr(instance))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "lib_id":
+                object.libId = item[1]
+            elif item[0] == "lib_name":
+                object.libName = item[1]
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "unit":
+                object.unit = item[1]
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "property":
+                object.properties.append(Property().from_sexpr(item))
+            elif item[0] == "pin":
+                object.pins.update({item[1]: item[2][1]})
+            elif item[0] == "mirror":
+                object.mirror = item[1]
+            elif item[0] == "instances":
+                for instance in item[1:]:
+                    object.instances.append(SymbolProjectInstance.from_sexpr(instance))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1299,44 +1427,48 @@ class SchematicSymbol():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['symbol']
+        expr = ["symbol"]
 
         if self.libName is not None:
-            expr.append(['lib_name', escape_and_quote(self.libName)])
+            expr.append(["lib_name", escape_and_quote(self.libName)])
 
-        expr.append(['lib_id', escape_and_quote(self.libId)])
+        expr.append(["lib_id", escape_and_quote(self.libId)])
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         if self.mirror is not None:
-            expr.append(['mirror', self.mirror])
+            expr.append(["mirror", self.mirror])
 
         if self.unit is not None:
-            expr.append(['unit', self.unit])
+            expr.append(["unit", self.unit])
 
         if self.exclude_from_sim is not None:
-            expr.append(format_bool_raw("exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True))
+            expr.append(
+                format_bool(
+                    "exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True
+                )
+            )
 
-        expr.append(format_bool_raw("in_bom", self.inBom, compact=False, yesno=True))
-        expr.append(format_bool_raw("on_board", self.onBoard, compact=False, yesno=True))
+        expr.append(format_bool("in_bom", self.inBom, compact=False, yesno=True))
+        expr.append(format_bool("on_board", self.onBoard, compact=False, yesno=True))
         if self.dnp is not None:
-            expr.append(format_bool_raw("dnp", self.dnp, compact=False, yesno=True))
-        expr.append(format_bool_raw("fields_autoplaced", self.fieldsAutoplaced))
+            expr.append(format_bool("dnp", self.dnp, compact=False, yesno=True))
+        expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))
 
         if self.uuid:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
             expr.append(prop._to_sexpr_raw())
 
         for number, uuid in self.pins.items():
-            expr.append(['pin', escape_and_quote(number), ['uuid', quote(uuid)]])
+            expr.append(["pin", escape_and_quote(number), ["uuid", quote(uuid)]])
 
         if len(self.instances) != 0:
-            instances_expr = ['instances']
+            instances_expr = ["instances"]
             for instance in self.instances:
                 instances_expr.append(instance._to_sexpr_raw())
             expr.append(instances_expr)
@@ -1345,7 +1477,7 @@ class SchematicSymbol():
 
 
 @dataclass
-class HierarchicalPin():
+class HierarchicalPin:
     """The ``pin`` token in a sheet object defines an electrical connection between the sheet in a
        schematic with the hierarchical label defined in the associated schematic file
 
@@ -1387,7 +1519,7 @@ class HierarchicalPin():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'pin':
+        if exp[0] != "pin":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -1395,12 +1527,19 @@ class HierarchicalPin():
         object.connectionType = exp[2]
         for item in exp[3:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1418,22 +1557,22 @@ class HierarchicalPin():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['pin', escape_and_quote(self.name), self.connectionType]
+        expr = ["pin", escape_and_quote(self.name), self.connectionType]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         expr.append(self.effects._to_sexpr_raw())
         return expr
 
 
 @dataclass
-class HierarchicalSheetProjectPath():
+class HierarchicalSheetProjectPath:
     """The symbol project path defines the ``path`` token to the sheet instance of the instance data
     of a symbol.
 
@@ -1442,7 +1581,7 @@ class HierarchicalSheetProjectPath():
     Documentation:
         https://dev-docs.kicad.org/en/file-formats/sexpr-schematic/#_hierarchical_sheet_section
     """
-    
+
     sheetInstancePath: str = ""
     """The ``PATH_INSTANCE`` token defines the path to the symbol instance"""
 
@@ -1450,7 +1589,7 @@ class HierarchicalSheetProjectPath():
     """The ``page`` token is a string that defines the page number of the sheet instance"""
 
     @classmethod
-    def from_sexpr(cls, exp: list) -> HierarchicalSheetProjectPath:        
+    def from_sexpr(cls, exp: list) -> HierarchicalSheetProjectPath:
         """Convert the given S-Expression into a HierarchicalSheetProjectPath object
 
         Args:
@@ -1466,17 +1605,22 @@ class HierarchicalSheetProjectPath():
         if not isinstance(exp, list) or len(exp) < 2:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'path':
+        if exp[0] != "path":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.sheetInstancePath = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'page': object.page = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "page":
+                object.page = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1494,14 +1638,18 @@ class HierarchicalSheetProjectPath():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['path', escape_and_quote(self.sheetInstancePath), ['page', escape_and_quote(self.page)]]
+        return [
+            "path",
+            escape_and_quote(self.sheetInstancePath),
+            ["page", escape_and_quote(self.page)],
+        ]
 
 
 @dataclass
 class HierarchicalSheetProjectInstance(ProjectInstance):
-    """The ``project`` token attribute defines the name of the project as well as a list of 
-    hierarchical sheet project paths (instance data). There can be instance data from other project 
-    when schematics are shared across multiple projects. The projects will have to be sorted by the 
+    """The ``project`` token attribute defines the name of the project as well as a list of
+    hierarchical sheet project paths (instance data). There can be instance data from other project
+    when schematics are shared across multiple projects. The projects will have to be sorted by the
     ``name`` token in alphabetical order.
 
     Available since KiCad v7.
@@ -1512,9 +1660,9 @@ class HierarchicalSheetProjectInstance(ProjectInstance):
 
     paths: List[HierarchicalSheetProjectPath] = field(default_factory=list)
     """The ``paths`` token defines a list of hierarchical sheet project paths for this project instance"""
-    
+
     @classmethod
-    def from_sexpr(cls, exp: list) -> HierarchicalSheetProjectInstance:        
+    def from_sexpr(cls, exp: list) -> HierarchicalSheetProjectInstance:
         """Convert the given S-Expression into a HierarchicalSheetProjectInstance object
 
         Args:
@@ -1530,17 +1678,22 @@ class HierarchicalSheetProjectInstance(ProjectInstance):
         if not isinstance(exp, list) or len(exp) < 2:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'project':
+        if exp[0] != "project":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'path': object.paths.append(HierarchicalSheetProjectPath.from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "path":
+                object.paths.append(HierarchicalSheetProjectPath.from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1558,7 +1711,7 @@ class HierarchicalSheetProjectInstance(ProjectInstance):
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['project', escape_and_quote(self.name)]
+        expr = ["project", escape_and_quote(self.name)]
 
         for path in self.paths:
             expr.append(path._to_sexpr_raw())
@@ -1567,7 +1720,7 @@ class HierarchicalSheetProjectInstance(ProjectInstance):
 
 
 @dataclass
-class HierarchicalSheet():
+class HierarchicalSheet:
     """The ``sheet`` token defines a hierarchical sheet of the schematic
 
     Documentation:
@@ -1611,7 +1764,7 @@ class HierarchicalSheet():
     pins: List[HierarchicalPin] = field(default_factory=list)
     """The ``pins`` section is a list of hierarchical pins that map a hierarchical label defined in
        the associated schematic file"""
-    
+
     instances: List[HierarchicalSheetProjectInstance] = field(default_factory=list)
     """The ``instances`` token defines a list of hierachical sheet instances grouped by project. 
     Every hierarchical sheet will have a least one instance.
@@ -1619,15 +1772,18 @@ class HierarchicalSheet():
     Available since KiCad v7."""
 
     # Available since KiCad v9
-    # TODO Update docs
 
-    exclude_from_sim: Optional[str] = None
+    exclude_from_sim: Optional[bool] = None
+    """The optional ``exclude_from_sim`` token defines if all components in this sheet are excluded from simulation"""
 
-    in_bom: Optional[str] = None
+    in_bom: Optional[bool] = None
+    """The optional ``in_bom`` token defines if all components in this sheet are included in BOM"""
 
-    on_board: Optional[str] = None
+    on_board: Optional[bool] = None
+    """The optional ``on_board`` token defines if all components in this sheet are included on PCB"""
 
-    dnp: Optional[str] = None
+    dnp: Optional[bool] = None
+    """The optional ``dnp`` token defines if all components in this sheet are DNP"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> HierarchicalSheet:
@@ -1646,36 +1802,55 @@ class HierarchicalSheet():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'sheet':
+        if exp[0] != "sheet":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, "fields_autoplaced"):
+                object.fieldsAutoplaced = parse_bool(item, "fields_autoplaced")
+            elif is_bool_key(item, "exclude_from_sim"):
+                object.exclude_from_sim = parse_bool(item, "exclude_from_sim")
+            elif is_bool_key(item, "in_bom"):
+                object.in_bom = parse_bool(item, "in_bom")
+            elif is_bool_key(item, "on_board"):
+                object.on_board = parse_bool(item, "on_board")
+            elif is_bool_key(item, "dnp"):
+                object.dnp = parse_bool(item, "dnp")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'size':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "size":
                 object.width, object.height = item[1], item[2]
-            elif item[0] == 'fill':
+            elif item[0] == "fill":
                 object.fill = ColorRGBA().from_sexpr(item[1])
                 object.fill.precision = 4
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property':
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "property":
                 p = Property().from_sexpr(item)
-                if item[1] in ['Sheet name', 'Sheetname']: object.sheetName = p
-                elif item[1] in ['Sheet file', 'Sheetfile']: object.fileName = p
-                else: object.properties.append(p)
-            elif item[0] == 'pin': object.pins.append(HierarchicalPin().from_sexpr(item))
-            elif item[0] == 'instances':
-                for instance in item[1:]: object.instances.append(HierarchicalSheetProjectInstance.from_sexpr(instance))
-            elif item[0] == 'exclude_from_sim': object.exclude_from_sim = item[1]
-            elif item[0] == 'in_bom': object.in_bom = item[1]
-            elif item[0] == 'on_board': object.on_board = item[1]
-            elif item[0] == 'dnp': object.dnp = item[1]
+                if item[1] in ["Sheet name", "Sheetname"]:
+                    object.sheetName = p
+                elif item[1] in ["Sheet file", "Sheetfile"]:
+                    object.fileName = p
+                else:
+                    object.properties.append(p)
+            elif item[0] == "pin":
+                object.pins.append(HierarchicalPin().from_sexpr(item))
+            elif item[0] == "instances":
+                for instance in item[1:]:
+                    object.instances.append(
+                        HierarchicalSheetProjectInstance.from_sexpr(instance)
+                    )
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1694,26 +1869,32 @@ class HierarchicalSheet():
 
     def _to_sexpr_raw(self):
         expr = [
-            'sheet',
-            ['at', format_float(self.position.X), format_float(self.position.Y)],
-            ['size', format_float(self.width), format_float(self.height)],
+            "sheet",
+            ["at", self.position.X, self.position.Y],
+            ["size", self.width, self.height],
         ]
 
         if self.exclude_from_sim is not None:
-            expr.append(['exclude_from_sim', self.exclude_from_sim])
+            expr.append(
+                format_bool(
+                    "exclude_from_sim", self.exclude_from_sim, compact=False, yesno=True
+                )
+            )
         if self.in_bom is not None:
-            expr.append(['in_bom', self.in_bom])
+            expr.append(format_bool("in_bom", self.in_bom, compact=False, yesno=True))
         if self.on_board is not None:
-            expr.append(['on_board', self.on_board])
+            expr.append(
+                format_bool("on_board", self.on_board, compact=False, yesno=True)
+            )
         if self.dnp is not None:
-            expr.append(['dnp', self.dnp])
+            expr.append(format_bool("dnp", self.dnp, compact=False, yesno=True))
 
-        expr.append(format_bool_raw('fields_autoplaced', self.fieldsAutoplaced))
+        expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))
 
         expr.append(self.stroke._to_sexpr_raw())
-        expr.append(['fill', self.fill._to_sexpr_raw()])
+        expr.append(["fill", self.fill._to_sexpr_raw()])
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         expr.append(self.sheetName._to_sexpr_raw())
         expr.append(self.fileName._to_sexpr_raw())
@@ -1725,7 +1906,7 @@ class HierarchicalSheet():
             expr.append(pin._to_sexpr_raw())
 
         if len(self.instances) != 0:
-            instances_expr = ['instances']
+            instances_expr = ["instances"]
             for instance in self.instances:
                 instances_expr.append(instance._to_sexpr_raw())
             expr.append(instances_expr)
@@ -1734,7 +1915,7 @@ class HierarchicalSheet():
 
 
 @dataclass
-class HierarchicalSheetInstance():
+class HierarchicalSheetInstance:
     """The sheet_instance token defines the per sheet information for the entire schematic. This
        section will only exist in schematic files that are the root sheet of a project
 
@@ -1766,17 +1947,22 @@ class HierarchicalSheetInstance():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'path':
+        if exp[0] != "path":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.instancePath = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'page': object.page = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "page":
+                object.page = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1794,11 +1980,15 @@ class HierarchicalSheetInstance():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['path', escape_and_quote(self.instancePath), ['page', escape_and_quote(self.page)]]
+        return [
+            "path",
+            escape_and_quote(self.instancePath),
+            ["page", escape_and_quote(self.page)],
+        ]
 
 
 @dataclass
-class SymbolInstance():
+class SymbolInstance:
     """The ``symbol_instance`` token defines the per symbol information for the entire schematic
 
     Documentation:
@@ -1839,20 +2029,28 @@ class SymbolInstance():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'path':
+        if exp[0] != "path":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.path = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'reference': object.reference = item[1]
-            elif item[0] == 'unit': object.unit = item[1]
-            elif item[0] == 'value': object.value = item[1]
-            elif item[0] == 'footprint': object.footprint = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "reference":
+                object.reference = item[1]
+            elif item[0] == "unit":
+                object.unit = item[1]
+            elif item[0] == "value":
+                object.value = item[1]
+            elif item[0] == "footprint":
+                object.footprint = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1871,16 +2069,17 @@ class SymbolInstance():
 
     def _to_sexpr_raw(self):
         return [
-            'path', escape_and_quote(self.path),
-            ['reference', escape_and_quote(self.reference)],
-            ['unit', self.unit],
-            ['value', escape_and_quote(self.value)],
-            ['footprint', escape_and_quote(self.footprint)],
+            "path",
+            escape_and_quote(self.path),
+            ["reference", escape_and_quote(self.reference)],
+            ["unit", self.unit],
+            ["value", escape_and_quote(self.value)],
+            ["footprint", escape_and_quote(self.footprint)],
         ]
 
 
 @dataclass
-class Rectangle():
+class Rectangle:
     """The ``rectangle`` token defines a graphical rectangle in a schematic.
 
     Available since KiCad v7
@@ -1921,20 +2120,29 @@ class Rectangle():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'rectangle':
+        if exp[0] != "rectangle":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position().from_sexpr(item)
-            elif item[0] == 'end': object.end = Position().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position().from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -1952,22 +2160,22 @@ class Rectangle():
 
     def _to_sexpr_raw(self):
         expr = [
-            'rectangle',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            "rectangle",
+            ["start", self.start.X, self.start.Y],
+            ["end", self.end.X, self.end.Y],
         ]
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class Arc():
+class Arc:
     """The ``Arc`` token defines a graphical arc in a schematic.
 
     Available since KiCad v7
@@ -2011,21 +2219,31 @@ class Arc():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'arc':
+        if exp[0] != "arc":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position().from_sexpr(item)
-            elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
-            elif item[0] == 'end': object.end = Position().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position().from_sexpr(item)
+            elif item[0] == "mid":
+                object.mid = Position().from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -2043,23 +2261,23 @@ class Arc():
 
     def _to_sexpr_raw(self):
         expr = [
-            'arc',
-            ['start', format_float(self.start.X), format_float(self.start.Y)],
-            ['mid', format_float(self.mid.X), format_float(self.mid.Y)],
-            ['end', format_float(self.end.X), format_float(self.end.Y)],
+            "arc",
+            ["start", self.start.X, self.start.Y],
+            ["mid", self.mid.X, self.mid.Y],
+            ["end", self.end.X, self.end.Y],
         ]
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class Circle():
+class Circle:
     """The ``Circle`` token defines a graphical circle in a schematic.
 
     Available since KiCad v7
@@ -2100,20 +2318,29 @@ class Circle():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'circle':
+        if exp[0] != "circle":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'center': object.center = Position().from_sexpr(item)
-            elif item[0] == 'radius': object.radius = item[1]
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "center":
+                object.center = Position().from_sexpr(item)
+            elif item[0] == "radius":
+                object.radius = item[1]
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
@@ -2131,22 +2358,22 @@ class Circle():
 
     def _to_sexpr_raw(self):
         expr = [
-            'circle',
-            ['center', format_float(self.center.X), format_float(self.center.Y)],
-            ['radius', format_float(self.radius)],
+            "circle",
+            ["center", self.center.X, self.center.Y],
+            ["radius", self.radius],
         ]
 
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         return expr
 
 
 @dataclass
-class NetclassFlag():
+class NetclassFlag:
     """The ``netclass_flag`` token defines a netclass flag in a schematic.
 
     Available since KiCad v7
@@ -2198,23 +2425,34 @@ class NetclassFlag():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'netclass_flag':
+        if exp[0] != "netclass_flag":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'fields_autoplaced'): object.fieldsAutoplaced = True
+            if is_bool_key(item, "fields_autoplaced"):
+                object.fieldsAutoplaced = parse_bool(item, "fields_autoplaced")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'length': object.length = item[1]
-            elif item[0] == 'shape': object.shape = item[1]
-            elif item[0] == 'at': object.position = Position.from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'property': object.properties.append(Property.from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "length":
+                object.length = item[1]
+            elif item[0] == "shape":
+                object.shape = item[1]
+            elif item[0] == "at":
+                object.position = Position.from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects.from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "property":
+                object.properties.append(Property.from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -2232,22 +2470,23 @@ class NetclassFlag():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
 
         expr = [
-            'netclass_flag', escape_and_quote(self.text),
-            ['length', format_float(self.length)],
-            ['shape', self.shape],
+            "netclass_flag",
+            escape_and_quote(self.text),
+            ["length", self.length],
+            ["shape", self.shape],
             pos,
-            format_bool_raw('fields_autoplaced', self.fieldsAutoplaced),
+            format_bool("fields_autoplaced", self.fieldsAutoplaced),
         ]
 
         expr.append(self.effects._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
             expr.append(prop._to_sexpr_raw())
@@ -2282,18 +2521,25 @@ class TableBorder:
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'border':
+        if exp[0] != "border":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'external'): object.external = True
-            elif parse_bool(item, 'header'): object.header = True
+            if is_bool_key(item, "external"):
+                object.external = parse_bool(item, "external")
+            elif is_bool_key(item, "header"):
+                object.header = parse_bool(item, "header")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -2311,10 +2557,10 @@ class TableBorder:
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['border']
+        expr = ["border"]
 
-        expr.append(format_bool_raw('external', self.external))
-        expr.append(format_bool_raw('header', self.header))
+        expr.append(format_bool("external", self.external))
+        expr.append(format_bool("header", self.header))
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -2349,18 +2595,25 @@ class TableSeparators:
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'separators':
+        if exp[0] != "separators":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'rows'): object.rows = True
-            elif parse_bool(item, 'cols'): object.columns = True
+            if is_bool_key(item, "rows"):
+                object.rows = parse_bool(item, "rows")
+            elif is_bool_key(item, "cols"):
+                object.columns = parse_bool(item, "cols")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -2378,10 +2631,10 @@ class TableSeparators:
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['separators']
+        expr = ["separators"]
 
-        expr.append(format_bool_raw('rows', self.rows))
-        expr.append(format_bool_raw('cols', self.columns))
+        expr.append(format_bool("rows", self.rows))
+        expr.append(format_bool("cols", self.columns))
 
         if self.stroke is not None:
             expr.append(self.stroke._to_sexpr_raw())
@@ -2390,7 +2643,7 @@ class TableSeparators:
 
 
 @dataclass
-class Table():
+class Table:
     """The ``table`` token defines a table
 
     Documentation:
@@ -2432,24 +2685,34 @@ class Table():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'table':
+        if exp[0] != "table":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'column_count': object.column_count = int(item[1])
-            elif item[0] == 'border': object.border = TableBorder().from_sexpr(item)
-            elif item[0] == 'separators': object.separators = TableSeparators().from_sexpr(item)
-            elif item[0] == 'column_widths':
-                for width in item[1:]: object.column_widths.append(float(width))
-            elif item[0] == 'row_heights':
-                for height in item[1:]: object.row_heights.append(float(height))
-            elif item[0] == 'cells':
-                for cell in item[1:]: object.cells.append(TextBox.from_sexpr(cell, table_cell=True))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "column_count":
+                object.column_count = item[1]
+            elif item[0] == "border":
+                object.border = TableBorder().from_sexpr(item)
+            elif item[0] == "separators":
+                object.separators = TableSeparators().from_sexpr(item)
+            elif item[0] == "column_widths":
+                for width in item[1:]:
+                    object.column_widths.append(float(width))
+            elif item[0] == "row_heights":
+                for height in item[1:]:
+                    object.row_heights.append(float(height))
+            elif item[0] == "cells":
+                for cell in item[1:]:
+                    object.cells.append(TextBox.from_sexpr(cell, table_cell=True))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -2467,9 +2730,9 @@ class Table():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['table']
+        expr = ["table"]
 
-        expr.append(['column_count', self.column_count])
+        expr.append(["column_count", self.column_count])
 
         if self.border is not None:
             expr.append(self.border._to_sexpr_raw())
@@ -2477,11 +2740,11 @@ class Table():
         if self.separators is not None:
             expr.append(self.separators._to_sexpr_raw())
 
-        expr.append(['column_widths'] + [format_float(w) for w in self.column_widths])
-        expr.append(['row_heights'] + [format_float(h) for h in self.row_heights])
+        expr.append(["column_widths"] + [w for w in self.column_widths])
+        expr.append(["row_heights"] + [h for h in self.row_heights])
 
         if self.cells:
-            cells_expr = ['cells']
+            cells_expr = ["cells"]
             for cell in self.cells:
                 cells_expr.append(cell._to_sexpr_raw(table_cell=True))
             expr.append(cells_expr)

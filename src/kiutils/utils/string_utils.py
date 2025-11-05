@@ -10,6 +10,7 @@ Major changes:
     28.02.2022 - created
 """
 
+
 def dequote(input: str) -> str:
     """Escapes double-quotes in a string using a backslash
 
@@ -19,7 +20,8 @@ def dequote(input: str) -> str:
     Returns:
         - str: String with replaced double-quotes
     """
-    return str(input).replace("\"", "\\\"")
+    return str(input).replace('"', '\\"')
+
 
 def quote(s: str) -> str:
     """Wraps a string in double quotes without escaping internal quotes
@@ -32,6 +34,7 @@ def quote(s: str) -> str:
     """
     return f'"{s}"'
 
+
 def escape_and_quote(s: str) -> str:
     """Escapes double-quotes in a string using the external `dequote` function and wraps the result in double quotes
 
@@ -42,6 +45,7 @@ def escape_and_quote(s: str) -> str:
         - str: Escaped string wrapped in double quotes
     """
     return f'"{dequote(s)}"'
+
 
 def remove_prefix(input: str, prefix: str) -> str:
     """Removes the given prefix from a string (to remove incompatibility of ``str.removeprefix()``
@@ -54,4 +58,4 @@ def remove_prefix(input: str, prefix: str) -> str:
     Returns:
         - str: String with removed prefix, or the ``input`` string as is, if the prefix was not found
     """
-    return input[len(prefix):] if input.startswith(prefix) else input
+    return input[len(prefix) :] if input.startswith(prefix) else input

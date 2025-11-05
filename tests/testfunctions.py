@@ -16,12 +16,13 @@ import shutil
 import stat
 import os
 
-TEST_BASE = Path('tests') / 'testdata'
+TEST_BASE = Path("tests") / "testdata"
 
 
 @dataclass
 class TestData:
     """Data container for testcase-specific information used in test reports."""
+
     producedOutput: Optional[str] = None
     expectedOutput: Optional[str] = None
     ownDescription: Optional[str] = None
@@ -60,7 +61,9 @@ def to_file_and_compare(obj, test_data: TestData) -> bool:
     )
 
     test_data.producedOutput = load_contents(output_file)
-    test_data.expectedOutput = load_contents(compare_file) if compare_file.exists() else None
+    test_data.expectedOutput = (
+        load_contents(compare_file) if compare_file.exists() else None
+    )
     test_data.wasSuccessful = filecmp.cmp(output_file, compare_file, shallow=False)
 
     cleanup_after_test(test_data, tmp_dir)

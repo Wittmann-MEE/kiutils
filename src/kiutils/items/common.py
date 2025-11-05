@@ -24,16 +24,17 @@ from enum import Enum
 import urllib.parse
 
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
+
 
 def is_url(path: str) -> bool:
     parsed = urllib.parse.urlparse(path)
-    return parsed.scheme in ('http', 'https', 'ftp')
+    return parsed.scheme in ("http", "https", "ftp")
+
 
 @dataclass
-class Position():
+class Position:
     """The ``position`` token defines the positional coordinates and rotation of an object.
 
     Documentation:
@@ -75,23 +76,24 @@ class Position():
         object = cls()
         object.X = float(exp[1])
         object.Y = float(exp[2])
-        if len(exp) >= 4:
-            # More than four components means X, Y, and either angle or unlocked are present
-            if exp[3] != 'unlocked':
+        if len(exp) > 3:
+            # More than three components means X, Y, and either angle or unlocked are present
+            if is_bool_key(exp[3], "unlocked"):
+                object.unlocked = parse_bool(exp[3], "unlocked")
+            else:
                 object.angle = exp[3]
-
-        for item in exp:
-            if parse_bool(item, 'unlocked'): object.unlocked = True
 
         return object
 
     def to_sexpr(self) -> str:
         """This object does not have a direct S-Expression representation."""
-        raise NotImplementedError("This object does not have a direct S-Expression representation")
+        raise NotImplementedError(
+            "This object does not have a direct S-Expression representation"
+        )
 
 
 @dataclass
-class Coordinate():
+class Coordinate:
     """The ``coordinate`` token defines a three-dimentional position"""
 
     X: float = 0.0
@@ -120,7 +122,7 @@ class Coordinate():
         if not isinstance(exp, list) or len(exp) != 4:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'xyz':
+        if exp[0] != "xyz":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -144,11 +146,11 @@ class Coordinate():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['xyz', self.X, self.Y, self.Z]
+        return ["xyz", self.X, self.Y, self.Z]
 
 
 @dataclass
-class ColorRGBA():
+class ColorRGBA:
     """The ``color`` token defines a RGBA color"""
 
     R: int = 0
@@ -160,7 +162,7 @@ class ColorRGBA():
     B: int = 0
     """The ``B`` token defines the blue channel of the color"""
 
-    A: int = 0
+    A: float = 0.0
     """The ``A`` token defines the alpha channel of the color"""
 
     precision: Optional[int] = None
@@ -184,7 +186,7 @@ class ColorRGBA():
         if not isinstance(exp, list) or len(exp) != 5:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'color':
+        if exp[0] != "color":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -210,15 +212,15 @@ class ColorRGBA():
 
     def _to_sexpr_raw(self):
         if self.precision is not None:
-            alpha = f'{self.A:.{self.precision}f}'
+            alpha = f"{self.A:.{self.precision}f}"
         else:
             alpha = self.A
 
-        return ['color', self.R, self.G, self.B, alpha]
+        return ["color", self.R, self.G, self.B, alpha]
 
 
 @dataclass
-class Stroke():
+class Stroke:
     """The ``stroke`` token defines how the outlines of graphical objects are drawn.
 
     Documentation:
@@ -255,18 +257,25 @@ class Stroke():
         if not isinstance(exp, list) or len(exp) < 2:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'stroke':
+        if exp[0] != "stroke":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'width': object.width = item[1]
-            elif item[0] == 'type':  object.type = item[1]
-            elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "width":
+                object.width = item[1]
+            elif item[0] == "type":
+                object.type = item[1]
+            elif item[0] == "color":
+                object.color = ColorRGBA.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -284,10 +293,10 @@ class Stroke():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['stroke', ['width', format_float(self.width)]]
+        expr = ["stroke", ["width", self.width]]
 
         if self.type is not None:
-            expr.append(['type', self.type])
+            expr.append(["type", self.type])
 
         if self.color is not None:
             expr.append(self.color._to_sexpr_raw())
@@ -296,12 +305,13 @@ class Stroke():
 
 
 @dataclass
-class Font():
+class Font:
     """The ``font`` token attributes define how text is shown.
 
     Documentation:
         https://dev-docs.kicad.org/en/file-formats/sexpr-intro/#_text_effects
     """
+
     face: Optional[str] = None
     """The optional 'face' token indicates the font family. It should be a TrueType font family
     name or "KiCad Font" for the KiCad stroke font. (Kicad version 7)"""
@@ -347,23 +357,33 @@ class Font():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'font':
+        if exp[0] != "font":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'bold'): object.bold = True
-            elif parse_bool(item, 'italic'): object.italic = True
+            if is_bool_key(item, "bold"):
+                object.bold = parse_bool(item, "bold")
+            elif is_bool_key(item, "italic"):
+                object.italic = parse_bool(item, "italic")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'face': object.face = item[1]
-            elif item[0] == 'size':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "face":
+                object.face = item[1]
+            elif item[0] == "size":
                 object.height, object.width = item[1], item[2]
-            elif item[0] == 'thickness': object.thickness = item[1]
-            elif item[0] == 'line_spacing': object.lineSpacing = item[1]
-            elif item[0] == 'color': object.color = ColorRGBA.from_sexpr(item)
+            elif item[0] == "thickness":
+                object.thickness = item[1]
+            elif item[0] == "line_spacing":
+                object.lineSpacing = item[1]
+            elif item[0] == "color":
+                object.color = ColorRGBA.from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -381,33 +401,33 @@ class Font():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['font']
+        expr = ["font"]
 
         if self.face is not None:
-            expr.append(['face', escape_and_quote(self.face)])
+            expr.append(["face", escape_and_quote(self.face)])
 
-        expr.append(['size', format_float(self.height), format_float(self.width)])
+        expr.append(["size", self.height, self.width])
 
         if self.thickness is not None:
-            expr.append(['thickness', self.thickness])
+            expr.append(["thickness", self.thickness])
 
         if self.bold:
-            expr.append(format_bool_raw('bold', self.bold))
+            expr.append(format_bool("bold", self.bold))
 
         if self.color is not None:
             expr.append(self.color._to_sexpr_raw())
 
         if self.italic:
-            expr.append(format_bool_raw('italic', self.italic))
+            expr.append(format_bool("italic", self.italic))
 
         if self.lineSpacing is not None:
-            expr.append(['line_spacing', self.lineSpacing])
+            expr.append(["line_spacing", self.lineSpacing])
 
         return expr
 
 
 @dataclass
-class Justify():
+class Justify:
     """The ``justify`` token defines the justification of a text object
 
     Documentation:
@@ -440,15 +460,18 @@ class Justify():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'justify':
+        if exp[0] != "justify":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             # 'center' is the standard on vertical but not on horizontal in work sheets
-            if item == 'left' or item == 'right' or item == 'center': object.horizontally = item
-            if item == 'top' or item == 'bottom': object.vertically = item
-            if item == 'mirror': object.mirror = True
+            if item == "left" or item == "right" or item == "center":
+                object.horizontally = item
+            if item == "top" or item == "bottom":
+                object.vertically = item
+            if item == "mirror":
+                object.mirror = True
 
         return object
 
@@ -471,7 +494,7 @@ class Justify():
         if self.horizontally is None and self.vertically is None and not self.mirror:
             return []
 
-        expr = ['justify']
+        expr = ["justify"]
 
         if self.horizontally is not None:
             expr.append(self.horizontally)
@@ -480,13 +503,13 @@ class Justify():
             expr.append(self.vertically)
 
         if self.mirror:
-            expr.append('mirror')
+            expr.append("mirror")
 
         return expr
 
 
 @dataclass
-class Effects():
+class Effects:
     """All text objects can have an optional effects section that defines how the text is displayed.
 
     Documentation:
@@ -524,19 +547,27 @@ class Effects():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'effects':
+        if exp[0] != "effects":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'hide'): object.hide = True
+            if is_bool_key(item, "hide"):
+                object.hide = parse_bool(item, "hide")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'font': object.font = Font().from_sexpr(item)
-            elif item[0] == 'justify': object.justify = Justify().from_sexpr(item)
-            elif item[0] == 'href': object.href = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "font":
+                object.font = Font().from_sexpr(item)
+            elif item[0] == "justify":
+                object.justify = Justify().from_sexpr(item)
+            elif item[0] == "href":
+                object.href = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -555,7 +586,7 @@ class Effects():
 
     def _to_sexpr_raw(self):
         expr = [
-            'effects',
+            "effects",
             self.font._to_sexpr_raw(),
         ]
 
@@ -564,15 +595,15 @@ class Effects():
             expr.append(justify_raw)
 
         if self.href is not None:
-            expr.append(['href', dequote(self.href)])
+            expr.append(["href", dequote(self.href)])
 
-        expr.append(format_bool_raw("hide", self.hide))
+        expr.append(format_bool("hide", self.hide))
 
         return expr
 
 
 @dataclass
-class Net():
+class Net:
     """The ``net`` token defines the number and name of a net"""
 
     number: int = 0
@@ -598,7 +629,7 @@ class Net():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'net':
+        if exp[0] != "net":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -621,11 +652,11 @@ class Net():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ['net', self.number, escape_and_quote(self.name)]
+        return ["net", self.number, escape_and_quote(self.name)]
 
 
 @dataclass
-class Group():
+class Group:
     """The ``group`` token defines a group of items.
 
     Documentation:
@@ -661,20 +692,28 @@ class Group():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'group':
+        if exp[0] != "group":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.name = exp[1]
         for item in exp[2:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'id': object.id = item[1]
-            elif item[0] == 'uuid': object.id = item[1] # id tagged as uuid since Kicad 9
-            elif item[0] == 'members': object.members.extend(item[1:])
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "id":
+                object.id = item[1]
+            elif item[0] == "uuid":
+                object.id = item[1]  # id tagged as uuid since Kicad 9
+            elif item[0] == "members":
+                object.members.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -693,22 +732,23 @@ class Group():
 
     def _to_sexpr_raw(self):
         expr = [
-            'group',
+            "group",
             escape_and_quote(self.name),
-            ['uuid', escape_and_quote(self.id)],
-            format_bool_raw("locked", self.locked),
-            ['members'] + [quote(member) for member in self.members],
+            ["uuid", escape_and_quote(self.id)],
+            format_bool("locked", self.locked),
+            ["members"] + [quote(member) for member in self.members],
         ]
         return expr
 
 
 @dataclass
-class PageSettings():
+class PageSettings:
     """The ``paper`` token defines the drawing page size and orientation.
 
     Documentation:
         https://dev-docs.kicad.org/en/file-formats/sexpr-intro/#_page_settings
     """
+
     paperSize: str = "A4"
     """The ``paperSize`` token defines the size of the paper. Valid sizes are `A0`, `A1`, `A2`,
     `A3`, `A4`, `A5`, ``A``, ``B``, ``C``, ``D`` and ``E``. When using user-defines page sizes, set
@@ -741,24 +781,22 @@ class PageSettings():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'paper':
+        if exp[0] != "paper":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.paperSize = exp[1]
         if object.paperSize == "User":
             if len(exp) < 4:
-                raise Exception("PageSettings: Expected more data for paper type 'User'")
+                raise Exception(
+                    "PageSettings: Expected more data for paper type 'User'"
+                )
 
             object.width = exp[2]
             object.height = exp[3]
-        else:
-            for item in exp[2:]:
-                if not isinstance(item, list):
-                    raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-                elif item[0] == 'portrait': object.portrait = True
-                else:
-                    raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+
+        if any(item == "portrait" for item in exp[2:]):
+            object.portrait = True
 
         return object
 
@@ -779,21 +817,23 @@ class PageSettings():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['paper', escape_and_quote(self.paperSize)]
+        expr = ["paper", escape_and_quote(self.paperSize)]
 
-        if self.paperSize == 'User':
+        if self.paperSize == "User":
             if self.width is None or self.height is None:
-                raise Exception("Page size set to 'User' but width or height not specified")
+                raise Exception(
+                    "Page size set to 'User' but width or height not specified"
+                )
             expr.extend([self.width, self.height])
 
         if self.portrait:
-            expr.append('portrait')
+            expr.append("portrait")
 
         return expr
 
 
 @dataclass
-class TitleBlock():
+class TitleBlock:
     """The ``title_block`` token defines the contents of the title block.
 
     Documentation:
@@ -833,20 +873,29 @@ class TitleBlock():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'title_block':
+        if exp[0] != "title_block":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'title': object.title = item[1]
-            elif item[0] == 'date': object.date = item[1]
-            elif item[0] == 'rev': object.revision = item[1]
-            elif item[0] == 'company': object.company = item[1]
-            elif item[0] == 'comment': object.comments.update({item[1]: item[2]})
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "title":
+                object.title = item[1]
+            elif item[0] == "date":
+                object.date = item[1]
+            elif item[0] == "rev":
+                object.revision = item[1]
+            elif item[0] == "company":
+                object.company = item[1]
+            elif item[0] == "comment":
+                object.comments.update({item[1]: item[2]})
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -864,28 +913,28 @@ class TitleBlock():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['title_block']
+        expr = ["title_block"]
 
         if self.title is not None:
-            expr.append(['title', escape_and_quote(self.title)])
+            expr.append(["title", escape_and_quote(self.title)])
 
         if self.date is not None:
-            expr.append(['date', escape_and_quote(self.date)])
+            expr.append(["date", escape_and_quote(self.date)])
 
         if self.revision is not None:
-            expr.append(['rev', escape_and_quote(self.revision)])
+            expr.append(["rev", escape_and_quote(self.revision)])
 
         if self.company is not None:
-            expr.append(['company', escape_and_quote(self.company)])
+            expr.append(["company", escape_and_quote(self.company)])
 
         for number, comment in self.comments.items():
-            expr.append(['comment', number, escape_and_quote(comment)])
+            expr.append(["comment", number, escape_and_quote(comment)])
 
         return expr
 
 
 @dataclass
-class Property():
+class Property:
     """The ``property`` token defines a symbol property when used inside a ``symbol`` definition.
 
     Documentation:
@@ -936,30 +985,43 @@ class Property():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'property':
+        if exp[0] != "property":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.key = exp[1]
 
-        if object.key in ['Datasheet', 'Sim.Library'] and len(exp[2]) > 0 and exp[2] not in ['.', '~']:
+        if (
+            object.key in ["Datasheet", "Sim.Library"]
+            and len(exp[2]) > 0
+            and exp[2] not in [".", "~"]
+        ):
             if is_url(exp[2]):
-                object.value = exp[2].replace('\\', '/')  # Clean up malformed URLs
+                object.value = exp[2].replace("\\", "/")  # Clean up malformed URLs
             else:
                 object.value = str(Path(exp[2]))
         else:
             object.value = exp[2]
 
         for item in exp[3:]:
-            if item[0] == 'show_name': object.showName = parse_bool(item, 'show_name')
-            elif item[0] == 'do_not_autoplace': object.do_not_autoplace = parse_bool(item, 'do_not_autoplace')
+            if is_bool_key(item, "show_name"):
+                object.showName = parse_bool(item, "show_name")
+            elif is_bool_key(item, "do_not_autoplace"):
+                object.do_not_autoplace = parse_bool(item, "do_not_autoplace")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'id': object.id = item[1]
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "id":
+                object.id = item[1]
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -977,27 +1039,33 @@ class Property():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        if (self.key in ['Datasheet', 'Sim.Library'] and len(self.value) > 0
-                and self.value not in ['.','~'] and not is_url(self.value)):
+        if (
+            self.key in ["Datasheet", "Sim.Library"]
+            and len(self.value) > 0
+            and self.value not in [".", "~"]
+            and not is_url(self.value)
+        ):
             value = str(PureWindowsPath(self.value)).replace("\\", "\\\\")
         else:
             value = self.value
 
-        expr = ['property', escape_and_quote(self.key), escape_and_quote(value)]
+        expr = ["property", escape_and_quote(self.key), escape_and_quote(value)]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         if self.id is not None:
-            expr.append(['id', self.id])
+            expr.append(["id", self.id])
 
         if self.showName:
-            expr.append(format_bool_raw('show_name', self.showName))
+            expr.append(format_bool("show_name", self.showName))
 
         if self.do_not_autoplace:
-            expr.append(format_bool_raw('do_not_autoplace', self.do_not_autoplace, compact=True))
+            expr.append(
+                format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)
+            )
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())
@@ -1006,7 +1074,7 @@ class Property():
 
 
 @dataclass
-class RenderCachePolygon():
+class RenderCachePolygon:
     """A polygon used by the ``render_cache`` token
 
     Used since KiCad v7
@@ -1032,17 +1100,22 @@ class RenderCachePolygon():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'polygon':
+        if exp[0] != "polygon":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'pts':
-                for point in item[1:]: object.pts.append(Position.from_sexpr(point))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.pts.append(Position.from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1062,13 +1135,13 @@ class RenderCachePolygon():
     def _to_sexpr_raw(self):
         pts_expr = []
         for i, point in enumerate(self.pts):
-            pts_expr.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts_expr.append(["xy", point.X, point.Y])
 
-        return ['polygon', ['pts'] + pts_expr]
+        return ["polygon", ["pts"] + pts_expr]
 
 
 @dataclass
-class RenderCache():
+class RenderCache:
     """The ``render_cache`` token defines a cache for none-standard fonts.
 
     Used since KiCad v7
@@ -1103,7 +1176,7 @@ class RenderCache():
         if not isinstance(exp, list) or len(exp) < 3:
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'render_cache':
+        if exp[0] != "render_cache":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -1111,10 +1184,15 @@ class RenderCache():
         object.id = exp[2]
         for item in exp[3:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'polygon': object.polygons.append(RenderCachePolygon.from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "polygon":
+                object.polygons.append(RenderCachePolygon.from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent: int = 4, newline: bool = True) -> str:
@@ -1131,7 +1209,7 @@ class RenderCache():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['render_cache', escape_and_quote(self.text), self.id]
+        expr = ["render_cache", escape_and_quote(self.text), self.id]
 
         for poly in self.polygons:
             expr.append(poly._to_sexpr_raw())
@@ -1140,7 +1218,7 @@ class RenderCache():
 
 
 @dataclass
-class Fill():
+class Fill:
     """The ``fill`` token defines how schematic and symbol graphical items are filled
 
     Documentation:
@@ -1176,17 +1254,23 @@ class Fill():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fill':
+        if exp[0] != "fill":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'type': object.type = item[1]
-            elif item[0] == 'color': object.color = ColorRGBA().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "type":
+                object.type = item[1]
+            elif item[0] == "color":
+                object.color = ColorRGBA().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1204,7 +1288,7 @@ class Fill():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fill', ['type', self.type]]
+        expr = ["fill", ["type", self.type]]
 
         if self.color is not None:
             expr.append(self.color._to_sexpr_raw())
@@ -1213,7 +1297,7 @@ class Fill():
 
 
 @dataclass
-class Image():
+class Image:
     """The ``image`` token defines an image embedded into the file
 
     Documentation:
@@ -1254,20 +1338,29 @@ class Image():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'image':
+        if exp[0] != "image":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'scale': object.scale = item[1]
-            elif item[0] == 'uuid': object.uuid = item[1]
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'data': object.data.extend(item[1:])
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "scale":
+                object.scale = item[1]
+            elif item[0] == "uuid":
+                object.uuid = item[1]
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "data":
+                object.data.extend(item[1:])
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1285,24 +1378,24 @@ class Image():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['image', ['at', format_float(self.position.X), format_float(self.position.Y)]]
+        expr = ["image", ["at", self.position.X, self.position.Y]]
 
         if self.layer is not None:
-            expr.append(['layer', escape_and_quote(self.layer)])
+            expr.append(["layer", escape_and_quote(self.layer)])
 
         if self.scale is not None:
-            expr.append(['scale', self.scale])
+            expr.append(["scale", self.scale])
 
         if self.uuid is not None:
-            expr.append(['uuid', quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid)])
 
-        expr.append(['data'] + [quote(b64part) for b64part in self.data])
+        expr.append(["data"] + [quote(b64part) for b64part in self.data])
 
         return expr
 
 
 @dataclass
-class EmbeddedFile():
+class EmbeddedFile:
     """The ``file`` token defines an embedded file
 
     Documentation:
@@ -1310,13 +1403,13 @@ class EmbeddedFile():
     """
 
     class FileType(Enum):
-        FONT = 'font',
-        MODEL = 'model',
-        WORKSHEET = 'worksheet',
-        DATASHEET = 'datasheet',
-        OTHER = 'other'
+        FONT = ("font",)
+        MODEL = ("model",)
+        WORKSHEET = ("worksheet",)
+        DATASHEET = ("datasheet",)
+        OTHER = "other"
 
-    name: str = ''
+    name: str = ""
     """The ``name`` token defines the name of the file"""
 
     type: FileType = FileType.OTHER
@@ -1325,7 +1418,7 @@ class EmbeddedFile():
     data: List[str] = field(default_factory=list)
     """The ``data`` token attribute defines the raw file data encoded with MIME type base64 as a list of strings"""
 
-    checksum: str = ''
+    checksum: str = ""
     """The ``checksum`` token attribute defines the checksum of the file"""
 
     @classmethod
@@ -1345,19 +1438,27 @@ class EmbeddedFile():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'file':
+        if exp[0] != "file":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'name': object.name = item[1]
-            elif item[0] == 'type': object.type = item[1]
-            elif item[0] == 'data': object.data.extend(item[1:])
-            elif item[0] == 'checksum': object.checksum = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "name":
+                object.name = item[1]
+            elif item[0] == "type":
+                object.type = item[1]
+            elif item[0] == "data":
+                object.data.extend(item[1:])
+            elif item[0] == "checksum":
+                object.checksum = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -1375,12 +1476,13 @@ class EmbeddedFile():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['file']
+        expr = ["file"]
 
-        expr.append(['name', quote(self.name)])
-        expr.append(['type', self.type])
-        expr.append(['data'] + self.data)
-        expr.append(['checksum', quote(self.checksum)])
+        expr.append(["name", quote(self.name)])
+        expr.append(["type", self.type])
+        if len(self.data) > 0:
+            expr.append(["data"] + self.data)
+        expr.append(["checksum", quote(self.checksum)])
 
         return expr
 
@@ -1389,7 +1491,7 @@ class EmbeddedFile():
 class ProjectInstance(ABC):
     """The ``instances`` token defines a project instance and serves as an abstract base class for
     symbol and hierarchical sheet project instances.
-    
+
     Available since KiCad v7."""
 
     name: str = ""

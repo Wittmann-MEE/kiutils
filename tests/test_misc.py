@@ -13,7 +13,8 @@ from kiutils.schematic import Schematic
 
 from tests.testfunctions import to_file_and_compare, prepare_test, TEST_BASE
 
-MISC_BASE = path.join(TEST_BASE, 'misc')
+MISC_BASE = path.join(TEST_BASE, "misc")
+
 
 class Tests_Misc(unittest.TestCase):
     pass

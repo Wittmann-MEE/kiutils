@@ -22,12 +22,12 @@ from typing import List, Optional
 
 from kiutils.items.common import Position, Stroke, Effects, Fill
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
+
 @dataclass
-class SyArc():
+class SyArc:
     """The ``arc`` token defines a graphical arc in a symbol definition.
 
     Documentation:
@@ -72,21 +72,31 @@ class SyArc():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'arc':
+        if exp[0] != "arc":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'private'): object.private = True
+            if is_bool_key(item, "private"):
+                object.private = parse_bool(item, "private")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position().from_sexpr(item)
-            elif item[0] == 'mid': object.mid = Position().from_sexpr(item)
-            elif item[0] == 'end': object.end = Position().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position().from_sexpr(item)
+            elif item[0] == "mid":
+                object.mid = Position().from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -104,21 +114,21 @@ class SyArc():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['arc', format_bool_raw('private', self.private, compact=True)]
+        expr = ["arc", format_bool("private", self.private, compact=True)]
 
-        start = ['start', format_float(self.start.X), format_float(self.start.Y)]
+        start = ["start", self.start.X, self.start.Y]
         if self.start.angle is not None:
-            start.append(format_float(self.start.angle))
+            start.append(self.start.angle)
         expr.append(start)
 
-        mid = ['mid', format_float(self.mid.X), format_float(self.mid.Y)]
+        mid = ["mid", self.mid.X, self.mid.Y]
         if self.mid.angle is not None:
-            mid.append(format_float(self.mid.angle))
+            mid.append(self.mid.angle)
         expr.append(mid)
 
-        end = ['end', format_float(self.end.X), format_float(self.end.Y)]
+        end = ["end", self.end.X, self.end.Y]
         if self.end.angle is not None:
-            end.append(format_float(self.end.angle))
+            end.append(self.end.angle)
         expr.append(end)
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -128,7 +138,7 @@ class SyArc():
 
 
 @dataclass
-class SyCircle():
+class SyCircle:
     """The ``circle`` token defines a graphical circle in a symbol definition.
 
     Documentation:
@@ -170,21 +180,30 @@ class SyCircle():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'circle':
+        if exp[0] != "circle":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
 
         for item in exp[1:]:
-            if parse_bool(item, 'private'): object.private = True
+            if is_bool_key(item, "private"):
+                object.private = parse_bool(item, "private")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'center': object.center = Position().from_sexpr(item)
-            elif item[0] == 'radius': object.radius = item[1]
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "center":
+                object.center = Position().from_sexpr(item)
+            elif item[0] == "radius":
+                object.radius = item[1]
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent: int = 6, newline: bool = True) -> str:
@@ -201,10 +220,10 @@ class SyCircle():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['circle', format_bool_raw('private', self.private, compact=True)]
+        expr = ["circle", format_bool("private", self.private, compact=True)]
 
-        expr.append(['center', format_float(self.center.X), format_float(self.center.Y)])
-        expr.append(['radius', format_float(self.radius)])
+        expr.append(["center", self.center.X, self.center.Y])
+        expr.append(["radius", self.radius])
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
 
@@ -212,7 +231,7 @@ class SyCircle():
 
 
 @dataclass
-class SyCurve():
+class SyCurve:
     """The ``curve`` token defines a graphical Qubic Bezier curve.
 
     Documentation:
@@ -245,19 +264,26 @@ class SyCurve():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'curve':
+        if exp[0] != "curve":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'pts':
-                for point in item[1:]: object.points.append(Position().from_sexpr(point))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.points.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -275,11 +301,11 @@ class SyCurve():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['curve']
+        expr = ["curve"]
 
-        pts = ['pts']
+        pts = ["pts"]
         for point in self.points:
-            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts.append(["xy", point.X, point.Y])
         expr.append(pts)
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -289,7 +315,7 @@ class SyCurve():
 
 
 @dataclass
-class SyPolyLine():
+class SyPolyLine:
     """The ``polyline`` token defines one or more graphical lines that may or may not define a polygon.
 
     Documentation:
@@ -322,19 +348,26 @@ class SyPolyLine():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'polyline':
+        if exp[0] != "polyline":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'pts':
-                for point in item[1:]: object.points.append(Position().from_sexpr(point))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.points.append(Position().from_sexpr(point))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -352,11 +385,11 @@ class SyPolyLine():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['polyline']
+        expr = ["polyline"]
 
-        pts = ['pts']
+        pts = ["pts"]
         for point in self.points:
-            pts.append(['xy', format_float(point.X), format_float(point.Y)])
+            pts.append(["xy", point.X, point.Y])
         expr.append(pts)
 
         expr.append(self.stroke._to_sexpr_raw())
@@ -366,7 +399,7 @@ class SyPolyLine():
 
 
 @dataclass
-class SyRect():
+class SyRect:
     """The ``rectangle`` token defines a graphical rectangle in a symbol definition.
 
     Documentation:
@@ -408,21 +441,30 @@ class SyRect():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'rectangle':
+        if exp[0] != "rectangle":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
 
         for item in exp[1:]:
-            if parse_bool(item, 'private'): object.private = True
-            if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'start': object.start = Position().from_sexpr(item)
-            elif item[0] == 'end': object.end = Position().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
+            if is_bool_key(item, "private"):
+                object.private = parse_bool(item, "private")
+            elif not isinstance(item, list):
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position().from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -440,10 +482,10 @@ class SyRect():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['rectangle', format_bool_raw('private', self.private, compact=True)]
+        expr = ["rectangle", format_bool("private", self.private, compact=True)]
 
-        expr.append(['start', format_float(self.start.X), format_float(self.start.Y)])
-        expr.append(['end', format_float(self.end.X), format_float(self.end.Y)])
+        expr.append(["start", self.start.X, self.start.Y])
+        expr.append(["end", self.end.X, self.end.Y])
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
 
@@ -451,7 +493,7 @@ class SyRect():
 
 
 @dataclass
-class SyText():
+class SyText:
     """The ``text`` token defines a graphical text in a symbol definition.
 
     Documentation:
@@ -484,18 +526,24 @@ class SyText():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'text':
+        if exp[0] != "text":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.text = exp[1]
         for item in exp[2:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -513,11 +561,11 @@ class SyText():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['text', escape_and_quote(self.text)]
+        expr = ["text", escape_and_quote(self.text)]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
         expr.append(self.effects._to_sexpr_raw())
@@ -526,7 +574,7 @@ class SyText():
 
 
 @dataclass
-class SyTextBox():
+class SyTextBox:
     """The ``text_box`` token defines a text box inside a symbol
 
     Available since KiCad v7
@@ -580,7 +628,7 @@ class SyTextBox():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'text_box':
+        if exp[0] != "text_box":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
@@ -596,15 +644,25 @@ class SyTextBox():
 
         for item in exp[start_at:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'at': object.position = Position().from_sexpr(item)
-            elif item[0] == 'size': object.size = Position().from_sexpr(item)
-            elif item[0] == 'effects': object.effects = Effects().from_sexpr(item)
-            elif item[0] == 'stroke': object.stroke = Stroke().from_sexpr(item)
-            elif item[0] == 'fill': object.fill = Fill().from_sexpr(item)
-            elif item[0] == 'uuid': object.uuid = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "at":
+                object.position = Position().from_sexpr(item)
+            elif item[0] == "size":
+                object.size = Position().from_sexpr(item)
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fill = Fill().from_sexpr(item)
+            elif item[0] == "uuid":
+                object.uuid = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
         return object
 
     def to_sexpr(self, indent=2, newline=True) -> str:
@@ -621,19 +679,23 @@ class SyTextBox():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['text_box', format_bool_raw('private', self.private, compact=True), escape_and_quote(self.text)]
+        expr = [
+            "text_box",
+            format_bool("private", self.private, compact=True),
+            escape_and_quote(self.text),
+        ]
 
-        pos = ['at', format_float(self.position.X), format_float(self.position.Y)]
+        pos = ["at", self.position.X, self.position.Y]
         if self.position.angle is not None:
-            pos.append(format_float(self.position.angle))
+            pos.append(self.position.angle)
         expr.append(pos)
 
-        expr.append(['size', format_float(self.size.X), format_float(self.size.Y)])
+        expr.append(["size", self.size.X, self.size.Y])
         expr.append(self.stroke._to_sexpr_raw())
         expr.append(self.fill._to_sexpr_raw())
         expr.append(self.effects._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(['uuid', self.uuid])
+            expr.append(["uuid", self.uuid])
 
         return expr

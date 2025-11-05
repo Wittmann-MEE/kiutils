@@ -18,7 +18,14 @@ from __future__ import annotations
 from typing import Dict
 from os import path
 
-from kiutils.items.common import Group, Image, Net, PageSettings, TitleBlock, EmbeddedFile
+from kiutils.items.common import (
+    Group,
+    Image,
+    Net,
+    PageSettings,
+    TitleBlock,
+    EmbeddedFile,
+)
 from kiutils.items.zones import Zone
 from kiutils.items.brditems import *
 from kiutils.items.gritems import *
@@ -27,16 +34,18 @@ from kiutils.utils.string_utils import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 from kiutils.footprint import Footprint
 from kiutils.misc.config import *
-from kiutils.utils.parsing_utils import parse_bool, format_bool
+from kiutils.utils.parsing_utils import *
+
 
 @dataclass
-class Board():
+class Board:
     """The ``board`` token defines a KiCad layout according to the board file format used in
     ``.kicad_pcb`` files.
 
     Documentation:
         https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/
     """
+
     version: str = ""
     """The ``version`` token defines the board version using the YYYYMMDD date format"""
 
@@ -68,7 +77,7 @@ class Board():
     """The ``footprints`` token defines a list of footprints used in the layout"""
 
     # TODO: Type hinting for this list
-    graphicItems: List = field(default_factory=list) # as in gritems.py
+    graphicItems: List = field(default_factory=list)  # as in gritems.py
     """The ``graphicItems`` token defines a list of graphical items used in the layout. Possible
     tokens are found in ``kiutils.items.gritems``
     
@@ -124,46 +133,82 @@ class Board():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'kicad_pcb':
+        if exp[0] != "kicad_pcb":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'version': object.version = item[1]
-            elif item[0] == 'generator': object.generator = item[1]
-            elif item[0] == 'generator_version': object.generator_version = item[1]
-            elif item[0] == 'general': object.general = GeneralSettings().from_sexpr(item)
-            elif item[0] == 'paper': object.paper = PageSettings().from_sexpr(item)
-            elif item[0] == 'title_block': object.titleBlock = TitleBlock().from_sexpr(item)
-            elif item[0] == 'layers':
-                for layer in item[1:]: object.layers.append(LayerToken().from_sexpr(layer))
-            elif item[0] == 'setup': object.setup = SetupData().from_sexpr(item)
-            elif item[0] == 'property': object.properties.update({item[1]: item[2]})
-            elif item[0] == 'net': object.nets.append(Net().from_sexpr(item))
-            elif item[0] == 'footprint': object.footprints.append(Footprint().from_sexpr(item))
-            elif item[0] == 'gr_text': object.graphicItems.append(GrText().from_sexpr(item))
-            elif item[0] == 'gr_text_box': object.graphicItems.append(GrTextBox().from_sexpr(item))
-            elif item[0] == 'gr_line': object.graphicItems.append(GrLine().from_sexpr(item))
-            elif item[0] == 'gr_rect': object.graphicItems.append(GrRect().from_sexpr(item))
-            elif item[0] == 'gr_circle': object.graphicItems.append(GrCircle().from_sexpr(item))
-            elif item[0] == 'gr_arc': object.graphicItems.append(GrArc().from_sexpr(item))
-            elif item[0] == 'gr_poly': object.graphicItems.append(GrPoly().from_sexpr(item))
-            elif item[0] == 'gr_curve': object.graphicItems.append(GrCurve().from_sexpr(item))
-            elif item[0] == 'image': object.graphicItems.append(Image().from_sexpr(item))
-            elif item[0] == 'dimension': object.dimensions.append(Dimension().from_sexpr(item))
-            elif item[0] == 'target': object.targets.append(Target().from_sexpr(item))
-            elif item[0] == 'segment': object.traceItems.append(Segment().from_sexpr(item))
-            elif item[0] == 'arc': object.traceItems.append(Arc().from_sexpr(item))
-            elif item[0] == 'via': object.traceItems.append(Via().from_sexpr(item))
-            elif item[0] == 'zone': object.zones.append(Zone().from_sexpr(item))
-            elif item[0] == 'group': object.groups.append(Group().from_sexpr(item))
-            elif item[0] == 'embedded_fonts': object.embedded_fonts = parse_bool(item, 'embedded_fonts')
-            elif item[0] == 'embedded_files': object.embedded_files.extend([EmbeddedFile().from_sexpr(f) for f in item[1:]])
-            elif item[0] == 'generated': object.generated.append(Generated().from_sexpr(item))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "version":
+                object.version = item[1]
+            elif item[0] == "generator":
+                object.generator = item[1]
+            elif item[0] == "generator_version":
+                object.generator_version = item[1]
+            elif item[0] == "general":
+                object.general = GeneralSettings().from_sexpr(item)
+            elif item[0] == "paper":
+                object.paper = PageSettings().from_sexpr(item)
+            elif item[0] == "title_block":
+                object.titleBlock = TitleBlock().from_sexpr(item)
+            elif item[0] == "layers":
+                for layer in item[1:]:
+                    object.layers.append(LayerToken().from_sexpr(layer))
+            elif item[0] == "setup":
+                object.setup = SetupData().from_sexpr(item)
+            elif item[0] == "property":
+                object.properties.update({item[1]: item[2]})
+            elif item[0] == "net":
+                object.nets.append(Net().from_sexpr(item))
+            elif item[0] == "footprint":
+                object.footprints.append(Footprint().from_sexpr(item))
+            elif item[0] == "gr_text":
+                object.graphicItems.append(GrText().from_sexpr(item))
+            elif item[0] == "gr_text_box":
+                object.graphicItems.append(GrTextBox().from_sexpr(item))
+            elif item[0] == "gr_line":
+                object.graphicItems.append(GrLine().from_sexpr(item))
+            elif item[0] == "gr_rect":
+                object.graphicItems.append(GrRect().from_sexpr(item))
+            elif item[0] == "gr_circle":
+                object.graphicItems.append(GrCircle().from_sexpr(item))
+            elif item[0] == "gr_arc":
+                object.graphicItems.append(GrArc().from_sexpr(item))
+            elif item[0] == "gr_poly":
+                object.graphicItems.append(GrPoly().from_sexpr(item))
+            elif item[0] == "gr_curve":
+                object.graphicItems.append(GrCurve().from_sexpr(item))
+            elif item[0] == "image":
+                object.graphicItems.append(Image().from_sexpr(item))
+            elif item[0] == "dimension":
+                object.dimensions.append(Dimension().from_sexpr(item))
+            elif item[0] == "target":
+                object.targets.append(Target().from_sexpr(item))
+            elif item[0] == "segment":
+                object.traceItems.append(Segment().from_sexpr(item))
+            elif item[0] == "arc":
+                object.traceItems.append(Arc().from_sexpr(item))
+            elif item[0] == "via":
+                object.traceItems.append(Via().from_sexpr(item))
+            elif item[0] == "zone":
+                object.zones.append(Zone().from_sexpr(item))
+            elif item[0] == "group":
+                object.groups.append(Group().from_sexpr(item))
+            elif item[0] == "embedded_fonts":
+                object.embedded_fonts = parse_bool(item, "embedded_fonts")
+            elif item[0] == "embedded_files":
+                object.embedded_files.extend(
+                    [EmbeddedFile().from_sexpr(f) for f in item[1:]]
+                )
+            elif item[0] == "generated":
+                object.generated.append(Generated().from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -174,7 +219,7 @@ class Board():
 
         Args:
             - filepath (str): Path or path-like object that points to the file
-            - encoding (str, optional): Encoding of the input file. Defaults to None (platform 
+            - encoding (str, optional): Encoding of the input file. Defaults to None (platform
                                         dependent encoding).
 
         Raises:
@@ -186,7 +231,7 @@ class Board():
         if not path.isfile(filepath):
             raise Exception("Given path is not a file!")
 
-        with open(filepath, 'r', encoding=encoding) as infile:
+        with open(filepath, "r", encoding=encoding) as infile:
             item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
@@ -204,32 +249,54 @@ class Board():
         board.generator_version = KIUTILS_CREATE_NEW_GENERATOR_VERSION_STR
 
         # Add all standard layers to board
-        board.layers.extend([
-            LayerToken(ordinal=0, name='F.Cu', type='signal'), 
-            LayerToken(ordinal=2, name='B.Cu', type='signal'),
-            LayerToken(ordinal=9, name='F.Adhes', type='user', userName="F.Adhesive"),
-            LayerToken(ordinal=11, name='B.Adhes', type='user', userName="B.Adhesive"),
-            LayerToken(ordinal=13, name='F.Paste', type='user'),
-            LayerToken(ordinal=15, name='B.Paste', type='user'),
-            LayerToken(ordinal=5, name='F.SilkS', type='user', userName="F.Silkscreen"),
-            LayerToken(ordinal=7, name='B.SilkS', type='user', userName="B.Silkscreen"),
-            LayerToken(ordinal=1, name='F.Mask', type='user'),
-            LayerToken(ordinal=3, name='B.Mask', type='user'),
-            LayerToken(ordinal=17, name='Dwgs.User', type='user', userName="User.Drawings"),
-            LayerToken(ordinal=19, name='Cmts.User', type='user', userName="User.Comments"),
-            LayerToken(ordinal=21, name='Eco1.User', type='user', userName="User.Eco1"),
-            LayerToken(ordinal=23, name='Eco2.User', type='user', userName="User.Eco2"),
-            LayerToken(ordinal=25, name='Edge.Cuts', type='user'),
-            LayerToken(ordinal=27, name='Margin', type='user'),
-            LayerToken(ordinal=31, name='F.CrtYd', type='user', userName="F.Courtyard"),
-            LayerToken(ordinal=29, name='B.CrtYd', type='user', userName="B.Courtyard"),
-            LayerToken(ordinal=35, name='F.Fab', type='user'),
-            LayerToken(ordinal=33, name='B.Fab', type='user'),
-            LayerToken(ordinal=39, name='User.1', type='user'),
-            LayerToken(ordinal=41, name='User.2', type='user'),
-            LayerToken(ordinal=43, name='User.3', type='user'),
-            LayerToken(ordinal=45, name='User.4', type='user'),
-        ])
+        board.layers.extend(
+            [
+                LayerToken(ordinal=0, name="F.Cu", type="signal"),
+                LayerToken(ordinal=2, name="B.Cu", type="signal"),
+                LayerToken(
+                    ordinal=9, name="F.Adhes", type="user", userName="F.Adhesive"
+                ),
+                LayerToken(
+                    ordinal=11, name="B.Adhes", type="user", userName="B.Adhesive"
+                ),
+                LayerToken(ordinal=13, name="F.Paste", type="user"),
+                LayerToken(ordinal=15, name="B.Paste", type="user"),
+                LayerToken(
+                    ordinal=5, name="F.SilkS", type="user", userName="F.Silkscreen"
+                ),
+                LayerToken(
+                    ordinal=7, name="B.SilkS", type="user", userName="B.Silkscreen"
+                ),
+                LayerToken(ordinal=1, name="F.Mask", type="user"),
+                LayerToken(ordinal=3, name="B.Mask", type="user"),
+                LayerToken(
+                    ordinal=17, name="Dwgs.User", type="user", userName="User.Drawings"
+                ),
+                LayerToken(
+                    ordinal=19, name="Cmts.User", type="user", userName="User.Comments"
+                ),
+                LayerToken(
+                    ordinal=21, name="Eco1.User", type="user", userName="User.Eco1"
+                ),
+                LayerToken(
+                    ordinal=23, name="Eco2.User", type="user", userName="User.Eco2"
+                ),
+                LayerToken(ordinal=25, name="Edge.Cuts", type="user"),
+                LayerToken(ordinal=27, name="Margin", type="user"),
+                LayerToken(
+                    ordinal=31, name="F.CrtYd", type="user", userName="F.Courtyard"
+                ),
+                LayerToken(
+                    ordinal=29, name="B.CrtYd", type="user", userName="B.Courtyard"
+                ),
+                LayerToken(ordinal=35, name="F.Fab", type="user"),
+                LayerToken(ordinal=33, name="B.Fab", type="user"),
+                LayerToken(ordinal=39, name="User.1", type="user"),
+                LayerToken(ordinal=41, name="User.2", type="user"),
+                LayerToken(ordinal=43, name="User.3", type="user"),
+                LayerToken(ordinal=45, name="User.4", type="user"),
+            ]
+        )
 
         # Append net0 to netlist
         board.nets.append(Net())
@@ -238,13 +305,13 @@ class Board():
 
         return board
 
-    def to_file(self, filepath = None, encoding: Optional[str] = None):
+    def to_file(self, filepath=None, encoding: Optional[str] = None):
         """Save the object to a file in S-Expression format
 
         Args:
-            - filepath (str, optional): Path-like string to the file. Defaults to None. If not set, 
+            - filepath (str, optional): Path-like string to the file. Defaults to None. If not set,
                                         the attribute ``self.filePath`` will be used instead.
-            - encoding (str, optional): Encoding of the output file. Defaults to None (platform 
+            - encoding (str, optional): Encoding of the output file. Defaults to None (platform
                                         dependent encoding).
 
         Raises:
@@ -255,7 +322,7 @@ class Board():
                 raise Exception("File path not set")
             filepath = self.filePath
 
-        with open(filepath, 'w', encoding=encoding) as outfile:
+        with open(filepath, "w", encoding=encoding) as outfile:
             pre_formatted_sexpr = self.to_sexpr()
             outfile.write(prettify(pre_formatted_sexpr))
 
@@ -274,13 +341,13 @@ class Board():
 
     def _to_sexpr_raw(self):
         expr = [
-            'kicad_pcb',
-            ['version', self.version],
-            ['generator', quote(self.generator)],
+            "kicad_pcb",
+            ["version", self.version],
+            ["generator", quote(self.generator)],
         ]
 
         if self.generator_version is not None:
-            expr.append(['generator_version', quote(self.generator_version)])
+            expr.append(["generator_version", quote(self.generator_version)])
 
         expr.append(self.general._to_sexpr_raw())
         expr.append(self.paper._to_sexpr_raw())
@@ -289,7 +356,7 @@ class Board():
             expr.append(self.titleBlock._to_sexpr_raw())
 
         # Layers
-        expr.append(['layers'] + [layer._to_sexpr_raw() for layer in self.layers])
+        expr.append(["layers"] + [layer._to_sexpr_raw() for layer in self.layers])
 
         # Setup
         expr.append(self.setup._to_sexpr_raw())
@@ -297,7 +364,9 @@ class Board():
         # Properties
         if len(self.properties) > 0:
             for key, value in self.properties.items():
-                expr.append(['property', escape_and_quote(key), escape_and_quote(value)])
+                expr.append(
+                    ["property", escape_and_quote(key), escape_and_quote(value)]
+                )
 
         # Nets
         if len(self.nets) > 0:
@@ -333,12 +402,17 @@ class Board():
 
         # Embedded fonts
         if self.embedded_fonts is not None:
-            expr.append(format_bool_raw('embedded_fonts', self.embedded_fonts, compact=False, yesno=True))
+            expr.append(
+                format_bool(
+                    "embedded_fonts", self.embedded_fonts, compact=False, yesno=True
+                )
+            )
 
         # Embedded files
         if len(self.embedded_files) > 0:
-            embedded_files_expr = ['embedded_files'] + [f._to_sexpr_raw() for f in self.embedded_files]
+            embedded_files_expr = ["embedded_files"] + [
+                f._to_sexpr_raw() for f in self.embedded_files
+            ]
             expr.append(embedded_files_expr)
 
         return expr
-

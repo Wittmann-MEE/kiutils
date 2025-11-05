@@ -19,8 +19,9 @@ from os import path
 from kiutils.utils.string_utils import *
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
 
+
 @dataclass
-class Library():
+class Library:
     """The ``library`` token defines either a symbol library or a footprint library in
     a library table file (``fp_lib_table`` or ``sym_lib_table``)"""
 
@@ -62,20 +63,29 @@ class Library():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'lib':
+        if exp[0] != "lib":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if item[0] == 'name': object.name = item[1]
-            elif item[0] == 'type': object.type = item[1]
-            elif item[0] == 'uri': object.uri = item[1]
-            elif item[0] == 'options': object.options = item[1]
-            elif item[0] == 'descr': object.description = item[1]
-            elif item[0] == 'disabled': object.active = False
-            elif item[0] == 'hidden': object.visible = False
+            if item[0] == "name":
+                object.name = item[1]
+            elif item[0] == "type":
+                object.type = item[1]
+            elif item[0] == "uri":
+                object.uri = item[1]
+            elif item[0] == "options":
+                object.options = item[1]
+            elif item[0] == "descr":
+                object.description = item[1]
+            elif item[0] == "disabled":
+                object.active = False
+            elif item[0] == "hidden":
+                object.visible = False
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -93,28 +103,28 @@ class Library():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['lib']
+        expr = ["lib"]
 
-        expr.append(['name', escape_and_quote(self.name)])
-        expr.append(['type', escape_and_quote(self.type)])
-        expr.append(['uri', escape_and_quote(self.uri)])
-        expr.append(['options', escape_and_quote(self.options)])
-        expr.append(['descr', escape_and_quote(self.description)])
+        expr.append(["name", escape_and_quote(self.name)])
+        expr.append(["type", escape_and_quote(self.type)])
+        expr.append(["uri", escape_and_quote(self.uri)])
+        expr.append(["options", escape_and_quote(self.options)])
+        expr.append(["descr", escape_and_quote(self.description)])
 
         if not self.active:
-            expr.append(['disabled'])
+            expr.append(["disabled"])
 
         if not self.visible:
-            expr.append(['hidden'])
+            expr.append(["hidden"])
 
         return expr
 
 
 @dataclass
-class LibTable():
+class LibTable:
     """The ``libtable`` token defines the ``fp_lib_table`` or ``sym_lib_table`` file of KiCad"""
 
-    type: str = 'sym_lib_table'
+    type: str = "sym_lib_table"
     """The ``type`` token defines the type of the library table. Valid values are ``fp_lib_table`` or
     ``sym_lib_table``."""
 
@@ -142,15 +152,18 @@ class LibTable():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if not (exp[0] == 'fp_lib_table' or exp[0] == 'sym_lib_table'):
+        if not (exp[0] == "fp_lib_table" or exp[0] == "sym_lib_table"):
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         object.type = exp[0]
         for item in exp[1:]:
-            if item[0] == 'lib': object.libs.append(Library().from_sexpr(item))
+            if item[0] == "lib":
+                object.libs.append(Library().from_sexpr(item))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -161,7 +174,7 @@ class LibTable():
 
         Args:
             - filepath (str): Path or path-like object that points to the file
-            - encoding (str, optional): Encoding of the input file. Defaults to None (platform 
+            - encoding (str, optional): Encoding of the input file. Defaults to None (platform
                                         dependent encoding).
 
         Raises:
@@ -173,13 +186,13 @@ class LibTable():
         if not path.isfile(filepath):
             raise Exception("Given path is not a file!")
 
-        with open(filepath, 'r', encoding=encoding) as infile:
+        with open(filepath, "r", encoding=encoding) as infile:
             item = cls.from_sexpr(parse_sexp(infile.read()))
             item.filePath = filepath
             return item
 
     @classmethod
-    def create_new(cls, type: str = 'sym_lib_table') -> LibTable:
+    def create_new(cls, type: str = "sym_lib_table") -> LibTable:
         """Creates a new empty library table with its attributes set as KiCad would create it
 
         Args:
@@ -190,13 +203,13 @@ class LibTable():
         """
         return cls(type=type)
 
-    def to_file(self, filepath = None, encoding: Optional[str] = None):
+    def to_file(self, filepath=None, encoding: Optional[str] = None):
         """Save the object to a file in S-Expression format
 
         Args:
-            - filepath (str, optional): Path-like string to the file. Defaults to None. If not set, 
+            - filepath (str, optional): Path-like string to the file. Defaults to None. If not set,
                                         the attribute ``self.filePath`` will be used instead.
-            - encoding (str, optional): Encoding of the output file. Defaults to None (platform 
+            - encoding (str, optional): Encoding of the output file. Defaults to None (platform
                                         dependent encoding).
 
         Raises:
@@ -207,7 +220,7 @@ class LibTable():
                 raise Exception("File path not set")
             filepath = self.filePath
 
-        with open(filepath, 'w', encoding=encoding) as outfile:
+        with open(filepath, "w", encoding=encoding) as outfile:
             pre_formatted_sexpr = self.to_sexpr()
             outfile.write(prettify(pre_formatted_sexpr))
 

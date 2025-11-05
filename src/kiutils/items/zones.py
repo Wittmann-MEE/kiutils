@@ -19,14 +19,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, List
 
+from enum import IntEnum
+
+from kiutils.items.brditems import Arc
 from kiutils.items.common import Position
 from kiutils.utils.string_utils import *
-from kiutils.utils.format_utils import format_float
-from kiutils.utils.parsing_utils import parse_bool, format_bool_raw, format_bool
+from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
 
+
 @dataclass
-class KeepoutSettings():
+class KeepoutSettings:
     """The ``keepout `` token attributes define which objects should be kept out of the
     zone. This section only applies to keep out zones.
 
@@ -71,20 +74,29 @@ class KeepoutSettings():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'keepout':
+        if exp[0] != "keepout":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'tracks': object.tracks = item[1]
-            elif item[0] == 'vias': object.vias = item[1]
-            elif item[0] == 'pads': object.pads = item[1]
-            elif item[0] == 'copperpour': object.copperpour = item[1]
-            elif item[0] == 'footprints': object.footprints = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "tracks":
+                object.tracks = item[1]
+            elif item[0] == "vias":
+                object.vias = item[1]
+            elif item[0] == "pads":
+                object.pads = item[1]
+            elif item[0] == "copperpour":
+                object.copperpour = item[1]
+            elif item[0] == "footprints":
+                object.footprints = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -104,17 +116,17 @@ class KeepoutSettings():
 
     def _to_sexpr_raw(self):
         return [
-            'keepout',
-            ['tracks', self.tracks],
-            ['vias', self.vias],
-            ['pads', self.pads],
-            ['copperpour', self.copperpour],
-            ['footprints', self.footprints],
+            "keepout",
+            ["tracks", self.tracks],
+            ["vias", self.vias],
+            ["pads", self.pads],
+            ["copperpour", self.copperpour],
+            ["footprints", self.footprints],
         ]
 
 
 @dataclass
-class FillSettings():
+class FillSettings:
     """The ``fill`` token attributes define how the zone is to be filled.
 
     Documentation:
@@ -207,30 +219,49 @@ class FillSettings():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fill':
+        if exp[0] != "fill":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'yes'): object.yes = True
+            if is_bool_key(item, "yes"):
+                object.yes = parse_bool(item, "yes")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'mode': object.mode = item[1]
-            elif item[0] == 'thermal_gap': object.thermalGap = item[1]
-            elif item[0] == 'thermal_bridge_width': object.thermalBridgeWidth = item[1]
-            elif item[0] == 'smoothing': object.smoothingStyle = item[1]
-            elif item[0] == 'radius': object.smoothingRadius = item[1]
-            elif item[0] == 'island_removal_mode': object.islandRemovalMode = item[1]
-            elif item[0] == 'island_area_min': object.islandAreaMin = item[1]
-            elif item[0] == 'hatch_thickness': object.hatchThickness = item[1]
-            elif item[0] == 'hatch_gap': object.hatchGap = item[1]
-            elif item[0] == 'hatch_orientation': object.hatchOrientation = item[1]
-            elif item[0] == 'hatch_smoothing_level': object.hatchSmoothingLevel = item[1]
-            elif item[0] == 'hatch_smoothing_value': object.hatchSmoothingValue = item[1]
-            elif item[0] == 'hatch_border_algorithm': object.hatchBorderAlgorithm = item[1]
-            elif item[0] == 'hatch_min_hole_area': object.hatchMinHoleArea = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "mode":
+                object.mode = item[1]
+            elif item[0] == "thermal_gap":
+                object.thermalGap = item[1]
+            elif item[0] == "thermal_bridge_width":
+                object.thermalBridgeWidth = item[1]
+            elif item[0] == "smoothing":
+                object.smoothingStyle = item[1]
+            elif item[0] == "radius":
+                object.smoothingRadius = item[1]
+            elif item[0] == "island_removal_mode":
+                object.islandRemovalMode = item[1]
+            elif item[0] == "island_area_min":
+                object.islandAreaMin = item[1]
+            elif item[0] == "hatch_thickness":
+                object.hatchThickness = item[1]
+            elif item[0] == "hatch_gap":
+                object.hatchGap = item[1]
+            elif item[0] == "hatch_orientation":
+                object.hatchOrientation = item[1]
+            elif item[0] == "hatch_smoothing_level":
+                object.hatchSmoothingLevel = item[1]
+            elif item[0] == "hatch_smoothing_value":
+                object.hatchSmoothingValue = item[1]
+            elif item[0] == "hatch_border_algorithm":
+                object.hatchBorderAlgorithm = item[1]
+            elif item[0] == "hatch_min_hole_area":
+                object.hatchMinHoleArea = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -249,59 +280,59 @@ class FillSettings():
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['fill']
+        expr = ["fill"]
 
         if self.yes:
-            expr.append('yes')
+            expr.append("yes")
 
         if self.mode is not None:
-            expr.append(['mode', self.mode])
+            expr.append(["mode", self.mode])
 
-        expr.append(['thermal_gap', self.thermalGap])
-        expr.append(['thermal_bridge_width', self.thermalBridgeWidth])
+        expr.append(["thermal_gap", self.thermalGap])
+        expr.append(["thermal_bridge_width", self.thermalBridgeWidth])
 
         if self.smoothingStyle is not None:
-            expr.append(['smoothing', self.smoothingStyle])
+            expr.append(["smoothing", self.smoothingStyle])
 
         if self.smoothingRadius is not None:
-            expr.append(['radius', self.smoothingRadius])
+            expr.append(["radius", self.smoothingRadius])
 
         if self.islandRemovalMode is not None:
-            expr.append(['island_removal_mode', self.islandRemovalMode])
+            expr.append(["island_removal_mode", self.islandRemovalMode])
 
         if self.islandAreaMin is not None:
-            expr.append(['island_area_min', self.islandAreaMin])
+            expr.append(["island_area_min", self.islandAreaMin])
 
         if self.hatchThickness is not None:
-            expr.append(['hatch_thickness', self.hatchThickness])
+            expr.append(["hatch_thickness", self.hatchThickness])
 
         if self.hatchGap is not None:
-            expr.append(['hatch_gap', self.hatchGap])
+            expr.append(["hatch_gap", self.hatchGap])
 
         if self.hatchOrientation is not None:
-            expr.append(['hatch_orientation', self.hatchOrientation])
+            expr.append(["hatch_orientation", self.hatchOrientation])
 
         if self.hatchSmoothingLevel is not None:
-            expr.append(['hatch_smoothing_level', self.hatchSmoothingLevel])
+            expr.append(["hatch_smoothing_level", self.hatchSmoothingLevel])
 
         if self.hatchSmoothingValue is not None:
-            expr.append(['hatch_smoothing_value', self.hatchSmoothingValue])
+            expr.append(["hatch_smoothing_value", self.hatchSmoothingValue])
 
         if self.hatchBorderAlgorithm is not None:
-            expr.append(['hatch_border_algorithm', self.hatchBorderAlgorithm])
+            expr.append(["hatch_border_algorithm", self.hatchBorderAlgorithm])
 
         if self.hatchMinHoleArea is not None:
-            expr.append(['hatch_min_hole_area', self.hatchMinHoleArea])
+            expr.append(["hatch_min_hole_area", self.hatchMinHoleArea])
 
         return expr
 
 
 @dataclass
-class ZonePolygon():
+class ZonePolygon:
     """The ``polygon`` token defines a list of coordinates that define part of a zone"""
 
-    coordinates: List[Position] = field(default_factory=list)
-    """The ``coordinates`` defines the list of polygon X/Y coordinates used to define the zone polygon"""
+    coordinates: Union[List[Position], List[Arc]] = field(default_factory=list)
+    """The ``coordinates`` defines the list of polygon X/Y coordinates or arcs used to define the zone polygon"""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> ZonePolygon:
@@ -320,17 +351,28 @@ class ZonePolygon():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'polygon':
+        if exp[0] != "polygon":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'pts':
-                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "pts":
+                if all(p[0] == "xy" for p in item[1:]):
+                    object.coordinates = [Position().from_sexpr(p) for p in item[1:]]
+                elif all(p[0] == "arc" for p in item[1:]):
+                    object.coordinates = [Arc().from_sexpr(p) for p in item[1:]]
+                else:
+                    raise ValueError(
+                        f"Expected all points to be either 'xy' or 'arc', got mixed types. Full expression: {item}"
+                    )
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -347,18 +389,31 @@ class ZonePolygon():
                    expression is returned.
         """
         if len(self.coordinates) == 0:
-            return ''
+            return ""
 
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
-        return ['polygon', ['pts'] + pts]
+        if not self.coordinates:
+            return ["polygon", ["pts"]]
+
+        pts = []
+        first_item = self.coordinates[0]
+        if isinstance(first_item, Position):
+            # All items are Position
+            pts = [["xy", p.X, p.Y] for p in self.coordinates]
+        elif isinstance(first_item, Arc):
+            # All items are Arc
+            pts = [arc._to_sexpr_raw(zone_poly=True) for arc in self.coordinates]
+        else:
+            raise TypeError(f"Unexpected type in coordinates: {type(first_item)}")
+
+        return ["polygon", ["pts"] + pts]
 
 
 @dataclass
-class FilledPolygon():
+class FilledPolygon:
     """The ``filled_polygon`` token defines the polygons used to fill a zone
 
     Documentation:
@@ -392,19 +447,26 @@ class FilledPolygon():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'filled_polygon':
+        if exp[0] != "filled_polygon":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'island'): object.island = True
+            if is_bool_key(item, "island"):
+                object.island = parse_bool(item, "island")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'pts':
-                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "pts":
+                for position in item[1:]:
+                    object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -421,26 +483,26 @@ class FilledPolygon():
                    expression is returned.
         """
         if len(self.coordinates) == 0:
-            return ''
+            return ""
 
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        expr = ['filled_polygon', ['layer', escape_and_quote(self.layer)]]
+        expr = ["filled_polygon", ["layer", escape_and_quote(self.layer)]]
 
         if self.island:
-            expr.append(format_bool_raw('island', self.island, compact=True))
+            expr.append(format_bool("island", self.island, compact=True))
 
-        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
-        expr.append(['pts'] + pts)
+        pts = [["xy", point.X, point.Y] for point in self.coordinates]
+        expr.append(["pts"] + pts)
 
         return expr
 
 
 # TODO: This is KiCad 4 stuff, has to be tested yet ..
 @dataclass
-class FillSegments():
+class FillSegments:
     """The ``fill_polygon`` token defines the segments used to fill the zone. This is only
        used when loading boards prior to version 4 which filled zones with segments.
 
@@ -471,18 +533,24 @@ class FillSegments():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'fill_segments':
+        if exp[0] != "fill_segments":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'layer': object.layer = item[1]
-            elif item[0] == 'pts':
-                for position in item[1:]: object.coordinates.append(Position().from_sexpr(position))
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "layer":
+                object.layer = item[1]
+            elif item[0] == "pts":
+                for position in item[1:]:
+                    object.coordinates.append(Position().from_sexpr(position))
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -499,22 +567,22 @@ class FillSegments():
               expression is returned.
         """
         if len(self.coordinates) == 0:
-            return ''
+            return ""
 
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        pts = [['xy', format_float(point.X), format_float(point.Y)] for point in self.coordinates]
+        pts = [["xy", point.X, point.Y] for point in self.coordinates]
         return [
-            'fill_segments',
-            ['layer', escape_and_quote(self.layer)],
-            ['pts'] + pts,
+            "fill_segments",
+            ["layer", escape_and_quote(self.layer)],
+            ["pts"] + pts,
         ]
 
 
 @dataclass
-class Hatch():
+class Hatch:
     """Data wrapper for Zone class hatching attribute"""
 
     style: str = "none"
@@ -524,8 +592,9 @@ class Hatch():
     pitch: float = 0.0
     """The ``pitch`` token defines the pitch of the hatch"""
 
+
 @dataclass
-class Zone():
+class Zone:
     """The ``zone`` token defines a zone on the board or footprint. Zones serve two purposes
        in KiCad: filled copper zones and keep out areas.
 
@@ -533,6 +602,7 @@ class Zone():
         https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_zone
 
     """
+
     locked: bool = False
     """The ``locked`` token defines if the zone may be edited or not (Missing in KiCad
     docu as of 11.02.2022)"""
@@ -550,7 +620,7 @@ class Zone():
     strings. When the zone only resides on one layer, the output of ``self.to_sexpr()`` will
     change into ``(layer "xyz")`` instead of ``(layers ..)`` automatically."""
 
-    tstamp: Optional[str] = None       # Used since KiCad 6
+    tstamp: Optional[str] = None  # Used since KiCad 6
     """The ``tstamp`` token defines the unique identifier of the zone object"""
 
     name: Optional[str] = None
@@ -600,6 +670,9 @@ class Zone():
     # Available since KiCad v9
     placement: Optional[PlacementSettings] = None
 
+    attr_teardrop_type: Optional[AttrTeardrop] = None
+    """The optional ``attr_teardrop_type`` token indicates if this is a teardrop zone and of which type"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Zone:
         """Convert the given S-Expresstion into a Zone object
@@ -617,40 +690,62 @@ class Zone():
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'zone':
+        if exp[0] != "zone":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
-            if parse_bool(item, 'locked'): object.locked = True
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
             elif not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'net': object.net = item[1]
-            elif item[0] == 'net_name': object.netName = item[1]
-            elif item[0] == 'layers' or item[0] == 'layer':
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "net":
+                object.net = item[1]
+            elif item[0] == "net_name":
+                object.netName = item[1]
+            elif item[0] == "layers" or item[0] == "layer":
                 for layer in item[1:]:
                     object.layers.append(layer)
-            elif item[0] == 'tstamp': object.tstamp = item[1]
-            elif item[0] == 'uuid': object.tstamp = item[1] # Haha :)
-            elif item[0] == 'name': object.name = item[1]
-            elif item[0] == 'hatch': object.hatch = Hatch(style=item[1], pitch=item[2])
-            elif item[0] == 'priority': object.priority = item[1]
-            elif item[0] == 'connect_pads':
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+            elif item[0] == "name":
+                object.name = item[1]
+            elif item[0] == "hatch":
+                object.hatch = Hatch(style=item[1], pitch=item[2])
+            elif item[0] == "priority":
+                object.priority = item[1]
+            elif item[0] == "connect_pads":
                 if len(item) == 2:
                     object.clearance = item[1][1]
                 else:
                     object.connectPads = item[1]
                     object.clearance = item[2][1]
-            elif item[0] == 'min_thickness': object.minThickness = item[1]
-            elif item[0] == 'filled_areas_thickness': object.filledAreasThickness = item[1]
-            elif item[0] == 'keepout': object.keepoutSettings = KeepoutSettings().from_sexpr(item)
-            elif item[0] == 'fill': object.fillSettings = FillSettings().from_sexpr(item)
-            elif item[0] == 'polygon': object.polygons.append(ZonePolygon().from_sexpr(item))
-            elif item[0] == 'filled_polygon': object.filledPolygons.append(FilledPolygon().from_sexpr(item))
-            elif item[0] == 'fill_segments': object.fillSegments = FillSegments().from_sexpr(item)
-            elif item[0] == 'placement': object.placement = PlacementSettings().from_sexpr(item)
+            elif item[0] == "min_thickness":
+                object.minThickness = item[1]
+            elif item[0] == "filled_areas_thickness":
+                object.filledAreasThickness = item[1]
+            elif item[0] == "keepout":
+                object.keepoutSettings = KeepoutSettings().from_sexpr(item)
+            elif item[0] == "fill":
+                object.fillSettings = FillSettings().from_sexpr(item)
+            elif item[0] == "polygon":
+                object.polygons.append(ZonePolygon().from_sexpr(item))
+            elif item[0] == "filled_polygon":
+                object.filledPolygons.append(FilledPolygon().from_sexpr(item))
+            elif item[0] == "fill_segments":
+                object.fillSegments = FillSegments().from_sexpr(item)
+            elif item[0] == "placement":
+                object.placement = PlacementSettings().from_sexpr(item)
+            elif item[0] == "attr":
+                object.attr_teardrop_type = AttrTeardrop().from_sexpr(item)
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -675,40 +770,47 @@ class Zone():
             raise Exception("Zone: No layers set for this zone")
 
         layers_list = [escape_and_quote(layer) for layer in self.layers]
-        if len(self.layers) == 1 and self.layers[0] != "F&B.Cu" and self.layers[0] != "*.Cu":
-            layer_token = 'layer'
+        if (
+            len(self.layers) == 1
+            and self.layers[0] != "F&B.Cu"
+            and self.layers[0] != "*.Cu"
+        ):
+            layer_token = "layer"
         else:
-            layer_token = 'layers'
+            layer_token = "layers"
 
         expr = [
-            'zone',
-            ['net', self.net],
-            ['net_name', escape_and_quote(self.netName)],
-            format_bool_raw('locked', self.locked),
+            "zone",
+            ["net", self.net],
+            ["net_name", escape_and_quote(self.netName)],
+            format_bool("locked", self.locked),
             [layer_token] + layers_list,
         ]
 
         if self.tstamp is not None:
-            expr.append(['uuid', quote(self.tstamp)])
+            expr.append(["uuid", quote(self.tstamp)])
 
         if self.name is not None:
-            expr.append(['name', escape_and_quote(self.name)])
+            expr.append(["name", escape_and_quote(self.name)])
 
-        expr.append(['hatch', self.hatch.style, self.hatch.pitch])
+        expr.append(["hatch", self.hatch.style, self.hatch.pitch])
 
         if self.priority is not None:
-            expr.append(['priority', self.priority])
+            expr.append(["priority", self.priority])
 
-        connect_pads_expr = ['connect_pads']
+        if self.attr_teardrop_type is not None:
+            expr.append(self.attr_teardrop_type._to_sexpr_raw())
+
+        connect_pads_expr = ["connect_pads"]
         if self.connectPads is not None:
             connect_pads_expr.append(self.connectPads)
-        connect_pads_expr.append(['clearance', self.clearance])
+        connect_pads_expr.append(["clearance", self.clearance])
         expr.append(connect_pads_expr)
 
-        expr.append(['min_thickness', self.minThickness])
+        expr.append(["min_thickness", float(self.minThickness)])
 
         if self.filledAreasThickness is not None:
-            expr.append(['filled_areas_thickness', self.filledAreasThickness])
+            expr.append(["filled_areas_thickness", self.filledAreasThickness])
 
         if self.keepoutSettings is not None:
             expr.append(self.keepoutSettings._to_sexpr_raw())
@@ -732,9 +834,9 @@ class Zone():
 
 
 @dataclass
-class PlacementSettings():
+class PlacementSettings:
 
-    enabled: str = "no"
+    enabled: bool = False
 
     sheet_name: str = ""
 
@@ -750,22 +852,28 @@ class PlacementSettings():
             - Exception: When the first item of the list is not placement
 
         Returns:
-            - KeepoutSettings: Object of the class initialized with the given S-Expression
+            - PlacementSettings: Object of the class initialized with the given S-Expression
         """
         if not isinstance(exp, list):
             raise Exception("Expression does not have the correct type")
 
-        if exp[0] != 'placement':
+        if exp[0] != "placement":
             raise Exception("Expression does not have the correct type")
 
         object = cls()
         for item in exp[1:]:
             if not isinstance(item, list):
-                raise ValueError(f"Expected list property [key, value], got: {item}. Full expression: {exp}")
-            elif item[0] == 'enabled': object.enabled = item[1]
-            elif item[0] == 'sheetname': object.sheet_name = item[1]
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "enabled":
+                object.enabled = parse_bool(item, "enabled")
+            elif item[0] == "sheetname":
+                object.sheet_name = item[1]
             else:
-                raise ValueError(f"Unrecognized property key: {item[0]}. Full expression: {item}")
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
 
         return object
 
@@ -785,7 +893,102 @@ class PlacementSettings():
 
     def _to_sexpr_raw(self):
         return [
-            'placement',
-            ['enabled', self.enabled],
-            ['sheetname', quote(self.sheet_name)],
+            "placement",
+            format_bool("enabled", self.enabled, yesno=True),
+            ["sheetname", quote(self.sheet_name)],
         ]
+
+
+@dataclass
+class AttrTeardrop:
+    """The ``attr_teardrop`` object defines the teardrop attributes of the zone"""
+
+    class TeardropType(IntEnum):
+        TD_NONE = 0  # Not a teardrop: just a standard zone
+        TD_UNSPECIFIED = 1  # Not specified/unknown teardrop type
+        TD_VIAPAD = 2  # a teardrop on a via or pad
+        TD_TRACKEND = 3  # a teardrop on a track end
+        # (when 2 tracks having different widths have a teardrop on the
+        # end of the largest track)
+
+    t_type: TeardropType = TeardropType.TD_NONE
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> AttrTeardrop:
+        """Convert the given S-Expresstion into a AttrTeardrop object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(attr (teardrop ...))``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not placement
+
+        Returns:
+            - AttrTeardrop: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != "attr":
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        teardrop_expr = exp[1]
+        if teardrop_expr[0] != "teardrop":
+            raise Exception(
+                "Expression does not have the correct type, expecting: teardrop"
+            )
+
+        type_expr = teardrop_expr[1]
+        if type_expr[0] != "type":
+            raise Exception(
+                "Expression does not have the correct type, expecting: type"
+            )
+
+        if type_expr[1] not in ["padvia", "track_end"]:
+            raise Exception(
+                "Expression does not have the correct type, expecting: padvia or track_end"
+            )
+
+        if type_expr[1] == "padvia":
+            object.t_type = cls.TeardropType.TD_VIAPAD
+        elif type_expr[1] == "track_end":
+            object.t_type = cls.TeardropType.TD_TRACKEND
+
+        return object
+
+    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
+        """Generate the S-Expression representing this object. When no coordinates are set
+        in the curve, the resulting S-Expression will be left empty.
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
+            - newline (bool): Adds a newline to the end of the output. Defaults to False.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        if self.t_type == self.TeardropType.TD_NONE:
+            return []
+
+        expr = ["attr"]
+        expr.append(
+            [
+                "teardrop",
+                [
+                    "type",
+                    (
+                        "padvia"
+                        if self.t_type == self.TeardropType.TD_VIAPAD
+                        else "track_end"
+                    ),
+                ],
+            ]
+        )
+
+        return expr
