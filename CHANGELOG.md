@@ -1,5 +1,14 @@
 # kiutils - CHANGELOG
 
+## v1.9.0 - 05.11.2025
+### Non-breaking changes
+- Cleanup: Major refactor and improvement of s-expression parsing
+- Cleanup: Refactor boolean parameters parsing in all `from_sexpr` methods
+- Cleanup: Handle int/float formatting in `sexp_to_string`
+- Cleanup: Reformat whole codebase with Black formatter
+- Added: New round of test data from official KiCad demo projects
+- Added: Initial support for padstack in `pad`
+
 ## v1.8.4 - 21.10.2025
 ### Non-breaking changes
 - Cleanup: Refactored and added comments in `FpProperty`
