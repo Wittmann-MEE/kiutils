@@ -22,7 +22,7 @@ from typing import Dict
 from os import path
 
 from kiutils.items.zones import Zone
-from kiutils.items.brditems import Teardrops
+from kiutils.items.brditems import Teardrops, PadStack
 from kiutils.items.common import Image, Coordinate, Net, Group, Font, EmbeddedFile
 from kiutils.items.dimensions import Dimension
 from kiutils.items.fpitems import *
@@ -579,6 +579,9 @@ class Pad:
     teardrops: Optional[Teardrops] = None
     """The optional ``teardrops`` token defines the teardrop connections for the pad"""
 
+    padstack: Optional[PadStack] = None
+    """The optional ``padstack`` token defines pad pattern on different layers"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Pad:
         """Convert the given S-Expresstion into a Pad object
@@ -661,6 +664,8 @@ class Pad:
                 object.thermalGap = item[1]
             elif item[0] == "options":
                 object.customPadOptions = PadOptions().from_sexpr(item)
+            elif item[0] == "padstack":
+                object.padstack = PadStack.from_sexpr(item)
             elif item[0] == "primitives":
                 for primitive in item[1:]:
                     if primitive[0] == "gr_text":
@@ -810,6 +815,9 @@ class Pad:
 
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
+
+        if self.padstack is not None:
+            expr.append(self.padstack._to_sexpr_raw())
 
         return expr
 

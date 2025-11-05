@@ -2090,3 +2090,194 @@ class Teardrops:
                 expr.append(formatter(value))
 
         return expr
+
+
+@dataclass
+class PadStackLayer:
+    name: str = ""
+
+    shape: str = ""
+
+    size: list[float] = field(default_factory=lambda: [0, 0])
+
+    rect_delta: list[float] = field(default_factory=lambda: [0, 0])
+
+    offset: list[float] = field(default_factory=lambda: [0, 0])
+
+    thermal_bridge_angle: Optional[float] = None
+
+    thermal_gap: Optional[int] = None
+
+    thermal_bridge_width: Optional[int] = None
+
+    clearance: Optional[str] = None
+
+    zone_connect: Optional[int] = None
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> PadStackLayer:
+        """Convert the given S-Expresstion into a PadStackLayer object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(layer ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not generator
+
+        Returns:
+            - PadStackLayer: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != "layer":
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        object.name = exp[1]
+
+        for item in exp[2:]:
+            if not isinstance(item, list):
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "shape":
+                object.shape = item[1]
+            elif item[0] == "size":
+                object.size = item[1:]
+            elif item[0] == "rect_delta":
+                object.rect_delta = item[1:]
+            elif item[0] == "offset":
+                object.offset = item[1:]
+            elif item[0] == "thermal_bridge_angle":
+                object.thermal_bridge_angle = item[1]
+            elif item[0] == "thermal_gap":
+                object.thermal_gap = item[1]
+            elif item[0] == "thermal_bridge_width":
+                object.thermal_bridge_width = item[1]
+            elif item[0] == "clearance":
+                object.clearance = item[1]
+            elif item[0] == "zone_connect":
+                object.zone_connect = item[1]
+            elif item[0] == "options":
+                print("Padstack layer options are still unsupported")
+                continue
+            else:
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ["layer", escape_and_quote(self.name)]
+
+        expr.append(["shape", self.shape])
+
+        expr.append(["size", self.size[0], self.size[1]])
+
+        if self.rect_delta[0] != 0 or self.rect_delta[1] != 0:
+            expr.append(["rect_delta", self.rect_delta[0], self.rect_delta[1]])
+
+        if self.offset[0] != 0 or self.offset[1] != 0:
+            expr.append(["offset", self.offset[0], self.offset[1]])
+
+        # TODO options
+
+        if self.thermal_bridge_angle is not None:
+            expr.append(["thermal_bridge_angle", self.thermal_bridge_angle])
+
+        if self.thermal_gap is not None:
+            expr.append(["thermal_gap", self.thermal_gap])
+
+        if self.thermal_bridge_width is not None:
+            expr.append(["thermal_bridge_width", self.thermal_bridge_width])
+
+        if self.clearance is not None:
+            expr.append(["clearance", self.clearance])
+
+        if self.zone_connect is not None:
+            expr.append(["zone_connect", self.zone_connect])
+
+        return expr
+
+
+@dataclass
+class PadStack:
+    mode: str = ""
+
+    layers: dict[str, PadStackLayer] = field(default_factory=dict)
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> PadStack:
+        """Convert the given S-Expresstion into a PadStack object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(padstack ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not generator
+
+        Returns:
+            - PadStack: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != "padstack":
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "mode":
+                object.mode = item[1]
+            elif item[0] == "layer":
+                object.layers[item[1]] = PadStackLayer.from_sexpr(item)
+            else:
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
+
+        return object
+
+    def to_sexpr(self, indent=2, newline=True) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
+            - newline (bool): Adds a newline to the end of the output. Defaults to True.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        expr = ["padstack"]
+
+        expr.append(["mode", self.mode])
+
+        for layer in self.layers.values():
+            expr.append(layer._to_sexpr_raw())
+
+        return expr
