@@ -2102,13 +2102,13 @@ class PadOptions:
         https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_custom_pad_options
     """
 
-    clearance: str = "outline"
-    """The ``clearance`` token defines the type of clearance used for a custom pad. Valid clearance
+    clearance: Optional[str] = None
+    """The optional ``clearance`` token defines the type of clearance used for a custom pad. Valid clearance
     types are ``outline`` and ``convexhull``."""
 
-    anchor: str = "rect"
-    """The ``anchor`` token defines the anchor pad shape of a custom pad. Valid anchor pad shapes
-    are rect and circle."""
+    anchor: Optional[str] = None
+    """The optional ``anchor`` token defines the anchor pad shape of a custom pad. Valid anchor pad shapes
+    are ``rect`` and ``circle``."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PadOptions:
@@ -2161,7 +2161,12 @@ class PadOptions:
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
-        return ["options", ["clearance", self.clearance], ["anchor", self.anchor]]
+        options_expr = ["options"]
+        if self.clearance is not None:
+            options_expr.append(["clearance", self.clearance])
+        if self.anchor is not None:
+            options_expr.append(["anchor", self.anchor])
+        return options_expr
 
 
 @dataclass
@@ -2317,7 +2322,7 @@ class PadStackLayer:
         if self.options is not None:
             expr.append(self.options._to_sexpr_raw())
 
-        if self.primitives is not None and len(self.primitives) > 0:
+        if self.shape == "custom" and self.primitives is not None:
             primitives = ["primitives"]
             for primitive in self.primitives:
                 primitives.append(primitive._to_sexpr_raw())

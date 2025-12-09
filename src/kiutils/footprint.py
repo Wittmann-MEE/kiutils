@@ -734,7 +734,7 @@ class Pad:
         if self.customPadOptions is not None:
             expr.append(self.customPadOptions._to_sexpr_raw())
 
-        if self.customPadPrimitives is not None and len(self.customPadPrimitives) > 0:
+        if self.shape == "custom" and self.customPadPrimitives is not None:
             primitives = ["primitives"]
             for primitive in self.customPadPrimitives:
                 primitives.append(primitive._to_sexpr_raw())
