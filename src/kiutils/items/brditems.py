@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 from kiutils.items.common import Position
+from kiutils.items.gritems import *
 from kiutils.utils.string_utils import *
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
@@ -2094,25 +2095,47 @@ class Teardrops:
 
 @dataclass
 class PadStackLayer:
+    """The ``padstacklayer`` token defines a pad's geometry and thermal/zoning
+    properties for a specific board layer."""
+
     name: str = ""
+    """The ``name`` token defines an optional label for this layer's pad shape."""
 
     shape: str = ""
+    """The ``shape`` token defines the pad shape on this layer
+    (e.g. ``circle``, ``rect``, ``oval``, ``trapezoid``, ``roundrect``, ``custom``)."""
 
     size: list[float] = field(default_factory=lambda: [0, 0])
+    """The ``size`` token defines the pad's width and height on this layer."""
 
     rect_delta: list[float] = field(default_factory=lambda: [0, 0])
+    """The ``rect_delta`` token defines the taper or dimensional delta used for trapezoidal
+    or asymmetric pad shapes."""
 
     offset: list[float] = field(default_factory=lambda: [0, 0])
+    """The ``offset`` token defines the X/Y displacement of the pad shape relative to
+    the nominal pad position."""
 
     thermal_bridge_angle: Optional[float] = None
+    """The ``thermal_bridge_angle`` token defines the rotation angle of thermal-relief spokes."""
 
     thermal_gap: Optional[int] = None
+    """The ``thermal_gap`` token defines the clearance between the pad and a copper zone
+    when using thermal-relief connections."""
 
     thermal_bridge_width: Optional[int] = None
+    """The ``thermal_bridge_width`` token defines the width of the thermal-relief spokes."""
 
     clearance: Optional[str] = None
+    """The ``clearance`` token defines a pad-specific copper clearance override."""
 
     zone_connect: Optional[int] = None
+    """The ``zone_connect`` token defines how the pad connects to copper zones
+    (e.g. solid, thermal-relief, or none)."""
+
+    primitives: List = field(default_factory=list)
+    """The optional ``primitives`` token defines the drawing objects and options used to define
+    a custom pad on this layer."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PadStackLayer:
@@ -2160,6 +2183,24 @@ class PadStackLayer:
                 object.clearance = item[1]
             elif item[0] == "zone_connect":
                 object.zone_connect = item[1]
+            elif item[0] == "primitives":
+                for primitive in item[1:]:
+                    if primitive[0] == "gr_text":
+                        object.primitives.append(GrText().from_sexpr(primitive))
+                    elif primitive[0] == "gr_text_box":
+                        object.primitives.append(GrTextBox().from_sexpr(primitive))
+                    elif primitive[0] == "gr_line":
+                        object.primitives.append(GrLine().from_sexpr(primitive))
+                    elif primitive[0] == "gr_rect":
+                        object.primitives.append(GrRect().from_sexpr(primitive))
+                    elif primitive[0] == "gr_circle":
+                        object.primitives.append(GrCircle().from_sexpr(primitive))
+                    elif primitive[0] == "gr_arc":
+                        object.primitives.append(GrArc().from_sexpr(primitive))
+                    elif primitive[0] == "gr_poly":
+                        object.primitives.append(GrPoly().from_sexpr(primitive))
+                    elif primitive[0] == "gr_curve":
+                        object.primitives.append(GrCurve().from_sexpr(primitive))
             elif item[0] == "options":
                 print("Padstack layer options are still unsupported")
                 continue
@@ -2198,6 +2239,12 @@ class PadStackLayer:
 
         # TODO options
 
+        if self.primitives is not None and len(self.primitives) > 0:
+            primitives = ["primitives"]
+            for primitive in self.primitives:
+                primitives.append(primitive._to_sexpr_raw())
+            expr.append(primitives)
+
         if self.thermal_bridge_angle is not None:
             expr.append(["thermal_bridge_angle", self.thermal_bridge_angle])
 
@@ -2218,9 +2265,16 @@ class PadStackLayer:
 
 @dataclass
 class PadStack:
+    """The ``padstack`` token defines how a pad is formed across all copper,
+    mask, and other PCB layers."""
+
     mode: str = ""
+    """The ``mode`` token defines the padstack type
+    (e.g. ``thru_hole``, ``smd``, ``connect``, ``np_thru_hole``)."""
 
     layers: dict[str, PadStackLayer] = field(default_factory=dict)
+    """The ``layers`` token defines a mapping from layer name to its
+    corresponding pad geometry via ``padstacklayer`` entries."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PadStack:
