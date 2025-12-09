@@ -2094,6 +2094,77 @@ class Teardrops:
 
 
 @dataclass
+class PadOptions:
+    """The ``options`` token attributes define the settings used for custom pads. This token is
+    only used when a custom pad is defined.
+
+    Documentation:
+        https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_custom_pad_options
+    """
+
+    clearance: str = "outline"
+    """The ``clearance`` token defines the type of clearance used for a custom pad. Valid clearance
+    types are ``outline`` and ``convexhull``."""
+
+    anchor: str = "rect"
+    """The ``anchor`` token defines the anchor pad shape of a custom pad. Valid anchor pad shapes
+    are rect and circle."""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> PadOptions:
+        """Convert the given S-Expresstion into a PadOptions object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(options ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not options
+
+        Returns:
+            - PadOptions: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != "options":
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "clearance":
+                object.clearance = item[1]
+            elif item[0] == "anchor":
+                object.anchor = item[1]
+            else:
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
+
+        return object
+
+    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
+        """Generate the S-Expression representing this object
+
+        Args:
+            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
+            - newline (bool): Adds a newline to the end of the output. Defaults to False.
+
+        Returns:
+            - str: S-Expression of this object
+        """
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+        return ["options", ["clearance", self.clearance], ["anchor", self.anchor]]
+
+
+@dataclass
 class PadStackLayer:
     """The ``padstacklayer`` token defines a pad's geometry and thermal/zoning
     properties for a specific board layer."""
@@ -2136,6 +2207,10 @@ class PadStackLayer:
     primitives: List = field(default_factory=list)
     """The optional ``primitives`` token defines the drawing objects and options used to define
     a custom pad on this layer."""
+
+    options: Optional[PadOptions] = None
+    """The optional ``options`` token defines optional shape-specific parameters used to
+    refine the pad's geometry or behavior on this layer."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> PadStackLayer:
@@ -2183,6 +2258,8 @@ class PadStackLayer:
                 object.clearance = item[1]
             elif item[0] == "zone_connect":
                 object.zone_connect = item[1]
+            elif item[0] == "options":
+                object.options = PadOptions().from_sexpr(item)
             elif item[0] == "primitives":
                 for primitive in item[1:]:
                     if primitive[0] == "gr_text":
@@ -2237,7 +2314,8 @@ class PadStackLayer:
         if self.offset[0] != 0 or self.offset[1] != 0:
             expr.append(["offset", self.offset[0], self.offset[1]])
 
-        # TODO options
+        if self.options is not None:
+            expr.append(self.options._to_sexpr_raw())
 
         if self.primitives is not None and len(self.primitives) > 0:
             primitives = ["primitives"]

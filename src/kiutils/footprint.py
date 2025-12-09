@@ -22,7 +22,7 @@ from typing import Dict
 from os import path
 
 from kiutils.items.zones import Zone
-from kiutils.items.brditems import Teardrops, PadStack
+from kiutils.items.brditems import Teardrops, PadStack, PadOptions
 from kiutils.items.common import Image, Coordinate, Net, Group, Font, EmbeddedFile
 from kiutils.items.dimensions import Dimension
 from kiutils.items.fpitems import *
@@ -369,77 +369,6 @@ class DrillDefinition:
 
 
 @dataclass
-class PadOptions:
-    """The ``options`` token attributes define the settings used for custom pads. This token is
-    only used when a custom pad is defined.
-
-    Documentation:
-        https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_custom_pad_options
-    """
-
-    clearance: str = "outline"
-    """The ``clearance`` token defines the type of clearance used for a custom pad. Valid clearance
-    types are ``outline`` and ``convexhull``."""
-
-    anchor: str = "rect"
-    """The ``anchor`` token defines the anchor pad shape of a custom pad. Valid anchor pad shapes
-    are rect and circle."""
-
-    @classmethod
-    def from_sexpr(cls, exp: list) -> PadOptions:
-        """Convert the given S-Expresstion into a PadOptions object
-
-        Args:
-            - exp (list): Part of parsed S-Expression ``(options ...)``
-
-        Raises:
-            - Exception: When given parameter's type is not a list
-            - Exception: When the first item of the list is not options
-
-        Returns:
-            - PadOptions: Object of the class initialized with the given S-Expression
-        """
-        if not isinstance(exp, list):
-            raise Exception("Expression does not have the correct type")
-
-        if exp[0] != "options":
-            raise Exception("Expression does not have the correct type")
-
-        object = cls()
-        for item in exp[1:]:
-            if not isinstance(item, list):
-                raise ValueError(
-                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
-                )
-            elif item[0] == "clearance":
-                object.clearance = item[1]
-            elif item[0] == "anchor":
-                object.anchor = item[1]
-            else:
-                raise ValueError(
-                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
-                )
-
-        return object
-
-    def to_sexpr(self, indent: int = 0, newline: bool = False) -> str:
-        """Generate the S-Expression representing this object
-
-        Args:
-            - indent (int): Number of whitespaces used to indent the output. Defaults to 0.
-            - newline (bool): Adds a newline to the end of the output. Defaults to False.
-
-        Returns:
-            - str: S-Expression of this object
-        """
-        raw_expr = self._to_sexpr_raw()
-        return sexp_to_string(raw_expr)
-
-    def _to_sexpr_raw(self):
-        return ["options", ["clearance", self.clearance], ["anchor", self.anchor]]
-
-
-@dataclass
 class Pad:
     """The ``pad`` token defines a pad in a footprint definition.
 
@@ -559,7 +488,8 @@ class Pad:
     with a thermal relief. If not set, the footprint thermal_gap setting is used."""
 
     customPadOptions: Optional[PadOptions] = None
-    """The optional ``customPadOptions`` token defines the options when a custom pad is defined"""
+    """The optional ``customPadOptions`` token defines optional shape-specific parameters used to
+    refine the pad's geometry or behavior."""
 
     # Documentation seems wrong about primitives here. It seems like its just a list
     # of graphical objects, but the docu suggests, besides the list, two other params
