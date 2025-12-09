@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.9.1 - 09.12.2025
+### Non-breaking changes
+- Added: Support for primitives in padstack layers
+
 ## v1.9.0 - 05.11.2025
 ### Non-breaking changes
 - Cleanup: Major refactor and improvement of s-expression parsing
