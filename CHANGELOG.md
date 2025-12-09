@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.9.3 - 09.12.2025
+### Non-breaking changes
+- Fixed: Only write out `primitives` for custom shape pads
+
 ## v1.9.2 - 09.12.2025
 ### Non-breaking changes
 - Added: Support for options in padstack layers
