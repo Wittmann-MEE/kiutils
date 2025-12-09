@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.9.2 - 09.12.2025
+### Non-breaking changes
+- Added: Support for options in padstack layers
+
 ## v1.9.1 - 09.12.2025
 ### Non-breaking changes
 - Added: Support for primitives in padstack layers
