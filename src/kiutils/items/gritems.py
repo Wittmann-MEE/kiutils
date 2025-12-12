@@ -63,6 +63,10 @@ class GrText:
     
     Available since KiCad v7"""
 
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> GrText:
         """Convert the given S-Expresstion into a GrText object
@@ -106,6 +110,8 @@ class GrText:
                 object.tstamp = item[1]  # Haha :)
             elif item[0] == "render_cache":
                 object.renderCache = RenderCache.from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -143,6 +149,9 @@ class GrText:
             layer.append("knockout")
         if layer:
             expr.append(layer)
+
+        if self.net is not None:
+            expr.append(["net", self.net])
 
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
@@ -352,6 +361,10 @@ class GrLine:
     locked: bool = False
     """The ``locked`` token defines if the object may be moved or not"""
 
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> GrLine:
         """Convert the given S-Expresstion into a GrLine object
@@ -394,6 +407,8 @@ class GrLine:
                 object.width = item[1]
             elif item[0] == "stroke":
                 object.stroke = GrStroke().from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -438,6 +453,9 @@ class GrLine:
         if self.layer is not None:
             expr.append(["layer", escape_and_quote(self.layer)])
 
+        if self.net is not None:
+            expr.append(["net", self.net])
+
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
 
@@ -474,6 +492,10 @@ class GrRect:
 
     locked: bool = False
     """The ``locked`` token defines if the object may be moved or not"""
+
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrRect:
@@ -519,6 +541,8 @@ class GrRect:
                 object.width = item[1]
             elif item[0] == "stroke":
                 object.stroke = GrStroke().from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -564,6 +588,9 @@ class GrRect:
         if self.layer is not None:
             expr.append(["layer", escape_and_quote(self.layer)])
 
+        if self.net is not None:
+            expr.append(["net", self.net])
+
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
 
@@ -600,6 +627,10 @@ class GrCircle:
 
     locked: bool = False
     """The ``locked`` token defines if the object may be moved or not"""
+
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrCircle:
@@ -645,6 +676,8 @@ class GrCircle:
                 object.width = item[1]
             elif item[0] == "stroke":
                 object.stroke = GrStroke().from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -690,6 +723,9 @@ class GrCircle:
         if self.layer is not None:
             expr.append(["layer", escape_and_quote(self.layer)])
 
+        if self.net is not None:
+            expr.append(["net", self.net])
+
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
 
@@ -726,6 +762,10 @@ class GrArc:
 
     locked: bool = False
     """The ``locked`` token defines if the object may be moved or not"""
+
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrArc:
@@ -771,6 +811,8 @@ class GrArc:
                 object.width = item[1]
             elif item[0] == "stroke":
                 object.stroke = GrStroke().from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -814,6 +856,9 @@ class GrArc:
         if self.layer is not None:
             expr.append(["layer", escape_and_quote(self.layer)])
 
+        if self.net is not None:
+            expr.append(["net", self.net])
+
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
 
@@ -847,6 +892,10 @@ class GrPoly:
 
     locked: bool = False
     """The ``locked`` token defines if the object may be moved or not"""
+
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrPoly:
@@ -892,6 +941,8 @@ class GrPoly:
                 object.width = item[1]
             elif item[0] == "stroke":
                 object.stroke = GrStroke().from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -947,6 +998,9 @@ class GrPoly:
         if self.layer is not None:
             expr.append(["layer", escape_and_quote(self.layer)])
 
+        if self.net is not None:
+            expr.append(["net", self.net])
+
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
 
@@ -977,6 +1031,10 @@ class GrCurve:
 
     locked: bool = False
     """The ``locked`` token defines if the object may be moved or not"""
+
+    net: Optional[int] = None
+    """The optional ``net`` token defines by net ordinal number which net in the net section that
+    the graphical item is part of."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrCurve:
@@ -1019,6 +1077,8 @@ class GrCurve:
                 object.width = item[1]
             elif item[0] == "stroke":
                 object.stroke = GrStroke().from_sexpr(item)
+            elif item[0] == "net":
+                object.net = item[1]
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -1066,6 +1126,9 @@ class GrCurve:
         if self.layer is not None:
             expr.append(["layer", escape_and_quote(self.layer)])
 
+        if self.net is not None:
+            expr.append(["net", self.net])
+
         if self.tstamp is not None:
             expr.append(["uuid", quote(self.tstamp)])
 
@@ -1074,10 +1137,13 @@ class GrCurve:
 
 @dataclass
 class GrStroke:
+    """The ``stroke`` token defines a line-style used to draw the shape's border."""
 
     width: float = 0.0
+    """The ``width`` token defines the line width of a stroke."""
 
     type: str = ""
+    """The ``type`` token defines the type of the stroke (solid, dashed, etc.)."""
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrStroke:
