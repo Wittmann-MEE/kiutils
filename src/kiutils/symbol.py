@@ -172,8 +172,9 @@ class SymbolPin:
                 object.number = item[1]
                 if len(item) > 2:
                     object.numberEffects = Effects().from_sexpr(item[2])
-            elif item[0] == "alternate":
-                object.alternatePins.append(SymbolAlternativePin().from_sexpr(item))
+            elif item[0] == "alternate_pins":
+                for ap in item[1:]:
+                    object.alternatePins.append(SymbolAlternativePin().from_sexpr(ap))
             else:
                 raise ValueError(f"Unrecognized property key: {item[0]}, exp: {exp}")
 
@@ -690,7 +691,12 @@ class SymbolLib:
             elif item[0] == "generator_version":
                 object.generator_version = item[1]
             elif item[0] == "symbol":
-                object.symbols.append(Symbol().from_sexpr(item))
+                try:
+                    object.symbols.append(Symbol().from_sexpr(item))
+                except Exception as e:
+                    print(
+                        f"Error loading symbol {item[1] if item[1] else 'Missing symbol ID'} with exception: {e}"
+                    )
             elif item[0] == "embedded_fonts":
                 object.embedded_fonts = item[1]
             else:
