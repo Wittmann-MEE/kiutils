@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.9.6 - 19.03.2026
+### Non-breaking changes
+- Added: Support for embedded files in schematics
+
 ## v1.9.5 - 09.02.2026
 ### Non-breaking changes
 - Fixed: Support for alternate pins in symbols
