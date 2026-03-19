@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Union
 from os import path
 
-from kiutils.items.common import Image, PageSettings, TitleBlock
+from kiutils.items.common import Image, PageSettings, TitleBlock, EmbeddedFile
 from kiutils.items.schitems import *
 from kiutils.symbol import Symbol
 from kiutils.utils.sexpr import sexp_prettify as prettify, sexp_to_string, parse_sexp
@@ -130,6 +130,9 @@ class Schematic:
     rule_areas: list[PolyLine] = field(default_factory=list)
     """The ``rule_areas`` token defines rule areas used in the schematic"""
 
+    embedded_files: list[EmbeddedFile] = field(default_factory=list)
+    """The ``embedded_files`` section is a list of embedded files that are embedded in the schematic"""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Schematic:
         """Convert the given S-Expresstion into a Schematic object
@@ -223,6 +226,10 @@ class Schematic:
                 object.tables.append(Table().from_sexpr(item))
             elif item[0] == "rule_area":
                 object.rule_areas.append(PolyLine().from_sexpr(item[1]))
+            elif item[0] == "embedded_files":
+                object.embedded_files.extend(
+                    [EmbeddedFile.from_sexpr(f) for f in item[1:]]
+                )
             else:
                 raise ValueError(
                     f"Unrecognized property key: {item[0]}. Full expression: {item}"
@@ -388,5 +395,11 @@ class Schematic:
                     "embedded_fonts", self.embedded_fonts, compact=False, yesno=True
                 )
             )
+
+        if len(self.embedded_files) > 0:
+            embedded_files = ["embedded_files"]
+            for f in self.embedded_files:
+                embedded_files.append(f._to_sexpr_raw())
+            expr.append(embedded_files)
 
         return expr
