@@ -12,7 +12,6 @@ from unittest.result import failfast
 
 from jinja2 import Template
 
-
 DEFAULT_TEMPLATE = os.path.join(
     os.path.dirname(__file__), "template", "report_template.html"
 )
@@ -79,7 +78,7 @@ def strip_module_names(testcase_names):
 class _TestInfo(object):
     """ " Keeps information about the execution of a test method."""
 
-    (SUCCESS, FAILURE, ERROR, SKIP) = range(4)
+    SUCCESS, FAILURE, ERROR, SKIP = range(4)
 
     def __init__(
         self, test_result, test_method, outcome=SUCCESS, err=None, subTest=None
@@ -154,7 +153,7 @@ class _TestInfo(object):
 
 class _SubTestInfos(object):
     # TODO: make better: inherit _TestInfo?
-    (SUCCESS, FAILURE, ERROR, SKIP) = range(4)
+    SUCCESS, FAILURE, ERROR, SKIP = range(4)
 
     def __init__(self, test_id, subtests):
         self.subtests = subtests
