@@ -174,160 +174,229 @@ class GrTextBox:
         https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_graphical_text_box
     """
 
-    locked: bool = False
-    """The ``locked`` token specifies if the text box can be moved. Defaults to ``False``."""
-
     text: str = ""
-    """The ``text`` token defines the content of the text box. Defaults to an empty string."""
+    """The ``text`` token defines the content of the text box."""
+
+    locked: bool = False
+    """The ``locked`` token specifies if the text box can be moved."""
 
     start: Optional[Position] = None
-    """The optional ``start`` token defines the top-left of a cardinally oriented text box"""
+    """The optional ``start`` token defines the top-left of a cardinally oriented text box."""
 
     end: Optional[Position] = None
-    """The optional ``end`` token defines the bottom-right of a cardinally oriented text box"""
+    """The optional ``end`` token defines the bottom-right of a cardinally oriented text box."""
 
     pts: List[Position] = field(default_factory=list)
-    """The ``pts`` token defines the four corners of a non-cardianlly oriented text box. The corners
-    must be in order, but the winding can be either direction."""
+    """The ``pts`` token defines the four corners of a non-cardinally oriented text box."""
 
     angle: Optional[float] = None
-    """The optional ``angle`` token defines the rotation of the text box in degrees.
+    """The optional ``angle`` token defines the rotation of the text box in degrees."""
 
-    Note:
-        - If ``angle`` is not given, or is a cardinal angle (0, 90, 180 or 270), then the text box
-          MUST have ``start`` and ``end`` tokens.
-        - If ``angle`` is given and is not a cardinal angle, then the text box MUST have a ``pts``
-          token (with 4 pts).
-    """
+    margins: Optional[List[float]] = None
+    """The optional ``margins`` token defines left, top, right, bottom margins."""
 
-    layer: str = "F.Cu"
-    """The ``layer`` token defines the canonical layer the text box resides on. Defaults to
-    ``F.Cu``."""
+    layer: Optional[str] = None
+    """The ``layer`` token defines the canonical layer the text box resides on."""
 
     tstamp: Optional[str] = None
-    """The optional ``tstamp`` token defines the unique identifier of the text box"""
+    """The optional ``tstamp`` token defines the unique identifier of the text box."""
 
     effects: Optional[Effects] = None
-    """The optional ``effects`` token describes the style of the text in the text box"""
+    """The optional ``effects`` token describes the style of the text in the text box."""
+
+    border: bool = False
+    """The ``border`` token defines whether the border is visible."""
+
+    knockout: bool = False
+    """The ``knockout`` token defines if the text is inverted."""
 
     stroke: Optional[Stroke] = None
-    """The optional ``stroke`` token describes the style of an optional border to be drawn around 
-    the text box"""
+    """The optional ``stroke`` token describes the style of an optional border."""
 
     renderCache: Optional[RenderCache] = None
-    """If the ``effects`` token prescribe a TrueType font then the optional ``render_cache`` token 
-    should be given in case the font can not be found on the current system.
-    
-    Available since KiCad v7"""
+    """If the ``effects`` token prescribe a TrueType font then the optional
+    ``render_cache`` token should be given in case the font can not be found
+    on the current system.
+    """
 
     @classmethod
     def from_sexpr(cls, exp: list) -> GrTextBox:
-        raise Exception(
-            "We never dealt with this before."
-            "Most definitely there were changes introduced between Kicad 7 and 9."
-            "If you know what you are doing, proceed to verify/fix and remove the exception,"
-            "or contact the maintainer."
-        )
+        """Convert the given S-Expression into a GrTextBox object
 
-        # """Convert the given S-Expression into a GrTextBox object
-        #
-        # Args:
-        #     - exp (list): Part of parsed S-Expression ``(gr_text_box ...)``
-        #
-        # Raises:
-        #     - Exception: When given parameter's type is not a list
-        #     - Exception: When the first item of the list is not fp_text_box
-        #
-        # Returns:
-        #     - GrTextBox: Object of the class initialized with the given S-Expression
-        # """
-        # if not isinstance(exp, list) or len(exp) < 2:
-        #     raise Exception("Expression does not have the correct type")
-        #
-        # if exp[0] != 'gr_text_box':
-        #     raise Exception("Expression does not have the correct type")
-        #
-        # object = cls()
-        #
-        # # Extract "locked" token, if any is present
-        # if exp[1] == "locked" and not isinstance(exp[2], list):
-        #     object.locked = True
-        #     object.text = exp[2]
-        #     start_at = 3
-        # else:
-        #     object.text = exp[1]
-        #     start_at = 2
-        #
-        # for item in exp[start_at:]:
-        #     if item[0] == 'start': object.start = Position.from_sexpr(item)
-        #     if item[0] == 'end': object.end = Position.from_sexpr(item)
-        #     if item[0] == 'pts':
-        #         for point in item[1:]:
-        #             object.pts.append(Position().from_sexpr(point))
-        #     if item[0] == 'angle': object.angle = item[1]
-        #     if item[0] == 'layer': object.layer = item[1]
-        #     if item[0] == 'tstamp': object.tstamp = item[1]
-        #     if item[0] == 'tstamp': object.uuid = item[1] # Haha :)
-        #     if item[0] == 'effects': object.effects = Effects.from_sexpr(item)
-        #     if item[0] == 'stroke': object.stroke = Stroke.from_sexpr(item)
-        #     if item[0] == 'render_cache': object.renderCache = RenderCache.from_sexpr(item)
-        #
-        # return object
+        Args:
+            - exp (list): Part of parsed S-Expression ``(gr_text_box ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not gr_text_box
+
+        Returns:
+            - GrTextBox: Object initialized with the given S-Expression
+        """
+
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != "gr_text_box":
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+
+        object.text = exp[1]
+
+        for item in exp[2:]:
+
+            if is_bool_key(item, "locked"):
+                object.locked = parse_bool(item, "locked")
+
+            elif is_bool_key(item, "border"):
+                object.border = parse_bool(item, "border")
+
+            elif is_bool_key(item, "knockout"):
+                object.knockout = parse_bool(item, "knockout")
+
+            elif not isinstance(item, list):
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+
+            elif item[0] == "start":
+                object.start = Position().from_sexpr(item)
+
+            elif item[0] == "end":
+                object.end = Position().from_sexpr(item)
+
+            elif item[0] == "pts":
+                for point in item[1:]:
+                    object.pts.append(Position().from_sexpr(point))
+
+            elif item[0] == "angle":
+                object.angle = item[1]
+
+            elif item[0] == "margins":
+                object.margins = [
+                    item[1],
+                    item[2],
+                    item[3],
+                    item[4],
+                ]
+
+            elif item[0] == "layer":
+                object.layer = item[1]
+
+            elif item[0] == "tstamp":
+                object.tstamp = item[1]
+
+            elif item[0] == "uuid":
+                object.tstamp = item[1]  # Haha :)
+
+            elif item[0] == "effects":
+                object.effects = Effects().from_sexpr(item)
+
+            elif item[0] == "stroke":
+                object.stroke = Stroke().from_sexpr(item)
+
+            elif item[0] == "render_cache":
+                object.renderCache = RenderCache.from_sexpr(item)
+
+            else:
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
+
+        return object
 
     def to_sexpr(self, indent: int = 2, newline: bool = True) -> str:
         """Generate the S-Expression representing this object
 
         Args:
-            - indent (int): Number of whitespaces used to indent the output. Defaults to 2.
-            - newline (bool): Adds a newline to the end of the output. Defaults to True.
-
-        Raises:
-            - Exception: When a non-cardinal angle is given and no corner points were defined using
-              the ``self.pts`` token
-            - Exception: When a cardinal angle or no angle is given and either start or end token
-              is undefined
+            - indent (int): Number of whitespaces used to indent the output.
+            - newline (bool): Adds a newline to the end of the output.
 
         Returns:
             - str: S-Expression of this object
         """
+
+        raw_expr = self._to_sexpr_raw()
+        return sexp_to_string(raw_expr)
+
+    def _to_sexpr_raw(self):
+
+        # Validation
         if self.angle is not None and self.angle not in [0.0, 90.0, 180.0, 270.0]:
             if len(self.pts) != 4:
                 raise Exception(
-                    "None-cardinal angles must have exactly four corner points defined"
+                    "Non-cardinal angles must have exactly four corner points defined"
                 )
+
         if self.angle is None or self.angle in [0.0, 90.0, 180.0, 270.0]:
             if self.start is None or self.end is None:
                 raise Exception(
                     "No angle or a cardinal angle needs a start and end token defined"
                 )
 
-        indents = " " * indent
-        endline = "\n" if newline else ""
+        expr = ["gr_text_box", escape_and_quote(self.text)]
 
-        tstamp = f" (tstamp {self.tstamp})" if self.tstamp is not None else ""
-        angle = f"(angle {self.angle}) " if self.angle is not None else ""
-        start = (
-            f"(start {self.start.X} {self.start.Y}) " if self.start is not None else ""
-        )
-        end = f"(end {self.end.X} {self.end.Y}) " if self.end is not None else ""
-        locked = " locked" if self.locked else ""
+        expr.append(format_bool("locked", self.locked))
 
-        expression = f'{indents}(gr_text_box{locked} "{dequote(self.text)}"\n'
-        if len(self.pts) == 4:
-            expression += f"{indents}  (pts\n"
-            expression += f"{indents}    (xy {self.pts[0].X} {self.pts[0].Y})        (xy {self.pts[1].X} {self.pts[1].Y})        (xy {self.pts[2].X} {self.pts[2].Y})        (xy {self.pts[3].X} {self.pts[3].Y})\n"
-            expression += f"{indents}  )\n"
-        expression += (
-            f'{indents}  {start}{end}{angle}(layer "{dequote(self.layer)}"){tstamp}\n'
-        )
+        # Geometry
+        if self.start is not None:
+            expr.append(["start", self.start.X, self.start.Y])
+
+        if self.end is not None:
+            expr.append(["end", self.end.X, self.end.Y])
+
+        if len(self.pts) > 0:
+            pts_expr = ["pts"]
+
+            for point in self.pts:
+                pts_expr.append(["xy", point.X, point.Y])
+
+            expr.append(pts_expr)
+
+        # Margins
+        if self.margins is not None:
+            expr.append(
+                [
+                    "margins",
+                    self.margins[0],
+                    self.margins[1],
+                    self.margins[2],
+                    self.margins[3],
+                ]
+            )
+
+        # Angle
+        if self.angle is not None and self.angle != 0:
+            expr.append(["angle", self.angle])
+
+        # Layer
+        if self.layer is not None:
+            expr.append(["layer", escape_and_quote(self.layer)])
+
+        # UUID
+        if self.tstamp is not None:
+            expr.append(["uuid", quote(self.tstamp)])
+
+        # Text effects
         if self.effects is not None:
-            expression += self.effects.to_sexpr(indent + 2)
+            expr.append(self.effects._to_sexpr_raw())
+
+        # Border
+        expr.append(format_bool("border", self.border))
+
+        # Stroke
         if self.stroke is not None:
-            expression += self.stroke.to_sexpr(indent + 2)
+            expr.append(self.stroke._to_sexpr_raw())
+
+        # Knockout
+        expr.append(format_bool("knockout", self.knockout))
+
+        # Render cache
         if self.renderCache is not None:
-            expression += self.renderCache.to_sexpr(indent + 2)
-        expression += f"{indents}){endline}"
-        return expression
+            expr.append(self.renderCache._to_sexpr_raw())
+
+        return expr
 
 
 @dataclass
