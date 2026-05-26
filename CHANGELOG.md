@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.9.7 - 26.05.2026
+### Non-breaking changes
+- Added: Support for large text boxes
+
 ## v1.9.6 - 19.03.2026
 ### Non-breaking changes
 - Added: Support for embedded files in schematics
