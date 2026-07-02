@@ -183,6 +183,8 @@ class Board:
                 object.graphicItems.append(GrCurve().from_sexpr(item))
             elif item[0] == "image":
                 object.graphicItems.append(Image().from_sexpr(item))
+            elif item[0] == "table":
+                object.graphicItems.append(Table().from_sexpr(item))
             elif item[0] == "dimension":
                 object.dimensions.append(Dimension().from_sexpr(item))
             elif item[0] == "target":
