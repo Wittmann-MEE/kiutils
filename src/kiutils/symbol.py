@@ -359,6 +359,15 @@ class Symbol:
     """The ``onBoard`` token, defines if a symbol is to be exported from the schematic to the printed
     circuit board. If undefined, the token will not be generated in `self.to_sexpr()`."""
 
+    inPosFiles: Optional[bool] = None
+    """The ``inPosFiles`` token (KiCad 9+), defines if a symbol is to be included in the component
+    position files. If undefined, the token will not be generated in `self.to_sexpr()`."""
+
+    duplicatePinNumbersAreJumpers: Optional[bool] = None
+    """The ``duplicatePinNumbersAreJumpers`` token (KiCad 9+), defines if pins sharing the same pin
+    number are treated as internally connected jumpers. If undefined, the token will not be generated
+    in `self.to_sexpr()`."""
+
     # TODO: Describe this token
     isPower: bool = (
         False  # Missing in documentation, added when "Als Spannungssymbol" is checked
@@ -439,6 +448,12 @@ class Symbol:
                 object.inBom = parse_bool(item, "in_bom")
             elif item[0] == "on_board":
                 object.onBoard = parse_bool(item, "on_board")
+            elif item[0] == "in_pos_files":
+                object.inPosFiles = parse_bool(item, "in_pos_files")
+            elif item[0] == "duplicate_pin_numbers_are_jumpers":
+                object.duplicatePinNumbersAreJumpers = parse_bool(
+                    item, "duplicate_pin_numbers_are_jumpers"
+                )
             elif item[0] == "symbol":
                 object.units.append(Symbol().from_sexpr(item))
             elif item[0] == "property":
@@ -576,6 +591,19 @@ class Symbol:
         if self.onBoard is not None:
             expr.append(
                 format_bool("on_board", self.onBoard, compact=False, yesno=True)
+            )
+        if self.inPosFiles is not None:
+            expr.append(
+                format_bool("in_pos_files", self.inPosFiles, compact=False, yesno=True)
+            )
+        if self.duplicatePinNumbersAreJumpers is not None:
+            expr.append(
+                format_bool(
+                    "duplicate_pin_numbers_are_jumpers",
+                    self.duplicatePinNumbersAreJumpers,
+                    compact=False,
+                    yesno=True,
+                )
             )
 
         for item in self.properties:

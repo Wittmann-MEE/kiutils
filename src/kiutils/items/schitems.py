@@ -1308,6 +1308,11 @@ class SchematicSymbol:
     """The optional ``unit`` token attribute defines which unit in the symbol library definition
     that the schematic symbol represents"""
 
+    bodyStyle: Optional[int] = None
+    """The optional ``body_style`` token (KiCad 9+, formerly ``convert``) defines which body style
+    (e.g. De Morgan alternate) of the symbol is used. If undefined, the token will not be generated
+    in `self.to_sexpr()`."""
+
     inBom: bool = False
     """The ``in_bom`` token attribute determines whether the schematic symbol appears in any bill
     of materials output"""
@@ -1315,6 +1320,10 @@ class SchematicSymbol:
     onBoard: bool = False
     """The ``on_board`` token attribute determines if the footprint associated with the symbol is
     exported to the board via the netlist"""
+
+    inPosFiles: Optional[bool] = None
+    """The optional ``in_pos_files`` token (KiCad 9+) determines if the symbol is included in the
+    component position files. If undefined, the token will not be generated in `self.to_sexpr()`."""
 
     dnp: Optional[bool] = None
     """The optional ``dnp`` token defines if a symbol is marked as do-not-populate in the schematic. 
@@ -1379,6 +1388,8 @@ class SchematicSymbol:
                 object.inBom = parse_bool(item, "in_bom")
             elif is_bool_key(item, "on_board"):
                 object.onBoard = parse_bool(item, "on_board")
+            elif is_bool_key(item, "in_pos_files"):
+                object.inPosFiles = parse_bool(item, "in_pos_files")
             elif is_bool_key(item, "dnp"):
                 object.dnp = parse_bool(item, "dnp")
             elif is_bool_key(item, "exclude_from_sim"):
@@ -1395,6 +1406,8 @@ class SchematicSymbol:
                 object.uuid = item[1]
             elif item[0] == "unit":
                 object.unit = item[1]
+            elif item[0] == "body_style":
+                object.bodyStyle = item[1]
             elif item[0] == "at":
                 object.position = Position().from_sexpr(item)
             elif item[0] == "property":
@@ -1445,6 +1458,9 @@ class SchematicSymbol:
         if self.unit is not None:
             expr.append(["unit", self.unit])
 
+        if self.bodyStyle is not None:
+            expr.append(["body_style", self.bodyStyle])
+
         if self.exclude_from_sim is not None:
             expr.append(
                 format_bool(
@@ -1454,6 +1470,10 @@ class SchematicSymbol:
 
         expr.append(format_bool("in_bom", self.inBom, compact=False, yesno=True))
         expr.append(format_bool("on_board", self.onBoard, compact=False, yesno=True))
+        if self.inPosFiles is not None:
+            expr.append(
+                format_bool("in_pos_files", self.inPosFiles, compact=False, yesno=True)
+            )
         if self.dnp is not None:
             expr.append(format_bool("dnp", self.dnp, compact=False, yesno=True))
         expr.append(format_bool("fields_autoplaced", self.fieldsAutoplaced))

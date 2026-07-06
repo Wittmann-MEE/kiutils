@@ -1,5 +1,13 @@
 # kiutils - CHANGELOG
 
+## v1.9.9 - 06.07.2026
+### Non-breaking changes
+- Added: Support for KiCad 9 schematic symbol tokens `in_pos_files`, `duplicate_pin_numbers_are_jumpers`, symbol-instance `body_style` (formerly `convert`) and property-level `hide`
+
+## v1.9.8 - 02.07.2026
+### Non-breaking changes
+- Added: Support for KiCad 9 graphical `table` element in boards
+
 ## v1.9.7 - 26.05.2026
 ### Non-breaking changes
 - Added: Support for large text boxes
