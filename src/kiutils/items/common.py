@@ -968,6 +968,11 @@ class Property:
     do_not_autoplace: Optional[bool] = None
     """The optional ``do_not_autoplace`` token defines if this field in the schematic is automatically placed"""
 
+    hide: Optional[bool] = None
+    """The optional ``hide`` token (KiCad 9+) defines if the property is hidden. Emitted at the
+    property level, separate from the ``effects`` visibility. If undefined, the token will not be
+    generated in `self.to_sexpr()`."""
+
     @classmethod
     def from_sexpr(cls, exp: list) -> Property:
         """Convert the given S-Expresstion into a Property object
@@ -1008,6 +1013,8 @@ class Property:
                 object.showName = parse_bool(item, "show_name")
             elif is_bool_key(item, "do_not_autoplace"):
                 object.do_not_autoplace = parse_bool(item, "do_not_autoplace")
+            elif is_bool_key(item, "hide"):
+                object.hide = parse_bool(item, "hide")
             elif not isinstance(item, list):
                 raise ValueError(
                     f"Expected list property [key, value], got: {item}. Full expression: {exp}"
@@ -1066,6 +1073,9 @@ class Property:
             expr.append(
                 format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)
             )
+
+        if self.hide is not None:
+            expr.append(format_bool("hide", self.hide, compact=False, yesno=True))
 
         if self.effects is not None:
             expr.append(self.effects._to_sexpr_raw())
