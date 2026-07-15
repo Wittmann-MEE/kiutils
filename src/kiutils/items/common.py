@@ -18,7 +18,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 from pathlib import Path, PureWindowsPath
 from enum import Enum
 import urllib.parse
@@ -90,6 +90,115 @@ class Position:
         raise NotImplementedError(
             "This object does not have a direct S-Expression representation"
         )
+
+
+@dataclass
+class PolyArc:
+    """The ``arc`` token defines an arc segment of a polygon outline. Since KiCad 9, the ``pts``
+    section of a polygon may mix plain ``(xy ..)`` points with ``(arc ..)`` segments.
+
+    Documentation:
+        https://dev-docs.kicad.org/en/file-formats/sexpr-intro/index.html#_coordinate_point_list
+    """
+
+    start: Position = field(default_factory=Position)
+    """The ``start`` token defines the coordinates the arc segment begins at"""
+
+    mid: Position = field(default_factory=Position)
+    """The ``mid`` token defines the coordinates the arc segment passes through"""
+
+    end: Position = field(default_factory=Position)
+    """The ``end`` token defines the coordinates the arc segment ends at"""
+
+    @classmethod
+    def from_sexpr(cls, exp: list) -> PolyArc:
+        """Convert the given S-Expression into a PolyArc object
+
+        Args:
+            - exp (list): Part of parsed S-Expression ``(arc ...)``
+
+        Raises:
+            - Exception: When given parameter's type is not a list
+            - Exception: When the first item of the list is not arc
+
+        Returns:
+            - PolyArc: Object of the class initialized with the given S-Expression
+        """
+        if not isinstance(exp, list):
+            raise Exception("Expression does not have the correct type")
+
+        if exp[0] != "arc":
+            raise Exception("Expression does not have the correct type")
+
+        object = cls()
+        for item in exp[1:]:
+            if not isinstance(item, list):
+                raise ValueError(
+                    f"Expected list property [key, value], got: {item}. Full expression: {exp}"
+                )
+            elif item[0] == "start":
+                object.start = Position().from_sexpr(item)
+            elif item[0] == "mid":
+                object.mid = Position().from_sexpr(item)
+            elif item[0] == "end":
+                object.end = Position().from_sexpr(item)
+            else:
+                raise ValueError(
+                    f"Unrecognized property key: {item[0]}. Full expression: {item}"
+                )
+
+        return object
+
+    def to_sexpr(self) -> str:
+        """This object is only serialized as part of a ``(pts ...)`` token."""
+        raise NotImplementedError(
+            "This object does not have a direct S-Expression representation"
+        )
+
+    def _to_sexpr_raw(self) -> list:
+        return [
+            "arc",
+            ["start", self.start.X, self.start.Y],
+            ["mid", self.mid.X, self.mid.Y],
+            ["end", self.end.X, self.end.Y],
+        ]
+
+
+def parse_pts(exp: list) -> List[Union[Position, PolyArc]]:
+    """Parse the coordinates held by a ``(pts ...)`` token. Entries are plain ``(xy ..)`` points,
+    or ``(arc ..)`` segments when the polygon carries curved outlines (KiCad 9 and up).
+
+    Args:
+        - exp (list): Part of parsed S-Expression ``(pts ...)``
+
+    Returns:
+        - List[Union[Position, PolyArc]]: The coordinates in the order they appear
+    """
+    coordinates = []
+    for point in exp[1:]:
+        if isinstance(point, list) and point[0] == "arc":
+            coordinates.append(PolyArc.from_sexpr(point))
+        else:
+            coordinates.append(Position().from_sexpr(point))
+    return coordinates
+
+
+def pts_to_sexpr_raw(coordinates: List[Union[Position, PolyArc]]) -> list:
+    """Generate the raw S-Expression of a ``(pts ...)`` token from the given coordinates.
+
+    Args:
+        - coordinates (List[Union[Position, PolyArc]]): The coordinates to serialize
+
+    Returns:
+        - list: Raw S-Expression of the ``(pts ...)`` token
+    """
+    pts = ["pts"]
+    for point in coordinates:
+        if isinstance(point, PolyArc):
+            pts.append(point._to_sexpr_raw())
+        else:
+            pts.append(["xy", point.X, point.Y])
+    return pts
 
 
 @dataclass

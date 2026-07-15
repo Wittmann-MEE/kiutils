@@ -1,5 +1,9 @@
 # kiutils - CHANGELOG
 
+## v1.9.10 - 15.07.2026
+### Non-breaking changes
+- Added: Support for `arc` segments in the `pts` list of `gr_poly` and `fp_poly` polygons
+
 ## v1.9.9 - 06.07.2026
 ### Non-breaking changes
 - Added: Support for KiCad 9 schematic symbol tokens `in_pos_files`, `duplicate_pin_numbers_are_jumpers`, symbol-instance `body_style` (formerly `convert`) and property-level `hide`

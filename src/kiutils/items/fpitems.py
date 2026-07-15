@@ -18,9 +18,17 @@ Documentation taken from:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Union
 
-from kiutils.items.common import RenderCache, Stroke, Position, Effects
+from kiutils.items.common import (
+    RenderCache,
+    Stroke,
+    PolyArc,
+    Position,
+    Effects,
+    parse_pts,
+    pts_to_sexpr_raw,
+)
 from kiutils.utils.string_utils import *
 from kiutils.utils.parsing_utils import *
 from kiutils.utils.sexpr import sexp_to_string
@@ -864,7 +872,7 @@ class FpPoly:
     layer: str = "F.Cu"
     """The ``layer`` token defines the canonical layer the polygon resides on"""
 
-    coordinates: List[Position] = field(default_factory=list)
+    coordinates: List[Union[Position, PolyArc]] = field(default_factory=list)
     """The ``coordinates`` define the list of X/Y coordinates of the polygon outline"""
 
     width: Optional[float] = 0.12  # Used for KiCad < 7
@@ -912,8 +920,7 @@ class FpPoly:
                     f"Expected list property [key, value], got: {item}. Full expression: {exp}"
                 )
             elif item[0] == "pts":
-                for point in item[1:]:
-                    object.coordinates.append(Position().from_sexpr(point))
+                object.coordinates.extend(parse_pts(item))
             elif item[0] == "layer":
                 object.layer = item[1]
             elif item[0] == "tstamp":
@@ -954,10 +961,7 @@ class FpPoly:
             return []
 
         expr = ["fp_poly"]
-        pts_expr = ["pts"]
-        for point in self.coordinates:
-            pts_expr.append(["xy", point.X, point.Y])
-        expr.append(pts_expr)
+        expr.append(pts_to_sexpr_raw(self.coordinates))
 
         if self.width is not None:
             expr.append(["width", self.width])
