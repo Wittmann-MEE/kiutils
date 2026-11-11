@@ -21,6 +21,7 @@ from tests.test_designrules import *
 from tests.test_schematic import *
 from tests.test_worksheets import *
 from tests.test_misc import *
+from tests.test_native_formatting import *
 from tests.reporter.runner import HTMLTestRunner
 
 if __name__ == "__main__":

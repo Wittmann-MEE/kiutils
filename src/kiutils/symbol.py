@@ -607,7 +607,7 @@ class Symbol:
             )
 
         for item in self.properties:
-            expr.append(item._to_sexpr_raw())
+            expr.append(item._to_sexpr_raw(compact_flags=True))
         for item in self.graphicItems:
             expr.append(item._to_sexpr_raw())
         for item in self.pins:

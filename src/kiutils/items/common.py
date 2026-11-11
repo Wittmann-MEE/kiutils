@@ -1154,7 +1154,9 @@ class Property:
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self):
+    def _to_sexpr_raw(self, *, compact_flags: Optional[bool] = None):
+        # None preserves standalone/footprint behavior; the containing symbol
+        # selects compact library flags or explicit placed-field flags.
         if (
             self.key in ["Datasheet", "Sim.Library"]
             and len(self.value) > 0
@@ -1176,11 +1178,17 @@ class Property:
             expr.append(["id", self.id])
 
         if self.showName:
-            expr.append(format_bool("show_name", self.showName))
+            expr.append(
+                format_bool("show_name", self.showName, compact=bool(compact_flags))
+            )
 
         if self.do_not_autoplace:
             expr.append(
-                format_bool("do_not_autoplace", self.do_not_autoplace, compact=True)
+                format_bool(
+                    "do_not_autoplace",
+                    self.do_not_autoplace,
+                    compact=compact_flags is not False,
+                )
             )
 
         if self.hide is not None:
