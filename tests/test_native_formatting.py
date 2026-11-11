@@ -20,9 +20,7 @@ from kiutils.utils.sexpr import parse_sexp
 
 class Tests_NativeSchematicFormatting(unittest.TestCase):
     def schematic(self, version=20250114):
-        return Schematic.from_sexpr(
-            parse_sexp(
-                f"""(kicad_sch
+        source = f"""(kicad_sch
             (version {version}) (generator "eeschema") (generator_version "9.0")
             (uuid "root") (paper "A4")
             (lib_symbols (symbol "test:part"
@@ -49,8 +47,7 @@ class Tests_NativeSchematicFormatting(unittest.TestCase):
                     (at 1 2 0) (show_name yes) (do_not_autoplace yes)
                     (effects (font (size 1 1)))))
             (embedded_fonts no))"""
-            )
-        )
+        return Schematic.from_sexpr(parse_sexp(source))
 
     def test_native_kicad9_shape_uuid_context(self):
         text = self.schematic().to_sexpr()

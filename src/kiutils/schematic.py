@@ -354,9 +354,13 @@ class Schematic:
             expr.extend(item._to_sexpr_raw() for item in self.busEntries)
         if self.graphicalItems:
             expr.extend(
-                item._to_sexpr_raw(quote_uuid=quote_shape_uuids or item.fill is None)
-                if isinstance(item, PolyLine)
-                else item._to_sexpr_raw()
+                (
+                    item._to_sexpr_raw(
+                        quote_uuid=quote_shape_uuids or item.fill is None
+                    )
+                    if isinstance(item, PolyLine)
+                    else item._to_sexpr_raw()
+                )
                 for item in self.graphicalItems
             )
         if self.tables:
