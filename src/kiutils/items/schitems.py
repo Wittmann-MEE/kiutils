@@ -518,7 +518,7 @@ class PolyLine:
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self):
+    def _to_sexpr_raw(self, *, quote_uuid: bool = True):
         expr = ["polyline"]
 
         pts_expr = ["pts"]
@@ -532,7 +532,7 @@ class PolyLine:
             expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(["uuid", quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid) if quote_uuid else self.uuid])
 
         return expr
 
@@ -864,7 +864,7 @@ class LocalLabel:
             expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
-            expr.append(prop._to_sexpr_raw())
+            expr.append(prop._to_sexpr_raw(compact_flags=False))
 
         return expr
 
@@ -976,7 +976,7 @@ class GlobalLabel:
             expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
-            expr.append(prop._to_sexpr_raw())
+            expr.append(prop._to_sexpr_raw(compact_flags=False))
 
         return expr
 
@@ -1087,7 +1087,7 @@ class HierarchicalLabel:
             expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
-            expr.append(prop._to_sexpr_raw())
+            expr.append(prop._to_sexpr_raw(compact_flags=False))
 
         return expr
 
@@ -1482,7 +1482,7 @@ class SchematicSymbol:
             expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
-            expr.append(prop._to_sexpr_raw())
+            expr.append(prop._to_sexpr_raw(compact_flags=False))
 
         for number, uuid in self.pins.items():
             expr.append(["pin", escape_and_quote(number), ["uuid", quote(uuid)]])
@@ -1916,11 +1916,11 @@ class HierarchicalSheet:
         if self.uuid is not None:
             expr.append(["uuid", quote(self.uuid)])
 
-        expr.append(self.sheetName._to_sexpr_raw())
-        expr.append(self.fileName._to_sexpr_raw())
+        expr.append(self.sheetName._to_sexpr_raw(compact_flags=False))
+        expr.append(self.fileName._to_sexpr_raw(compact_flags=False))
 
         for p in self.properties:
-            expr.append(p._to_sexpr_raw())
+            expr.append(p._to_sexpr_raw(compact_flags=False))
 
         for pin in self.pins:
             expr.append(pin._to_sexpr_raw())
@@ -2178,7 +2178,7 @@ class Rectangle:
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self):
+    def _to_sexpr_raw(self, *, quote_uuid: bool = True):
         expr = [
             "rectangle",
             ["start", self.start.X, self.start.Y],
@@ -2189,7 +2189,7 @@ class Rectangle:
         expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(["uuid", quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid) if quote_uuid else self.uuid])
 
         return expr
 
@@ -2279,7 +2279,7 @@ class Arc:
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self):
+    def _to_sexpr_raw(self, *, quote_uuid: bool = True):
         expr = [
             "arc",
             ["start", self.start.X, self.start.Y],
@@ -2291,7 +2291,7 @@ class Arc:
         expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(["uuid", quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid) if quote_uuid else self.uuid])
 
         return expr
 
@@ -2376,7 +2376,7 @@ class Circle:
         raw_expr = self._to_sexpr_raw()
         return sexp_to_string(raw_expr)
 
-    def _to_sexpr_raw(self):
+    def _to_sexpr_raw(self, *, quote_uuid: bool = True):
         expr = [
             "circle",
             ["center", self.center.X, self.center.Y],
@@ -2387,7 +2387,7 @@ class Circle:
         expr.append(self.fill._to_sexpr_raw())
 
         if self.uuid is not None:
-            expr.append(["uuid", quote(self.uuid)])
+            expr.append(["uuid", quote(self.uuid) if quote_uuid else self.uuid])
 
         return expr
 
@@ -2509,7 +2509,7 @@ class NetclassFlag:
             expr.append(["uuid", quote(self.uuid)])
 
         for prop in self.properties:
-            expr.append(prop._to_sexpr_raw())
+            expr.append(prop._to_sexpr_raw(compact_flags=False))
 
         return expr
 

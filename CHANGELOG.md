@@ -1,5 +1,10 @@
 # kiutils - CHANGELOG
 
+## Unreleased
+### Fixes
+- Preserve native KiCad 9 shape UUID formatting while retaining quoted UUIDs for KiCad 10 and notes lines
+- Serialize placed schematic field flags explicitly and cached symbol-library flags in compact form
+
 ## v1.9.10 - 15.07.2026
 ### Non-breaking changes
 - Added: Support for `arc` segments in the `pts` list of `gr_poly` and `fp_poly` polygons

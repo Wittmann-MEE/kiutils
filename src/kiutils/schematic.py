@@ -313,6 +313,9 @@ class Schematic:
         return sexp_to_string(raw_expr)
 
     def _to_sexpr_raw(self):
+        # KiCad 9 shape UUIDs are bare; KiCad 10 quotes them.
+        # Notes lines retain quoted UUIDs in both formats.
+        quote_shape_uuids = int(self.version) > 20250114
         expr = [
             "kicad_sch",
             ["version", self.version],
@@ -350,11 +353,18 @@ class Schematic:
         if self.busEntries:
             expr.extend(item._to_sexpr_raw() for item in self.busEntries)
         if self.graphicalItems:
-            expr.extend(item._to_sexpr_raw() for item in self.graphicalItems)
+            expr.extend(
+                item._to_sexpr_raw(quote_uuid=quote_shape_uuids or item.fill is None)
+                if isinstance(item, PolyLine)
+                else item._to_sexpr_raw()
+                for item in self.graphicalItems
+            )
         if self.tables:
             expr.extend(item._to_sexpr_raw() for item in self.tables)
         if self.shapes:
-            expr.extend(item._to_sexpr_raw() for item in self.shapes)
+            expr.extend(
+                item._to_sexpr_raw(quote_uuid=quote_shape_uuids) for item in self.shapes
+            )
         if self.images:
             expr.extend(item._to_sexpr_raw() for item in self.images)
         if self.labels:
@@ -366,7 +376,9 @@ class Schematic:
 
         if len(self.rule_areas) > 0:
             for ra in self.rule_areas:
-                expr.append(["rule_area", ra._to_sexpr_raw()])
+                expr.append(
+                    ["rule_area", ra._to_sexpr_raw(quote_uuid=quote_shape_uuids)]
+                )
 
         if self.netclassFlags:
             expr.extend(item._to_sexpr_raw() for item in self.netclassFlags)
